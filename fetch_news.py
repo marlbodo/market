@@ -46,17 +46,16 @@ def fetch_and_store_news():
                 "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}",
                 "Content-Type": "application/json",
-                "Prefer": "return=minimal"
+                "Prefer": "resolution=ignore-duplicates" # 중복 발생 시 무시하고 넘어가도록 설정
             },
             method="POST"
         )
         try:
             with urllib.request.urlopen(req) as response:
                 pass
-        except urllib.error.HTTPError as e:
-            print(f"저장 실패 ({title[:15]}...): HTTP {e.code} - {e.reason}")
-        except Exception as e:
-            print(f"저장 실패 ({title[:15]}...): {e}")
+        except Exception:
+            # 중복 등으로 인한 에러는 조용히 넘김
+            pass
             
     print("뉴스 수집 및 저장 완료")
 

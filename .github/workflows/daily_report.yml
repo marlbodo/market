@@ -2,12 +2,14 @@ name: Daily Financial Pipeline Automation
 
 on:
   schedule:
-    - cron: '0 23 * * *' # 매일 아침 8시 (UTC 23시)
+    - cron: '0 23 * * *'
   workflow_dispatch:
 
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # 레포지토리 쓰기 권한 허용
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

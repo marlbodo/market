@@ -45,17 +45,15 @@ def fetch_and_store_news():
             headers={
                 "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "resolution=ignore-duplicates" # 중복 발생 시 무시하고 넘어가도록 설정
+                "Content-Type": "application/json"
             },
             method="POST"
         )
         try:
             with urllib.request.urlopen(req) as response:
                 pass
-        except Exception:
-            # 중복 등으로 인한 에러는 조용히 넘김
-            pass
+        except Exception as e:
+            print(f"저장 중 예외 발생: {e}")
             
     print("뉴스 수집 및 저장 완료")
 

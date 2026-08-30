@@ -15,7 +15,6 @@ SEARCH_QUERIES = [
 ]
 
 def clear_all_news():
-    """기존 뉴스 데이터 초기화"""
     delete_url = f"{SUPABASE_URL}/rest/v1/financial_news?id=gt.0"
     req = urllib.request.Request(
         delete_url,
@@ -28,9 +27,9 @@ def clear_all_news():
     )
     try:
         with urllib.request.urlopen(req):
-            print("기존 뉴스 데이터 전체 초기화 완료")
+            print("기존 뉴스 데이터 초기화 완료")
     except Exception as e:
-        print(f"데이터 초기화 중 에러 발생: {e}")
+        print(f"데이터 초기화 에러: {e}")
 
 def fetch_financial_news():
     clear_all_news()
@@ -42,9 +41,6 @@ def fetch_financial_news():
         feed = feedparser.parse(rss_url)
         all_entries.extend(feed.entries)
         
-    print(f"수집된 원본 뉴스 총 건수 (중복 포함): {len(all_entries)}")
-    
-    # [핵심] 현재 시간 기준 정확히 3일(72시간) 전 시점 계산
     now_utc = datetime.now(timezone.utc)
     three_days_ago = now_utc - timedelta(days=3)
     
@@ -67,22 +63,20 @@ def fetch_financial_news():
         else:
             published_at = now_utc
             
-        # [핵심 필터] 현재 기준 3일 전보다 오래된 기사는 무조건 배제
         if published_at < three_days_ago:
             continue
             
-        valid_dict[link] = (entry, published_at)
+        # RSS에 포함된 요약 스니펫 추출 (HTML 태그 제거 등 간단 가공)
+        raw_summary = entry.get('description', '')
+        
+        valid_dict[link] = (entry, published_at, raw_summary)
         
     valid_entries = list(valid_dict.values())
-    print(f"현재 기준 최근 3일 이내 유효한 뉴스 건수: {len(valid_entries)}")
-    
-    # 최신순 정렬 후 상위 30개 추출
     valid_entries.sort(key=lambda x: x[1], reverse=True)
-    top_entries = valid_entries[:30]
-    print(f"저장할 최종 최신 뉴스 건수: {len(top_entries)}")
+    top_entries = valid_entries[:15]
     
     news_list = []
-    for entry, published_at in top_entries:
+    for entry, published_at, raw_summary in top_entries:
         title = entry.title
         link = entry.link
         
@@ -109,7 +103,8 @@ def fetch_financial_news():
 
         news_item = {
             "title": title,
-            "summary": "요약 대기 중...",
+            # 요약 대기 중 상태 대신 RSS 본문 스니펫을 임시 보관하거나 빈 값으로 두어 LLM이 처리하게 함
+            "summary": raw_summary if raw_summary else "요약 대기 중...",
             "original_link": link,
             "category": category,
             "region": region,
@@ -123,8 +118,6 @@ def fetch_financial_news():
 
 if __name__ == "__main__":
     collected_news = fetch_financial_news()
-
-    success_count = 0
     for news in collected_news:
         payload = json.dumps(news).encode('utf-8')
         req = urllib.request.Request(
@@ -140,8 +133,7 @@ if __name__ == "__main__":
         )
         try:
             with urllib.request.urlopen(req):
-                success_count += 1
+                pass
         except Exception as e:
             print(f"저장 실패: {e}")
-
-    print(f"총 {success_count}건의 최근 3일 이내 최신 뉴스 Supabase 저장 완료")
+    print("뉴스 수집 및 저장 완료")

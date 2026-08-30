@@ -74,8 +74,8 @@ def summarize_unread_news():
         except Exception as e:
             print(f"데이터베이스 업데이트 실패: {e}")
             
-        # [중요] 무료 티어 쿼타 제한(RPM)을 피하기 위해 각 요청마다 8초 이상 대기
-        time.sleep(8)
+        # [중요] 무료 티어 쿼타 제한(RPM)을 피하기 위해 각 요청마다 5초 대기
+        time.sleep(5)
 
 if __name__ == "__main__":
     summarize_unread_news()

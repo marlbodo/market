@@ -1,5 +1,6 @@
 import os
 import urllib.request
+import urllib.parse
 import json
 import feedparser
 from datetime import datetime, timezone, timedelta
@@ -66,17 +67,14 @@ def fetch_financial_news():
         if published_at < three_days_ago:
             continue
             
-        # RSS에 포함된 요약 스니펫 추출 (HTML 태그 제거 등 간단 가공)
-        raw_summary = entry.get('description', '')
-        
-        valid_dict[link] = (entry, published_at, raw_summary)
+        valid_dict[link] = (entry, published_at)
         
     valid_entries = list(valid_dict.values())
     valid_entries.sort(key=lambda x: x[1], reverse=True)
     top_entries = valid_entries[:15]
     
     news_list = []
-    for entry, published_at, raw_summary in top_entries:
+    for entry, published_at in top_entries:
         title = entry.title
         link = entry.link
         
@@ -103,8 +101,6 @@ def fetch_financial_news():
 
         news_item = {
             "title": title,
-            # 요약 대기 중 상태 대신 RSS 본문 스니펫을 임시 보관하거나 빈 값으로 두어 LLM이 처리하게 함
-            "summary": raw_summary if raw_summary else "요약 대기 중...",
             "original_link": link,
             "category": category,
             "region": region,

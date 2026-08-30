@@ -29,11 +29,14 @@ def generate_html_report():
             return 5
         return 99
 
+    # 우선순위는 낮을수록 먼저 오도록, 날짜는 최신순이 위로 오도록 정렬 조정
     news_data = sorted(
         raw_data, 
         key=lambda x: (get_detailed_priority(x), str(x.get('published_at', ''))), 
-        reverse=True
+        reverse=False
     )
+    # 최신 뉴스가 맨 위로 오도록 전체 리스트를 역순으로 한번 더 뒤집어줍니다.
+    news_data.reverse()
 
     today_str = datetime.now().strftime("%Y-%m-%d")
     
@@ -51,8 +54,8 @@ def generate_html_report():
     </style></head>
     <body>
     <div class="header">
-        <h1>최근 3일 맞춤 정렬 금융 뉴스</h1>
-        <div>기준 일자: {today_str} | 정렬: 금리(국내➔해외) ➔ 주식(국내➔해외) ➔ 환율 (최신순)</div>
+        <h1>최신 금융 시장 동향 리포트</h1>
+        <div>기준 일자: {today_str} | 정렬: 채권/금리(국내➔해외) ➔ 주식(국내➔해외) ➔ 환율 (최신순)</div>
     </div>
     """
 

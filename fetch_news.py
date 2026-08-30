@@ -2,12 +2,11 @@ import os
 import urllib.request
 import json
 import feedparser
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# 공모주/IPO 및 금융 관련 구글 RSS URL
 RSS_URL = "https://news.google.com/rss/search?q=금융+금리+환율+주식+공모주+IPO&hl=ko&gl=KR&ceid=KR:ko"
 
 def clear_all_news():
@@ -30,19 +29,19 @@ def clear_all_news():
         print(f"데이터 초기화 중 에러 발생: {e}")
 
 def fetch_and_store_news():
-    # 1. 기존 데이터 싹 비우기
     clear_all_news()
     
-    # 2. RSS 피드 파싱
     feed = feedparser.parse(RSS_URL)
     entries = feed.entries
     print(f"수집된 원본 뉴스 건수: {len(entries)}")
     
+    # 현재 시간 기준 정확히 3일(72시간) 전 계산
+    now_utc = datetime.now(timezone.utc)
+    three_days_ago = now_utc - timedelta(days=3)
+    
     saved_count = 0
     
-    # 상위 최대 20개의 가장 최신 뉴스를 무조건 가져오되, 
-    # 날짜 파싱 오류나 타임존 문제로 누락되는 일이 없도록 안전하게 처리합니다.
-    for entry in entries[:20]:
+    for entry in entries:
         title = entry.title
         link = entry.link
         
@@ -51,7 +50,7 @@ def fetch_and_store_news():
         if published:
             published_at = datetime(*published[:6], tzinfo=timezone.utc)
         else:
-            published_at = datetime.now(timezone.utc)
+            published_at = now_utc
             
         # 수정일시 파싱
         updated = entry.get('updated_parsed')
@@ -59,6 +58,10 @@ def fetch_and_store_news():
             modified_at = datetime(*updated[:6], tzinfo=timezone.utc)
         else:
             modified_at = published_at
+
+        # [핵심] 정확히 최근 3일(72시간) 이내 기사만 필터링
+        if published_at < three_days_ago:
+            continue
 
         published_at_str = published_at.isoformat()
         modified_at_str = modified_at.isoformat()
@@ -109,9 +112,9 @@ def fetch_and_store_news():
             error_body = e.read().decode()
             print(f"저장 실패 ({title[:15]}...): HTTP {e.code} - {error_body}")
         except Exception as e:
-            print(f"저장 실패 ({title[:15]}...): {e}")
+            print(f"저장실패 ({title[:15]}...): {e}")
             
-    print(f"신규 뉴스 {saved_count}건 저장 완료")
+    print(f"최근 3일 이내 신규 뉴스 {saved_count}건 저장 완료")
 
 if __name__ == "__main__":
     fetch_and_store_news()

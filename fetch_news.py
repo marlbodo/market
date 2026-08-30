@@ -1,83 +1,77 @@
 import os
-import urllib.request
-import json
 import feedparser
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from supabase import create_client, Client
+import urllib.parse
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+# 1. Supabase 연결 설정
+SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co"
+SUPABASE_KEY = "sb_publishable_1_9-bKTcV3sBQkv10ru__w_iW-51pKt"
 
-RSS_URL = "https://news.google.com/rss/search?q=금융+금리+환율+주식+공모주+IPO&hl=ko&gl=KR&ceid=KR:ko"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# 2. 채권, 금리, 주가, 환율, 공모주, IPO 관련 통합 검색 쿼리
+RSS_URL = "https://news.google.com/rss/search?q=채권+금리+주가+환율+공모주+IPO&hl=ko&gl=KR&ceid=KR:ko"
 
 def clear_all_news():
-    """파이프라인 실행 전 기존 뉴스 데이터를 모두 삭제"""
-    delete_url = f"{SUPABASE_URL}/rest/v1/financial_news?id=gt.0"
-    
-    req = urllib.request.Request(
-        delete_url,
-        headers={
-            "apikey": SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Prefer": "return=minimal"
-        },
-        method="DELETE"
-    )
+    """기존 뉴스 데이터를 초기화하여 항상 최신 상태 유지"""
     try:
-        with urllib.request.urlopen(req):
-            print("기존 뉴스 데이터 전체 초기화 완료")
+        supabase.table("financial_news").delete().gt("id", 0).execute()
+        print("기존 뉴스 데이터 전체 초기화 완료")
     except Exception as e:
         print(f"데이터 초기화 중 에러 발생: {e}")
 
-def fetch_and_store_news():
+def fetch_financial_news():
     clear_all_news()
     
     feed = feedparser.parse(RSS_URL)
     entries = feed.entries
     print(f"수집된 원본 뉴스 총 건수: {len(entries)}")
     
+    now_utc = datetime.now(timezone.utc)
+    # 현재 날짜 기준 너무 오래된 기사(2025년 이전 등)는 엄격히 필터링
     valid_entries = []
     
-    # 1단계: 채권, 금리, 주식, 환율, 공모주, IPO 관련 키워드가 포함된 뉴스만 먼저 선별
-    target_keywords = ["금리", "채권", "국채", "주식", "증시", "코스피", "코스닥", "나스닥", "환율", "달러", "공모주", "IPO", "상장", "증권", "연준"]
-    
+    target_keywords = ["채권", "금리", "국채", "주가", "주식", "증시", "코스피", "코스닥", "나스닥", "환율", "달러", "공모주", "IPO", "상장", "증권", "연준"]
+
     for entry in entries:
         title = entry.title
-        if any(keyword in title for keyword in target_keywords):
-            valid_entries.append(entry)
-            
-    print(f"키워드 필터링 통과 뉴스 건수: {len(valid_entries)}")
-    
-    # 2단계: 선별된 뉴스 중 가장 최신 상위 10개만 확정
-    target_entries = valid_entries[:10]
-    print(f"저장할 최종 최신 뉴스 건수: {len(target_entries)}")
-    
-    saved_count = 0
-    now_utc = datetime.now(timezone.utc)
-    
-    for entry in target_entries:
-        title = entry.title
-        link = entry.link
         
+        # 키워드 포함 여부 확인
+        if not any(keyword in title for keyword in target_keywords):
+            continue
+            
         published = entry.get('published_parsed')
         if published:
             published_at = datetime(*published[:6], tzinfo=timezone.utc)
         else:
             published_at = now_utc
             
+        # 2025년 이전 또는 터무니없는 과거 날짜 기사는 배제 (단, 최신 뉴스가 부족할 경우를 대비해 2026년 이후 또는 최근 7일 이내 우선)
+        if published_at.year < 2026:
+            continue
+            
+        valid_entries.append((entry, published_at))
+        
+    print(f"2026년 기준 키워드 필터링 통과 뉴스 건수: {len(valid_entries)}")
+    
+    # 최신순 정렬 후 상위 10개 추출
+    valid_entries.sort(key=lambda x: x[1], reverse=True)
+    top_entries = valid_entries[:10]
+    print(f"저장할 최종 최신 뉴스 건수: {len(top_entries)}")
+    
+    news_list = []
+    
+    for entry, published_at in top_entries:
+        title = entry.title
+        link = entry.link
+        
         updated = entry.get('updated_parsed')
         if updated:
-            modified_at = datetime(*updated[:6], tzinfo=timezone.utc)
+            modified_at = datetime(*updated[:6], tzinfo=timezone.utc).isoformat()
         else:
-            modified_at = published_at
+            modified_at = published_at.isoformat()
 
-        # 연도가 너무 터무니없이 과거(2024년 이전 등)인 경우 현재 시간으로 보정하여 리포트 누락 방지
-        if published_at.year < 2025:
-            published_at = now_utc
-            modified_at = now_utc
-
-        published_at_str = published_at.isoformat()
-        modified_at_str = modified_at.isoformat()
-        
         # 카테고리 분류
         category = "기타"
         if any(k in title for k in ["공모주", "IPO", "상장"]):
@@ -95,38 +89,32 @@ def fetch_and_store_news():
         if any(keyword in title for keyword in overseas_keywords):
             region = "OVERSEAS"
 
-        payload = json.dumps({
+        news_item = {
             "title": title,
+            "summary": "요약 대기 중...",
             "original_link": link,
-            "published_at": published_at_str,
-            "modified_at": modified_at_str,
             "category": category,
             "region": region,
             "importance_score": 3,
-            "summary": "요약 대기 중..."
-        }).encode('utf-8')
+            "published_at": published_at.isoformat(),
+            "modified_at": modified_at
+        }
+        news_list.append(news_item)
+        
+    return news_list
 
-        req = urllib.request.Request(
-            f"{SUPABASE_URL}/rest/v1/financial_news",
-            data=payload,
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal"
-            },
-            method="POST"
-        )
-        try:
-            with urllib.request.urlopen(req):
-                saved_count += 1
-        except urllib.error.HTTPError as e:
-            error_body = e.read().decode()
-            print(f"저장 실패 ({title[:15]}...): HTTP {e.code} - {error_body}")
-        except Exception as e:
-            print(f"저장 실패 ({title[:15]}...): {e}")
-            
-    print(f"최종 신규 뉴스 {saved_count}건 저장 완료")
+# 3. 뉴스 데이터 수집 및 Supabase 저장 실행
+collected_news = fetch_financial_news()
 
-if __name__ == "__main__":
-    fetch_and_store_news()
+success_count = 0
+for news in collected_news:
+    try:
+        response = supabase.table("financial_news").upsert(
+            news, 
+            on_conflict="original_link"
+        ).execute()
+        success_count += 1
+    except Exception as e:
+        print(f"저장 실패 ({news['title']}): {e}")
+
+print(f"총 {success_count}건의 최신 뉴스 Supabase 저장 완료")

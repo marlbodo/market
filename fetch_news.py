@@ -2,16 +2,15 @@ import os
 import urllib.request
 import json
 import feedparser
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# 금융, 금리, 환율, 주식, 공모주, IPO 관련 검색 쿼리 명시
 RSS_URL = "https://news.google.com/rss/search?q=금융+금리+환율+주식+공모주+IPO&hl=ko&gl=KR&ceid=KR:ko"
 
 def clear_all_news():
-    """파이프라인 실행 전 기존 뉴스 데이터를 모두 삭제하여 깨끗한 상태 유지"""
+    """파이프라인 실행 전 기존 뉴스 데이터를 모두 삭제"""
     delete_url = f"{SUPABASE_URL}/rest/v1/financial_news?id=gt.0"
     
     req = urllib.request.Request(
@@ -36,39 +35,50 @@ def fetch_and_store_news():
     entries = feed.entries
     print(f"수집된 원본 뉴스 총 건수: {len(entries)}")
     
-    # 기준 시점: 현재 시간(UTC 기준) 및 정확히 3일(72시간) 전 계산
-    now_utc = datetime.now(timezone.utc)
-    three_days_ago = now_utc - timedelta(days=3)
+    valid_entries = []
     
-    saved_count = 0
+    # 1단계: 채권, 금리, 주식, 환율, 공모주, IPO 관련 키워드가 포함된 뉴스만 먼저 선별
+    target_keywords = ["금리", "채권", "국채", "주식", "증시", "코스피", "코스닥", "나스닥", "환율", "달러", "공모주", "IPO", "상장", "증권", "연준"]
     
     for entry in entries:
         title = entry.title
+        if any(keyword in title for keyword in target_keywords):
+            valid_entries.append(entry)
+            
+    print(f"키워드 필터링 통과 뉴스 건수: {len(valid_entries)}")
+    
+    # 2단계: 선별된 뉴스 중 가장 최신 상위 10개만 확정
+    target_entries = valid_entries[:10]
+    print(f"저장할 최종 최신 뉴스 건수: {len(target_entries)}")
+    
+    saved_count = 0
+    now_utc = datetime.now(timezone.utc)
+    
+    for entry in target_entries:
+        title = entry.title
         link = entry.link
         
-        # 발행일시 파싱
         published = entry.get('published_parsed')
         if published:
             published_at = datetime(*published[:6], tzinfo=timezone.utc)
         else:
             published_at = now_utc
             
-        # 수정일시 파싱
         updated = entry.get('updated_parsed')
         if updated:
             modified_at = datetime(*updated[:6], tzinfo=timezone.utc)
         else:
             modified_at = published_at
 
-        # [핵심 필터링] 2025년 등 오래된 기사 및 3일 이전 기사는 엄격히 제외
-        # 단, RSS 날짜 데이터 자체가 왜곡되어 너무 과거로 찍힌 경우를 방지하되, 명백히 오래된 연도(2025년 이전)는 무조건 스킵
-        if published_at.year < 2026 or published_at < three_days_ago:
-            continue
+        # 연도가 너무 터무니없이 과거(2024년 이전 등)인 경우 현재 시간으로 보정하여 리포트 누락 방지
+        if published_at.year < 2025:
+            published_at = now_utc
+            modified_at = now_utc
 
         published_at_str = published_at.isoformat()
         modified_at_str = modified_at.isoformat()
         
-        # 카테고리 분류 (채권, 금리, 주식, 환율, 공모주/IPO)
+        # 카테고리 분류
         category = "기타"
         if any(k in title for k in ["공모주", "IPO", "상장"]):
             category = "공모주"
@@ -116,7 +126,7 @@ def fetch_and_store_news():
         except Exception as e:
             print(f"저장 실패 ({title[:15]}...): {e}")
             
-    print(f"최근 3일 이내 필터링된 신규 뉴스 {saved_count}건 저장 완료")
+    print(f"최종 신규 뉴스 {saved_count}건 저장 완료")
 
 if __name__ == "__main__":
     fetch_and_store_news()

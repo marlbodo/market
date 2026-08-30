@@ -11,7 +11,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 def summarize_unread_news():
-    # 쿼리 파라미터를 안전하게 인코딩
+    # 요약 대기 중인 뉴스 조회 (id와 title만 가져옴)
     query_params = urllib.parse.urlencode({
         "summary": "eq.요약 대기 중...",
         "select": "id,title"
@@ -47,6 +47,7 @@ def summarize_unread_news():
             print(f"Gemini 요약 실패 ({title[:15]}...): {e}")
             continue
         
+        # 요약 결과와 중요도를 DB에 업데이트
         patch_url = f"{SUPABASE_URL}/rest/v1/financial_news?id=eq.{news_id}"
         patch_data = json.dumps({
             "summary": summary_text,
@@ -67,6 +68,9 @@ def summarize_unread_news():
         try:
             with urllib.request.urlopen(update_req):
                 print(f"요약 완료 및 업데이트: {title[:20]}...")
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode()
+            print(f"데이터베이스 업데이트 실패 (HTTP {e.code}): {error_body}")
         except Exception as e:
             print(f"데이터베이스 업데이트 실패: {e}")
 

@@ -8,11 +8,11 @@ from datetime import datetime, timezone, timedelta
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
+# 채권 및 금리 관련 검색어로만 집중 설정
 SEARCH_QUERIES = [
     "채권 금리",
-    "주식 증시",
-    "원달러 환율",
-    "공모주 IPO"
+    "국채 금리",
+    "기준금리"
 ]
 
 def clear_all_news():
@@ -46,7 +46,7 @@ def fetch_financial_news():
     three_days_ago = now_utc - timedelta(days=3)
     
     valid_dict = {}
-    target_keywords = ["채권", "금리", "국채", "주가", "주식", "증시", "코스피", "코스닥", "나스닥", "환율", "달러", "공모주", "IPO", "상장", "증권", "연준"]
+    target_keywords = ["채권", "금리", "국채", "기준금리", "연준"]
 
     for entry in all_entries:
         title = entry.title
@@ -82,15 +82,8 @@ def fetch_financial_news():
         else:
             modified_at = published_at.isoformat()
 
-        category = "기타"
-        if any(k in title for k in ["공모주", "IPO", "상장"]):
-            category = "공모주"
-        elif any(k in title for k in ["금리", "채권", "국채", "기준금리"]):
-            category = "채권/금리"
-        elif any(k in title for k in ["환율", "달러", "원달러", "엔화", "위안화"]):
-            category = "환율"
-        elif any(k in title for k in ["주식", "증시", "코스피", "코스닥", "나스닥", "주가", "증권"]):
-            category = "주식"
+        # 카테고리는 모두 채권/금리로 통일
+        category = "채권/금리"
 
         region = "DOMESTIC"
         overseas_keywords = ["미국", "연준", "Fed", "중국", "일본", "유럽", "글로벌", "해외", "월가", "나스닥", "뉴욕", "파월"]
@@ -108,19 +101,8 @@ def fetch_financial_news():
         }
         news_list.append(news_item)
 
-    # 카테고리 및 지역 순서는 오름차순(낮은 번호 우선), 날짜는 최신순(내림차순) 정렬 적용
-    category_order = {"채권/금리": 1, "공모주": 2, "주식": 3, "환율": 4, "기타": 5}
-    region_order = {"DOMESTIC": 1, "OVERSEAS": 2}
-
-    news_list.sort(key=lambda x: (
-        category_order.get(x["category"], 5),
-        region_order.get(x["region"], 2),
-        datetime.fromisoformat(x["published_at"])
-    ), reverse=False)
-
-    # 같은 카테고리/지역 안에서는 최신 글이 위로 오도록 날짜 기준 내림차순 재정렬 수행
+    # 오직 최신 발행일 순(내림차순)으로만 정렬
     news_list.sort(key=lambda x: datetime.fromisoformat(x["published_at"]), reverse=True)
-    news_list.sort(key=lambda x: (category_order.get(x["category"], 5), region_order.get(x["region"], 2)), reverse=False)
 
     top_entries = news_list[:30]
     return top_entries
@@ -145,4 +127,4 @@ if __name__ == "__main__":
                 pass
         except Exception as e:
             print(f"저장 실패: {e}")
-    print("카테고리 순서 정렬 및 뉴스 30개 수집 완료")
+    print("채권/금리 뉴스 최신순 30개 수집 및 저장 완료")

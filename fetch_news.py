@@ -29,30 +29,25 @@ def clear_all_news():
         print(f"데이터 초기화 중 에러 발생: {e}")
 
 def fetch_and_store_news():
-    # 1. 기존 데이터 초기화
     clear_all_news()
     
-    # 2. RSS 피드 파싱
     feed = feedparser.parse(RSS_URL)
     entries = feed.entries
     print(f"수집된 원본 뉴스 건수: {len(entries)}")
     
     saved_count = 0
     
-    # 날짜 필터링으로 인해 기사가 0건이 되는 문제를 방지하기 위해,
-    # 수집된 최신 뉴스들을 그대로(최대 20건) 안전하게 저장합니다.
-    for entry in entries[:20]:
+    # 무조건 가장 최신 뉴스 상위 10개만 가져와서 저장
+    for entry in entries[:10]:
         title = entry.title
         link = entry.link
         
-        # 발행일시 파싱
         published = entry.get('published_parsed')
         if published:
             published_at = datetime(*published[:6], tzinfo=timezone.utc)
         else:
             published_at = datetime.now(timezone.utc)
             
-        # 수정일시 파싱
         updated = entry.get('updated_parsed')
         if updated:
             modified_at = datetime(*updated[:6], tzinfo=timezone.utc)
@@ -73,7 +68,6 @@ def fetch_and_store_news():
         elif "환율" in title or "달러" in title:
             category = "환율"
 
-        # 국내 / 해외 분류
         region = "DOMESTIC"
         overseas_keywords = ["미국", "연준", "Fed", "중국", "일본", "유럽", "글로벌", "해외", "월가", "나스닥", "뉴욕"]
         if any(keyword in title for keyword in overseas_keywords):
@@ -110,7 +104,7 @@ def fetch_and_store_news():
         except Exception as e:
             print(f"저장 실패 ({title[:15]}...): {e}")
             
-    print(f"신규 뉴스 {saved_count}건 저장 완료")
+    print(f"최신 뉴스 {saved_count}건 저장 완료")
 
 if __name__ == "__main__":
     fetch_and_store_news()

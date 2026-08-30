@@ -37,7 +37,7 @@ def summarize_unread_news():
         title = item['title']
         
         try:
-            prompt = f"다음 금융 뉴스를 1~2문장으로 핵심만 요약해줘: {title}"
+            prompt = f"다음 금융 뉴스를 핵심 위주로 1~2문장으로 간결하게 요약해줘: {title}"
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
                 contents=prompt
@@ -45,8 +45,7 @@ def summarize_unread_news():
             summary_text = response.text.strip()
         except Exception as e:
             print(f"Gemini 요약 실패 ({title[:15]}...): {e}")
-            # 에러가 나더라도 다음 요청 전 대기
-            time.sleep(5)
+            time.sleep(6)
             continue
         
         patch_url = f"{SUPABASE_URL}/rest/v1/financial_news?id=eq.{news_id}"
@@ -75,7 +74,7 @@ def summarize_unread_news():
         except Exception as e:
             print(f"데이터베이스 업데이트 실패: {e}")
             
-        # [핵심] API 요청 제한(Rate Limit)을 피하기 위해 요청마다 6초씩 대기
+        # [핵심] API Rate Limit(429 에러) 방지를 위한 6초 대기
         time.sleep(6)
 
 if __name__ == "__main__":

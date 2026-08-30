@@ -1,5 +1,6 @@
 import os
 import urllib.request
+import urllib.parse
 import json
 from google import genai
 
@@ -10,15 +11,24 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 def summarize_unread_news():
-    # 요약이 안 된 항목 조회
-    rest_url = f"{SUPABASE_URL}/rest/v1/financial_news?summary=eq.요약 대기 중...&select=id,title"
+    # 쿼리 파라미터를 안전하게 인코딩
+    query_params = urllib.parse.urlencode({
+        "summary": "eq.요약 대기 중...",
+        "select": "id,title"
+    })
+    rest_url = f"{SUPABASE_URL}/rest/v1/financial_news?{query_params}"
+    
     req = urllib.request.Request(rest_url, headers={
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}"
     })
     
-    with urllib.request.urlopen(req) as response:
-        items = json.loads(response.read().decode())
+    try:
+        with urllib.request.urlopen(req) as response:
+            items = json.loads(response.read().decode())
+    except Exception as e:
+        print(f"요약 대상 조회 실패: {e}")
+        return
     
     print(f"요약 대상 뉴스: {len(items)}건")
     
@@ -26,19 +36,21 @@ def summarize_unread_news():
         news_id = item['id']
         title = item['title']
         
-        # Gemini AI 호출
-        prompt = f"다음 금융 뉴스를 1~2문장으로 핵심만 요약해줘: {title}"
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt
-        )
-        summary_text = response.text.strip()
+        try:
+            prompt = f"다음 금융 뉴스를 1~2문장으로 핵심만 요약해줘: {title}"
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt
+            )
+            summary_text = response.text.strip()
+        except Exception as e:
+            print(f"Gemini 요약 실패 ({title[:15]}...): {e}")
+            continue
         
-        # Supabase 업데이트
         patch_url = f"{SUPABASE_URL}/rest/v1/financial_news?id=eq.{news_id}"
         patch_data = json.dumps({
             "summary": summary_text,
-            "importance_score": 4 # 예시 점수
+            "importance_score": 4
         }).encode('utf-8')
         
         update_req = urllib.request.Request(
@@ -56,7 +68,7 @@ def summarize_unread_news():
             with urllib.request.urlopen(update_req):
                 print(f"요약 완료 및 업데이트: {title[:20]}...")
         except Exception as e:
-            print(f"업데이트 실패: {e}")
+            print(f"데이터베이스 업데이트 실패: {e}")
 
 if __name__ == "__main__":
     summarize_unread_news()

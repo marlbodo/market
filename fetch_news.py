@@ -67,7 +67,7 @@ def fetch_financial_news():
         else:
             published_at = now_utc
             
-        # [핵심 필터] 2025년 기사 및 현재 기준 3일 전보다 오래된 기사는 무조건 배제
+        # [핵심 필터] 현재 기준 3일 전보다 오래된 기사는 무조건 배제
         if published_at < three_days_ago:
             continue
             

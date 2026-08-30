@@ -52,7 +52,6 @@ def fetch_financial_news():
         title = entry.title
         link = entry.link
         
-        # 중복 URL 체크
         if link in valid_dict:
             continue
             
@@ -71,14 +70,9 @@ def fetch_financial_news():
         valid_dict[link] = (entry, published_at)
         
     valid_entries = list(valid_dict.values())
-    # 최신 시간이 위로 가도록 내림차순 정렬
-    valid_entries.sort(key=lambda x: x[1], reverse=True)
-    
-    # 총 30개로 개수 변경
-    top_entries = valid_entries[:30]
     
     news_list = []
-    for entry, published_at in top_entries:
+    for entry, published_at in valid_entries:
         title = entry.title
         link = entry.link
         
@@ -113,8 +107,20 @@ def fetch_financial_news():
             "modified_at": modified_at
         }
         news_list.append(news_item)
-        
-    return news_list
+
+    # 지정한 우선순위에 따라 정렬 (카테고리 순서 -> 지역 순서(DOMESTIC 우선) -> 최신 발행일 순)
+    category_order = {"채권/금리": 1, "공모주": 2, "주식": 3, "환율": 4, "기타": 5}
+    region_order = {"DOMESTIC": 1, "OVERSEAS": 2}
+
+    news_list.sort(key=lambda x: (
+        category_order.get(x["category"], 5),
+        region_order.get(x["region"], 2),
+        x["published_at"]
+    ), reverse=True) # 최신 시간이 위로 오도록 reverse=True 적용 (날짜 문자열 내림차순 정렬)
+
+    # 총 30개 제한
+    top_entries = news_list[:30]
+    return top_entries
 
 if __name__ == "__main__":
     collected_news = fetch_financial_news()
@@ -136,4 +142,4 @@ if __name__ == "__main__":
                 pass
         except Exception as e:
             print(f"저장 실패: {e}")
-    print("뉴스 30개 수집 및 저장 완료")
+    print("정렬 조건에 맞춰 뉴스 30개 수집 및 저장 완료")

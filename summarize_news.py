@@ -36,17 +36,20 @@ def summarize_unread_news():
         news_id = item['id']
         title = item['title']
         
+        summary_text = title # API 호출 실패 시 원본 제목으로 대체
+        
         try:
             prompt = f"다음 금융 뉴스를 핵심 위주로 1~2문장으로 간결하게 요약해줘: {title}"
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
                 contents=prompt
             )
-            summary_text = response.text.strip()
+            if response and response.text:
+                summary_text = response.text.strip()
         except Exception as e:
-            print(f"Gemini 요약 실패 ({title[:15]}...): {e}")
-            time.sleep(6)
-            continue
+            print(f"Gemini 요약 한도 초과 또는 에러 ({title[:15]}...): {e}")
+            print("쿼타 제한 회복을 위해 15초 대기 후 다음으로 진행합니다...")
+            time.sleep(15)
         
         patch_url = f"{SUPABASE_URL}/rest/v1/financial_news?id=eq.{news_id}"
         patch_data = json.dumps({
@@ -68,14 +71,11 @@ def summarize_unread_news():
         try:
             with urllib.request.urlopen(update_req):
                 print(f"요약 완료 및 업데이트 ({index+1}/{len(items)}): {title[:20]}...")
-        except urllib.error.HTTPError as e:
-            error_body = e.read().decode()
-            print(f"데이터베이스 업데이트 실패 (HTTP {e.code}): {error_body}")
         except Exception as e:
             print(f"데이터베이스 업데이트 실패: {e}")
             
-        # [핵심] API Rate Limit(429 에러) 방지를 위한 6초 대기
-        time.sleep(6)
+        # [중요] 무료 티어 쿼타 제한(RPM)을 피하기 위해 각 요청마다 8초 이상 대기
+        time.sleep(8)
 
 if __name__ == "__main__":
     summarize_unread_news()

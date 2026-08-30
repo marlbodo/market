@@ -2,12 +2,11 @@ import os
 import urllib.request
 import json
 import feedparser
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# 다양한 금융 관련 검색어로 나누어 수집해야 풍부하게 가져올 수 있습니다.
 SEARCH_QUERIES = [
     "채권 금리",
     "주식 증시",
@@ -37,8 +36,6 @@ def fetch_financial_news():
     clear_all_news()
     
     all_entries = []
-    
-    # 각 검색어별로 RSS 수집
     for query in SEARCH_QUERIES:
         encoded_query = urllib.parse.quote(query)
         rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ko&gl=KR&ceid=KR:ko"
@@ -47,20 +44,20 @@ def fetch_financial_news():
         
     print(f"수집된 원본 뉴스 총 건수 (중복 포함): {len(all_entries)}")
     
+    # [핵심] 현재 시간 기준 정확히 3일(72시간) 전 시점 계산
     now_utc = datetime.now(timezone.utc)
-    valid_dict = {} # 중복 링크 제거용
+    three_days_ago = now_utc - timedelta(days=3)
     
+    valid_dict = {}
     target_keywords = ["채권", "금리", "국채", "주가", "주식", "증시", "코스피", "코스닥", "나스닥", "환율", "달러", "공모주", "IPO", "상장", "증권", "연준"]
 
     for entry in all_entries:
         title = entry.title
         link = entry.link
         
-        # 중복 링크면 스킵
         if link in valid_dict:
             continue
             
-        # 키워드 포함 여부 확인
         if not any(keyword in title for keyword in target_keywords):
             continue
             
@@ -70,14 +67,14 @@ def fetch_financial_news():
         else:
             published_at = now_utc
             
-        # 2026년 기준 기사만 엄선 (너무 오래된 과거 기사 배제)
-        if published_at.year < 2026:
+        # [핵심 필터] 2025년 기사 및 현재 기준 3일 전보다 오래된 기사는 무조건 배제
+        if published_at < three_days_ago:
             continue
             
         valid_dict[link] = (entry, published_at)
         
     valid_entries = list(valid_dict.values())
-    print(f"2026년 기준 유효한 고유 뉴스 건수: {len(valid_entries)}")
+    print(f"현재 기준 최근 3일 이내 유효한 뉴스 건수: {len(valid_entries)}")
     
     # 최신순 정렬 후 상위 15개 추출
     valid_entries.sort(key=lambda x: x[1], reverse=True)
@@ -85,7 +82,6 @@ def fetch_financial_news():
     print(f"저장할 최종 최신 뉴스 건수: {len(top_entries)}")
     
     news_list = []
-    
     for entry, published_at in top_entries:
         title = entry.title
         link = entry.link
@@ -96,7 +92,6 @@ def fetch_financial_news():
         else:
             modified_at = published_at.isoformat()
 
-        # 카테고리 분류
         category = "기타"
         if any(k in title for k in ["공모주", "IPO", "상장"]):
             category = "공모주"
@@ -107,7 +102,6 @@ def fetch_financial_news():
         elif any(k in title for k in ["주식", "증시", "코스피", "코스닥", "나스닥", "주가", "증권"]):
             category = "주식"
 
-        # 국내 / 해외 분류
         region = "DOMESTIC"
         overseas_keywords = ["미국", "연준", "Fed", "중국", "일본", "유럽", "글로벌", "해외", "월가", "나스닥", "뉴욕", "파월"]
         if any(keyword in title for keyword in overseas_keywords):
@@ -147,10 +141,7 @@ if __name__ == "__main__":
         try:
             with urllib.request.urlopen(req):
                 success_count += 1
-        except urllib.error.HTTPError as e:
-            error_body = e.read().decode()
-            print(f"저장 실패 ({news['title'][:15]}...): HTTP {e.code} - {error_body}")
         except Exception as e:
-            print(f"저장 실패 ({news['title'][:15]}...): {e}")
+            print(f"저장 실패: {e}")
 
-    print(f"총 {success_count}건의 최신 뉴스 Supabase 저장 완료")
+    print(f"총 {success_count}건의 최근 3일 이내 최신 뉴스 Supabase 저장 완료")

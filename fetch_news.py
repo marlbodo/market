@@ -76,9 +76,9 @@ def fetch_financial_news():
     valid_entries = list(valid_dict.values())
     print(f"현재 기준 최근 3일 이내 유효한 뉴스 건수: {len(valid_entries)}")
     
-    # 최신순 정렬 후 상위 15개 추출
+    # 최신순 정렬 후 상위 30개 추출
     valid_entries.sort(key=lambda x: x[1], reverse=True)
-    top_entries = valid_entries[:15]
+    top_entries = valid_entries[:30]
     print(f"저장할 최종 최신 뉴스 건수: {len(top_entries)}")
     
     news_list = []

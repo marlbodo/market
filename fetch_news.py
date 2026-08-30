@@ -108,17 +108,20 @@ def fetch_financial_news():
         }
         news_list.append(news_item)
 
-    # 지정한 우선순위에 따라 정렬 (카테고리 순서 -> 지역 순서(DOMESTIC 우선) -> 최신 발행일 순)
+    # 카테고리 및 지역 순서는 오름차순(낮은 번호 우선), 날짜는 최신순(내림차순) 정렬 적용
     category_order = {"채권/금리": 1, "공모주": 2, "주식": 3, "환율": 4, "기타": 5}
     region_order = {"DOMESTIC": 1, "OVERSEAS": 2}
 
     news_list.sort(key=lambda x: (
         category_order.get(x["category"], 5),
         region_order.get(x["region"], 2),
-        x["published_at"]
-    ), reverse=True) # 최신 시간이 위로 오도록 reverse=True 적용 (날짜 문자열 내림차순 정렬)
+        datetime.fromisoformat(x["published_at"])
+    ), reverse=False)
 
-    # 총 30개 제한
+    # 같은 카테고리/지역 안에서는 최신 글이 위로 오도록 날짜 기준 내림차순 재정렬 수행
+    news_list.sort(key=lambda x: datetime.fromisoformat(x["published_at"]), reverse=True)
+    news_list.sort(key=lambda x: (category_order.get(x["category"], 5), region_order.get(x["region"], 2)), reverse=False)
+
     top_entries = news_list[:30]
     return top_entries
 
@@ -142,4 +145,4 @@ if __name__ == "__main__":
                 pass
         except Exception as e:
             print(f"저장 실패: {e}")
-    print("정렬 조건에 맞춰 뉴스 30개 수집 및 저장 완료")
+    print("카테고리 순서 정렬 및 뉴스 30개 수집 완료")

@@ -11,9 +11,6 @@ from supabase import create_client, Client
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# 선택사항 — 설정 안 하면 종합판단(overall_assessment)은 비워둠.
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
 TODAY = datetime.now().date()
@@ -348,52 +345,6 @@ def fetch_38_listing_dates(max_pages=5):
 
 
 # ---------------------------------------------------------------------------
-# AI 종합판단 생성 (선택사항)
-# ---------------------------------------------------------------------------
-
-def generate_overall_assessment(entry):
-    if not ANTHROPIC_API_KEY:
-        return None
-
-    prompt = f"""아래는 IPO 공모주 정보입니다. 경쟁률과 공모가 밴드 대비 확정가 수준, 의무보유확약 비율,
-시장 상황을 종합 고려해서 2~3문장으로 간결한 종합판단을 작성해줘. 과장하지 말고 사실 기반으로.
-
-종목명: {entry.get('stock_name')}
-희망공모가 밴드: {entry.get('price_band_low')}~{entry.get('price_band_high')}
-확정공모가: {entry.get('confirmed_price')}
-공모금액(억원): {entry.get('offering_amount_eok')}
-기관경쟁률: {entry.get('institutional_competition_rate')}
-의무보유확약(%): {entry.get('lockup_commitment_ratio')}
-청약경쟁률(일반): {entry.get('subscription_competition_rate')}
-수요예측 기간: {entry.get('demand_forecast_start_date')} ~ {entry.get('demand_forecast_end_date')}
-청약 기간: {entry.get('subscription_start_date')} ~ {entry.get('subscription_end_date')}"""
-
-    body = json.dumps({
-        "model": "claude-sonnet-5",
-        "max_tokens": 400,
-        "messages": [{"role": "user", "content": prompt}],
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        data=body,
-        headers={
-            "Content-Type": "application/json",
-            "x-api-key": ANTHROPIC_API_KEY,
-            "anthropic-version": "2023-06-01",
-        },
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-        parts = [b.get("text", "") for b in data.get("content", []) if b.get("type") == "text"]
-        return "\n".join(parts).strip() or None
-    except Exception as e:
-        print(f"AI 종합판단 생성 에러('{entry.get('stock_name')}'): {e}")
-        return None
-
-
-# ---------------------------------------------------------------------------
 # 병합 / 상태 판단 / 필터
 # ---------------------------------------------------------------------------
 
@@ -489,17 +440,10 @@ def main():
         entry["listing_date"] = listing_date.isoformat() if listing_date else None
         entry["status"] = infer_status(entry, listing_date)
 
-        # 기관 수요예측 "신청금액"(institutional_demand_amount_eok)은 목록 페이지에
-        # 없는 값이라 정확히 구할 수 없음. 경쟁률 x 공모금액으로 근사치를 낼 수는
-        # 있지만 실제 기관 배정물량 기준과 달라 오해를 줄 수 있어 일부러 비워둠.
-        # 정확한 값이 필요하면 종목 상세페이지(o=v&no=...)를 별도로 파싱해야 함.
-        entry.setdefault("institutional_demand_amount_eok", None)
-
         for f in FILL_FIELDS:
             if entry.get(f) is None:
                 null_counts[f] += 1
 
-        entry["overall_assessment"] = generate_overall_assessment(entry)
         entry["source_urls"] = json.dumps(entry.get("source_urls", {}), ensure_ascii=False)
         rows_to_insert.append(entry)
 

@@ -27,3 +27,4 @@ jobs:
           pip install --upgrade pip
           pip install supabase
           python fetch_news.py
+          python fetch_ipo_news.py

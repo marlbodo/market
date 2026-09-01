@@ -67,12 +67,11 @@ def _iter_name_rows(html, href_pattern=r"fund/(index\.htm)?\?o=v&no=\d+"):
 #    수요예측 시작/종료일, 희망공모가, 확정공모가(있으면), 공모금액(백만원)
 # ---------------------------------------------------------------------------
 
-_DEMAND_SCHEDULE_ROW = re.compile(
-    r"(\d{4})\.(\d{2})\.(\d{2})~(\d{2})\.(\d{2})\s+"   # 수요예측일 (범위)
-    r"([\d,]{3,})~([\d,]{3,})\s+"                        # 희망공모가
-    r"(-|[\d,]{3,})\s+"                                   # 확정공모가
-    r"([\d,]{3,})"                                         # 공모금액(백만원)
-)
+_DATE_RANGE = re.compile(r"(\d{4})\.(\d{2})\.(\d{2})\s*~\s*(\d{2})\.(\d{2})")
+_NUM_RANGE = re.compile(r"([\d,]{3,})\s*~\s*([\d,]{3,})")
+_NUM_OR_DASH = re.compile(r"(-|[\d,]{3,})")
+_NUM = re.compile(r"([\d,]{3,})")
+_RATIO = re.compile(r"([\d,]+(?:\.\d+)?)\s*:\s*1")
 
 
 def fetch_38_demand_schedule(max_pages=3):
@@ -86,12 +85,33 @@ def fetch_38_demand_schedule(max_pages=3):
             break
 
         found_any = False
+        first_miss_logged = False
         for name, rest, a in _iter_name_rows(html):
-            m = _DEMAND_SCHEDULE_ROW.match(rest)
-            if not m:
+            m_date = _DATE_RANGE.search(rest)
+            if not m_date:
+                if not first_miss_logged:
+                    print(f"  [o=r 디버그] 날짜 매칭 실패, 원문: {rest[:80]!r}")
+                    first_miss_logged = True
                 continue
+            y, m1, d1, m2, d2 = m_date.groups()
+            tail = rest[m_date.end():]
+
+            m_band = _NUM_RANGE.search(tail)
+            if not m_band:
+                continue
+            band_lo, band_hi = m_band.groups()
+            tail = tail[m_band.end():]
+
+            stripped = tail.lstrip()
+            leading_ws = len(tail) - len(stripped)
+            m_confirmed = _NUM_OR_DASH.match(stripped)
+            confirmed = m_confirmed.group(1) if m_confirmed else "-"
+            tail = tail[leading_ws + m_confirmed.end():] if m_confirmed else tail
+
+            m_amount = _NUM.search(tail)
+            amount_mm = m_amount.group(1) if m_amount else None
+
             found_any = True
-            y, m1, d1, m2, d2, band_lo, band_hi, confirmed, amount_mm = m.groups()
             end_year = int(y) + 1 if int(m2) < int(m1) else int(y)
             entry = {
                 "stock_name": name,
@@ -100,7 +120,7 @@ def fetch_38_demand_schedule(max_pages=3):
                 "price_band_low": int(band_lo.replace(",", "")),
                 "price_band_high": int(band_hi.replace(",", "")),
                 "confirmed_price": None if confirmed == "-" else int(confirmed.replace(",", "")),
-                "offering_amount_eok": round(int(amount_mm.replace(",", "")) / 100, 2),
+                "offering_amount_eok": round(int(amount_mm.replace(",", "")) / 100, 2) if amount_mm else None,
                 "source_urls": {"38_수요예측일정": "http://www.38.co.kr" + a["href"].replace("index.htm", "")},
             }
             results[normalize_name(name)] = entry
@@ -118,16 +138,6 @@ def fetch_38_demand_schedule(max_pages=3):
 #    기관경쟁률, 의무보유확약 (여기서만 얻을 수 있음) + 공모금액/확정가 보강
 # ---------------------------------------------------------------------------
 
-_DEMAND_RESULT_ROW = re.compile(
-    r"(\d{4})\.(\d{2})\.(\d{2})\s+"        # 예측(결과)일
-    r"([\d,]{3,})~([\d,]{3,})\s+"            # 공모희망가 밴드
-    r"([\d,]{3,})\s+"                         # 공모가(확정)
-    r"([\d,]{3,})\s+"                         # 공모금액(백만원)
-    r"([\d,.]+):1\s+"                          # 기관경쟁률
-    r"(-|[\d.]+%?)"                            # 의무보유확약
-)
-
-
 def fetch_38_demand_results(max_pages=3):
     results = {}
     for page in range(1, max_pages + 1):
@@ -139,12 +149,45 @@ def fetch_38_demand_results(max_pages=3):
             break
 
         found_any = False
+        first_miss_logged = False
         for name, rest, a in _iter_name_rows(html):
-            m = _DEMAND_RESULT_ROW.match(rest)
-            if not m:
+            m_date = re.search(r"(\d{4})\.(\d{2})\.(\d{2})", rest)
+            if not m_date:
+                if not first_miss_logged:
+                    print(f"  [o=r1 디버그] 날짜 매칭 실패, 원문: {rest[:80]!r}")
+                    first_miss_logged = True
                 continue
+            y, mo, d = m_date.groups()
+            tail = rest[m_date.end():]
+
+            m_band = _NUM_RANGE.search(tail)
+            if not m_band:
+                continue
+            band_lo, band_hi = m_band.groups()
+            tail = tail[m_band.end():]
+
+            m_confirmed = _NUM.search(tail)
+            if not m_confirmed:
+                continue
+            confirmed = m_confirmed.group(1)
+            tail = tail[m_confirmed.end():]
+
+            m_amount = _NUM.search(tail)
+            if not m_amount:
+                continue
+            amount_mm = m_amount.group(1)
+            tail = tail[m_amount.end():]
+
+            m_rate = _RATIO.search(tail)
+            if not m_rate:
+                continue
+            inst_rate = m_rate.group(1)
+            tail = tail[m_rate.end():]
+
+            m_lockup = re.search(r"(-|[\d.]+%)", tail)
+            lockup = m_lockup.group(1) if m_lockup else None
+
             found_any = True
-            y, mo, d, band_lo, band_hi, confirmed, amount_mm, inst_rate, lockup = m.groups()
             entry = {
                 "stock_name": name,
                 "demand_forecast_end_date": f"{y}-{mo}-{d}",
@@ -153,7 +196,7 @@ def fetch_38_demand_results(max_pages=3):
                 "confirmed_price": int(confirmed.replace(",", "")),
                 "offering_amount_eok": round(int(amount_mm.replace(",", "")) / 100, 2),
                 "institutional_competition_rate": float(inst_rate.replace(",", "")),
-                "lockup_commitment_ratio": None if lockup == "-" else float(lockup.replace("%", "")),
+                "lockup_commitment_ratio": None if (lockup in (None, "-")) else float(lockup.replace("%", "")),
             }
             results[normalize_name(name)] = entry
 
@@ -170,13 +213,6 @@ def fetch_38_demand_results(max_pages=3):
 #    청약 시작/종료일(!), 청약경쟁률, 확정공모가/밴드 보강
 # ---------------------------------------------------------------------------
 
-_SUBSCRIPTION_ROW = re.compile(
-    r"(\d{4})\.(\d{2})\.(\d{2})~(\d{2})\.(\d{2})\s+"   # 공모주일정(청약기간)
-    r"(-|[\d,]{3,})\s+"                                   # 확정공모가
-    r"([\d,]{3,})~([\d,]{3,})"                             # 희망공모가
-)
-
-
 def fetch_38_subscription_schedule(max_pages=3):
     results = {}
     for page in range(1, max_pages + 1):
@@ -188,16 +224,33 @@ def fetch_38_subscription_schedule(max_pages=3):
             break
 
         found_any = False
+        first_miss_logged = False
         for name, rest, a in _iter_name_rows(html):
-            m = _SUBSCRIPTION_ROW.match(rest)
-            if not m:
+            m_date = _DATE_RANGE.search(rest)
+            if not m_date:
+                if not first_miss_logged:
+                    print(f"  [o=k 디버그] 날짜 매칭 실패, 원문: {rest[:80]!r}")
+                    first_miss_logged = True
                 continue
-            found_any = True
-            y, m1, d1, m2, d2, confirmed, band_lo, band_hi = m.groups()
-            end_year = int(y) + 1 if int(m2) < int(m1) else int(y)
-            after_band = rest[m.end():]
-            rate_m = re.search(r"([\d,]+(?:\.\d+)?)\s*:\s*1", after_band)
+            y, m1, d1, m2, d2 = m_date.groups()
+            tail = rest[m_date.end():]
 
+            stripped = tail.lstrip()
+            leading_ws = len(tail) - len(stripped)
+            m_confirmed = _NUM_OR_DASH.match(stripped)
+            confirmed = m_confirmed.group(1) if m_confirmed else "-"
+            tail = tail[leading_ws + m_confirmed.end():] if m_confirmed else tail
+
+            m_band = _NUM_RANGE.search(tail)
+            if not m_band:
+                continue
+            band_lo, band_hi = m_band.groups()
+            tail = tail[m_band.end():]
+
+            m_rate = _RATIO.search(tail)
+
+            found_any = True
+            end_year = int(y) + 1 if int(m2) < int(m1) else int(y)
             entry = {
                 "stock_name": name,
                 "subscription_start_date": f"{y}-{m1}-{d1}",
@@ -205,7 +258,7 @@ def fetch_38_subscription_schedule(max_pages=3):
                 "confirmed_price": None if confirmed == "-" else int(confirmed.replace(",", "")),
                 "price_band_low": int(band_lo.replace(",", "")),
                 "price_band_high": int(band_hi.replace(",", "")),
-                "subscription_competition_rate": float(rate_m.group(1).replace(",", "")) if rate_m else None,
+                "subscription_competition_rate": float(m_rate.group(1).replace(",", "")) if m_rate else None,
                 "source_urls": {"38_청약일정": "http://www.38.co.kr" + a["href"].replace("index.htm", "")},
             }
             results[normalize_name(name)] = entry

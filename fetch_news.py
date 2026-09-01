@@ -1,4 +1,6 @@
 import os
+import re
+import difflib
 import urllib.request
 import urllib.parse
 import json
@@ -17,18 +19,38 @@ API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 # we call the API once per keyword and merge/dedupe the results ourselves.
 # We also use this same list to filter by TITLE only (see fetch_naver_news_for_keyword),
 # so search and filtering stay consistent — no separate "content keyword" search.
-TITLE_FILTER_WORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "고용", "한국은행", "총재", "워시", "신현송"]
+# ("고용" removed — too broad, matches unrelated things like 장애인 의무고용.)
+TITLE_FILTER_WORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "한국은행", "총재", "워시", "신현송"]
 
 # Even when a title contains a TITLE_FILTER_WORDS match, it's often noise:
-# personal/retail loan-rate promos (생계비 융자금리, 은행 이벤트 금리) or
-# Chuseok grocery-price-control announcements (성수품 물가 안정), not actual
-# market rates / bond yields / policy rates. Titles containing any of these
-# are dropped even if they'd otherwise pass the TITLE_FILTER_WORDS check.
+# personal/retail loan-rate promos (생계비 융자금리, 은행 이벤트 금리), Chuseok
+# grocery shopping news, or unrelated compound words that merely CONTAIN a
+# filter word as a substring (중금리대출 contains "금리" but means a mid-credit
+# consumer loan product, not a market/policy rate). Titles containing any of
+# these are dropped even if they'd otherwise pass the TITLE_FILTER_WORDS check.
 TITLE_EXCLUDE_WORDS = [
     "생계비", "용자금리", "융자금리", "햇살론", "페이백", "이벤트", "특판", "우대금리",
     "성수품", "장바구니", "차례상",
     "적금", "예금",
+    "중금리",
 ]
+
+# Some filter words are themselves substrings of unrelated words, so a plain
+# "word in title" check produces false positives. "채권" (bond) is a prefix
+# of "채권자" (creditor/obligee) — a completely different concept that just
+# happens to share the same two syllables. For these words we match with a
+# regex that excludes the false-positive suffix instead of a plain substring
+# check.
+TITLE_FILTER_WORD_PATTERNS = {
+    "채권": re.compile(r"채권(?!자)"),
+}
+
+
+def title_contains_filter_word(title, word):
+    pattern = TITLE_FILTER_WORD_PATTERNS.get(word)
+    if pattern:
+        return bool(pattern.search(title))
+    return word in title
 
 
 def normalize_title(title):
@@ -36,6 +58,17 @@ def normalize_title(title):
     # collapse whitespace, so near-identical titles compare equal.
     clean = title.replace('<b>', '').replace('</b>', '').replace('&quot;', '"').replace('&amp;', '&')
     return " ".join(clean.split()).strip()
+
+
+def is_near_duplicate_title(title, existing_titles, threshold=0.6):
+    # Different outlets often cover the exact same story with slightly
+    # reworded headlines (e.g. "주식·채권 팔아 집 샀다...올해 1~7월에만 8조 넘어"
+    # vs "...7개월간 주택시장으로 8조원 이동"). An exact-string dedupe misses
+    # these, so we also compare similarity ratios and drop close matches.
+    for existing in existing_titles:
+        if difflib.SequenceMatcher(None, title, existing).ratio() >= threshold:
+            return True
+    return False
 
 
 def fetch_naver_news_for_keyword(keyword, display=50):
@@ -62,11 +95,14 @@ def fetch_naver_news_for_keyword(keyword, display=50):
             # articles that are actually about the topic, only keep items
             # whose title contains at least one word from TITLE_FILTER_WORDS,
             # and drop items whose title contains a TITLE_EXCLUDE_WORDS noise word.
-            on_topic = [
-                it for it in items
-                if any(w in normalize_title(it.get('title', '')) for w in TITLE_FILTER_WORDS)
-                and not any(w in normalize_title(it.get('title', '')) for w in TITLE_EXCLUDE_WORDS)
-            ]
+            on_topic = []
+            for it in items:
+                title = normalize_title(it.get('title', ''))
+                if not any(title_contains_filter_word(title, w) for w in TITLE_FILTER_WORDS):
+                    continue
+                if any(w in title for w in TITLE_EXCLUDE_WORDS):
+                    continue
+                on_topic.append(it)
             print(f"  '{keyword}': {len(items)}건 조회, 제목 매칭 {len(on_topic)}건")
             return on_topic
     except urllib.error.HTTPError as e:
@@ -87,11 +123,11 @@ def fetch_naver_news(max_total=30):
     print(f"Loaded API Key ID: {API_KEY_ID[:4] if API_KEY_ID else 'None'}... (length: {len(API_KEY_ID) if API_KEY_ID else 0})")
     print(f"Loaded API Key: {API_KEY[:2] if API_KEY else 'None'}... (length: {len(API_KEY) if API_KEY else 0})")
 
-    # Dedupe by link AND by normalized title — the same story is often
-    # republished under different URLs (different outlets/syndication)
-    # but with an identical or near-identical headline.
+    # Dedupe by link AND by title similarity — the same story is often
+    # republished under different URLs (different outlets/syndication) with
+    # a reworded but very similar headline, which an exact-string compare misses.
     merged = {}
-    seen_titles = set()
+    seen_titles = []
     for keyword in TITLE_FILTER_WORDS:
         for item in fetch_naver_news_for_keyword(keyword):
             # Prefer Naver's own internal link (news.naver.com) when available;
@@ -100,11 +136,11 @@ def fetch_naver_news(max_total=30):
             title_key = normalize_title(item.get('title', ''))
             if not link_key or link_key in merged:
                 continue
-            if title_key and title_key in seen_titles:
+            if title_key and is_near_duplicate_title(title_key, seen_titles):
                 continue
             merged[link_key] = item
             if title_key:
-                seen_titles.add(title_key)
+                seen_titles.append(title_key)
 
     def sort_key(item):
         dt = parse_rfc822_date(item.get('pubDate'))

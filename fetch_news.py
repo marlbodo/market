@@ -13,22 +13,27 @@ NAVER_CLIENT_ID = os.environ.get("NAVER_CLIENT_ID")
 NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET")
 
 def fetch_naver_news():
+    # 디버깅을 위해 전달된 ID/Secret의 길이와 앞 두 글자 확인 (보안을 위해 전체 노출은 안 함)
+    print(f"Loaded NAVER_CLIENT_ID: {NAVER_CLIENT_ID[:4] if NAVER_CLIENT_ID else 'None'}... (length: {len(NAVER_CLIENT_ID) if NAVER_CLIENT_ID else 0})")
+    print(f"Loaded NAVER_CLIENT_SECRET: {NAVER_CLIENT_SECRET[:2] if NAVER_CLIENT_SECRET else 'None'}... (length: {len(NAVER_CLIENT_SECRET) if NAVER_CLIENT_SECRET else 0})")
+
     query = "채권 금리"
     encoded_query = urllib.parse.quote(query)
     url = f"https://openapi.naver.com/v1/search/news.json?query={encoded_query}&display=30&sort=date"
     
     request = urllib.request.Request(url)
-    request.add_header("X-Naver-Client-Id", NAVER_CLIENT_ID)
-    request.add_header("X-Naver-Client-Secret", NAVER_CLIENT_SECRET)
+    request.add_header("X-Naver-Client-Id", NAVER_CLIENT_ID.strip() if NAVER_CLIENT_ID else "")
+    request.add_header("X-Naver-Client-Secret", NAVER_CLIENT_SECRET.strip() if NAVER_CLIENT_SECRET else "")
     
     try:
         response = urllib.request.urlopen(request)
         if response.getcode() == 200:
             data = json.loads(response.read().decode('utf-8'))
             return data.get('items', [])
+    except urllib.error.HTTPError as e:
+        print(f"네이버 API HTTP 에러 코드: {e.code}, 사유: {e.reason}")
     except Exception as e:
         print(f"네이버 API 호출 에러: {e}")
-        return []
     return []
 
 def parse_rfc822_date(date_str):
@@ -57,7 +62,6 @@ def main():
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
     try:
-        # 기존 데이터 전체 삭제
         supabase.table("financial_news").delete().gt("id", 0).execute()
         print("기존 financial_news 테이블 데이터를 모두 비웠습니다.")
 
@@ -76,7 +80,6 @@ def main():
                 "article_modified_at": pub_date
             })
 
-        # 새로운 최신 뉴스 30개 삽입
         supabase.table("financial_news").insert(rows_to_insert).execute()
         print(f"성공적으로 {len(rows_to_insert)}개의 최신 뉴스를 Supabase에 저장했습니다.")
 

@@ -65,6 +65,10 @@ def _iter_rows(html, min_cells=3):
             continue
         if re.match(r"^\d{2}[./]\d{2}", name):
             continue
+        if name.startswith("[") or "공모뉴스" in name or "뉴스" in name:
+            continue
+        if len(name) > 20:  # 정상적인 종목명치고 너무 긴 텍스트는 뉴스 제목 등으로 간주
+            continue
         cells = [td.get_text(" ", strip=True) for td in tds]
         key = (name, tuple(cells))
         if key in seen:

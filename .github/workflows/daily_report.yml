@@ -1,16 +1,15 @@
 name: Daily Financial News Fetcher
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: '0 21 * * *' # 매일 UTC 기준 밤 12시 (한국 시간 오전 9시) 실행
-  workflow_dispatch: # 수동 실행 버튼 허용
+    - cron: '0 23 * * *' # 매일 아침 8시 (KST 기준)
 
 jobs:
   run-fetch-news:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -18,15 +17,13 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
-        run: |
-          pip install feedparser
-
-      - name: Run fetch_news.py
+      - name: Install dependencies and run script
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
         run: |
+          pip install --upgrade pip
+          pip install supabase
           python fetch_news.py

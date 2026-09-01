@@ -17,7 +17,7 @@ API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 # we call the API once per keyword and merge/dedupe the results ourselves.
 # We also use this same list to filter by TITLE only (see fetch_naver_news_for_keyword),
 # so search and filtering stay consistent — no separate "content keyword" search.
-TITLE_FILTER_WORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "고용", "한국은행", "총재", "워시", "신현송"]
+TITLE_FILTER_WORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "워시", "신현송"]
 
 
 def normalize_title(title):

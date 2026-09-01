@@ -269,7 +269,6 @@ def fetch_38_demand_results(max_pages=5):
             band_lo, band_hi = parse_band(cells[2])
             entry = {
                 "stock_name": name,
-                "demand_forecast_end_date": pred_date,
                 "price_band_low": band_lo,
                 "price_band_high": band_hi,
                 "confirmed_price": parse_price(cells[3]),

@@ -6,7 +6,6 @@ from datetime import datetime
 from email.utils import parsedate_to_datetime
 from supabase import create_client, Client
 
-# GitHub Secrets 또는 환경 변수에서 값 가져오기
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
@@ -42,6 +41,14 @@ def parse_rfc822_date(date_str):
         return None
 
 def main():
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("Supabase 환경 변수가 설정되지 않았습니다.")
+        return
+
+    if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
+        print("네이버 API 인증 정보가 설정되지 않았습니다.")
+        return
+
     news_items = fetch_naver_news()
     if not news_items:
         print("가져온 뉴스가 없습니다.")

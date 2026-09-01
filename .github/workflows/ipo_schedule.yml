@@ -2,7 +2,7 @@ name: Daily IPO Schedule Fetcher
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 21 * * *' # 매일 새벽 6시 (KST 기준)
+    - cron: '26 22 * * *' # 매일 아침 7시 26분 (KST 기준)
 jobs:
   run-fetch-ipo-schedule:
     runs-on: ubuntu-latest

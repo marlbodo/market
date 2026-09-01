@@ -33,12 +33,9 @@ def fetch_naver_news():
     query = "채권 OR 금리 OR 기준금리 OR 연준 OR CPI OR 물가 OR 고용 OR 한국은행 OR 총재 OR 워시 OR 신현송"
     encoded_query = urllib.parse.quote(query)
     
-    # API Gateway 호출을 위한 URI 경로 (쿼리 스트링 포함)
+    # API Gateway 서명 생성 시에는 쿼리 스트링을 포함한 URI 전체 경로가 들어가야 합니다.
     uri = f"/v1/search/news.json?query={encoded_query}&display=50&sort=date"
-    
-    # API Gateway 기본 도메인 및 전체 URL 설정 (필요시 도메인 확인)
-    domain = "https://apigateway.apigw.ntruss.com" # 또는 해당 API HUB 가이드에 명시된 도메인
-    url = domain + uri
+    url = f"https://apigateway.apigw.ntruss.com{uri}"
     
     timestamp = str(int(time.time() * 1000))
     signature = make_signature("GET", uri, timestamp, ACCESS_KEY, SECRET_KEY)

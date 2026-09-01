@@ -69,6 +69,10 @@ def fetch_38_ipo_schedule(max_pages=3):
             stock_name = a.get_text(strip=True)
             if not stock_name:
                 continue
+            # 사이드바 위젯("09/15 종목명" 형식)이 같은 href 패턴을 써서 같이 잡히는
+            # 문제 방지 — 메인 테이블 종목명은 날짜 접두어가 없다.
+            if re.match(r"^\d{2}[./]\d{2}", stock_name):
+                continue
             tr = a.find_parent("tr")
             if not tr:
                 continue
@@ -94,11 +98,16 @@ def fetch_38_ipo_schedule(max_pages=3):
                 entry["demand_forecast_end_date"] = f"{end_year}-{m2}-{d2}"
                 row_text = row_text[m.end():]
 
-            # 희망공모가 밴드: 2,000~2,000  (원 단위)
-            m = re.search(r"([\d,]{3,})\s*~\s*([\d,]{3,})", row_text)
+            # 확정공모가 + 희망공모가 밴드가 붙어서 나온다:
+            #   "- 10,700~12,300"        (미확정: 대시)
+            #   "10,000 13,000~16,000"   (확정: 숫자)
+            m = re.match(r"\s*(-|[\d,]{3,})\s+([\d,]{3,})\s*~\s*([\d,]{3,})", row_text)
             if m:
-                entry["price_band_low"] = int(m.group(1).replace(",", ""))
-                entry["price_band_high"] = int(m.group(2).replace(",", ""))
+                confirmed_raw = m.group(1)
+                if confirmed_raw != "-":
+                    entry["confirmed_price"] = int(confirmed_raw.replace(",", ""))
+                entry["price_band_low"] = int(m.group(2).replace(",", ""))
+                entry["price_band_high"] = int(m.group(3).replace(",", ""))
                 row_text = row_text[m.end():]
 
             # 청약경쟁률: 2.85:1
@@ -112,6 +121,73 @@ def fetch_38_ipo_schedule(max_pages=3):
         time.sleep(0.3)
 
     print(f"38(o=k) 수요예측/청약 일정: {len(results)}개 종목 수집")
+    return results
+
+
+# ---------------------------------------------------------------------------
+# 2) 38커뮤니케이션 — 수요예측 결과 (o=r1)
+#    공모금액(백만원), 기관경쟁률, 의무보유확약을 여기서만 얻을 수 있다.
+# ---------------------------------------------------------------------------
+
+_DEMAND_RESULT_ROW = re.compile(
+    r"(\d{4})\.(\d{2})\.(\d{2})\s+"      # 예측일
+    r"([\d,]{3,})~([\d,]{3,})\s+"          # 공모희망가 밴드
+    r"([\d,]{3,})\s+"                       # 공모가(확정)
+    r"([\d,]{3,})\s+"                       # 공모금액(백만원)
+    r"([\d,.]+):1\s+"                        # 기관경쟁률
+    r"(-|[\d.]+%?)"                          # 의무보유확약
+)
+
+
+def fetch_38_demand_forecast_results(max_pages=3):
+    results = {}
+    for page in range(1, max_pages + 1):
+        url = f"http://www.38.co.kr/html/fund/index.htm?o=r1&page={page}"
+        try:
+            html = _fetch_html(url)
+        except Exception as e:
+            print(f"38(o=r1) 조회 에러(page {page}): {e}")
+            break
+
+        soup = BeautifulSoup(html, "html.parser")
+        name_links = soup.find_all("a", href=re.compile(r"fund/(index\.htm)?\?o=v&no=\d+"))
+        if not name_links:
+            break
+
+        found_any = False
+        for a in name_links:
+            stock_name = a.get_text(strip=True)
+            if not stock_name or re.match(r"^\d{2}[./]\d{2}", stock_name):
+                continue
+            tr = a.find_parent("tr")
+            if not tr:
+                continue
+            row_text = tr.get_text(" ", strip=True)
+            # 종목명 뒤에 이어지는 나머지 텍스트만 매칭 대상으로 삼는다
+            after_name = row_text.split(stock_name, 1)[-1].strip()
+            m = _DEMAND_RESULT_ROW.match(after_name)
+            if not m:
+                continue
+            found_any = True
+            y, mo, d, band_lo, band_hi, confirmed, amount_mm, inst_rate, lockup = m.groups()
+
+            entry = {
+                "demand_forecast_end_date": f"{y}-{mo}-{d}",
+                "price_band_low": int(band_lo.replace(",", "")),
+                "price_band_high": int(band_hi.replace(",", "")),
+                "confirmed_price": int(confirmed.replace(",", "")),
+                # 원본은 백만원 단위 -> 억원 단위로 변환 (1억원 = 100백만원)
+                "offering_amount_eok": round(int(amount_mm.replace(",", "")) / 100, 2),
+                "institutional_competition_rate": float(inst_rate.replace(",", "")),
+                "lockup_commitment_ratio": None if lockup == "-" else float(lockup.replace("%", "")),
+            }
+            results[normalize_name(stock_name)] = entry
+
+        if not found_any:
+            break
+        time.sleep(0.3)
+
+    print(f"38(o=r1) 수요예측 결과: {len(results)}개 종목 수집")
     return results
 
 
@@ -245,7 +321,21 @@ def main():
         print("38커뮤니케이션에서 수집된 공모주 일정이 없습니다.")
         return
 
+    demand_results = fetch_38_demand_forecast_results()
     listing_dates = fetch_38_listing_dates()
+
+    # 수요예측 결과 데이터로 빈 필드 보강 (이미 값이 있으면 덮어쓰지 않음)
+    for key, result in demand_results.items():
+        entry = schedule_data.get(key)
+        if entry is None:
+            # o=k 테이블에 아직 안 잡힌 종목(과거 페이지 등)도 결과가 있으면 추가
+            entry = {"stock_name": result.get("stock_name", key), "source_urls": {}}
+            schedule_data[key] = entry
+        for field in ("price_band_low", "price_band_high", "confirmed_price",
+                      "demand_forecast_end_date", "offering_amount_eok",
+                      "institutional_competition_rate", "lockup_commitment_ratio"):
+            if entry.get(field) is None and result.get(field) is not None:
+                entry[field] = result[field]
 
     rows_to_insert = []
     for key, entry in schedule_data.items():

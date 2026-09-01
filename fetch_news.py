@@ -15,7 +15,7 @@ API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 # The Naver search API has no boolean operator syntax (no "OR"/"AND" keywords) —
 # it's a plain full-text query. So instead of one query string joined with " OR ",
 # we call the API once per keyword and merge/dedupe the results ourselves.
-KEYWORDS = ["채권", "금리"]
+KEYWORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "고용", "한국은행", "총재", "워시", "신현송"]
 
 
 def fetch_naver_news_for_keyword(keyword, display=30):
@@ -53,24 +53,40 @@ def fetch_naver_news_for_keyword(keyword, display=30):
     return []
 
 
-def fetch_naver_news(max_total=50):
+def normalize_title(title):
+    # Strip Naver's <b> highlight tags and common HTML entities, then
+    # collapse whitespace, so near-identical titles compare equal.
+    clean = title.replace('<b>', '').replace('</b>', '').replace('&quot;', '"').replace('&amp;', '&')
+    return " ".join(clean.split()).strip()
+
+
+def fetch_naver_news(max_total=30):
     print(f"Loaded API Key ID: {API_KEY_ID[:4] if API_KEY_ID else 'None'}... (length: {len(API_KEY_ID) if API_KEY_ID else 0})")
     print(f"Loaded API Key: {API_KEY[:2] if API_KEY else 'None'}... (length: {len(API_KEY) if API_KEY else 0})")
 
-    # link -> item, to dedupe articles that match multiple keywords
+    # Dedupe by link AND by normalized title — the same story is often
+    # republished under different URLs (different outlets/syndication)
+    # but with an identical or near-identical headline.
     merged = {}
+    seen_titles = set()
     for keyword in KEYWORDS:
         for item in fetch_naver_news_for_keyword(keyword):
             link_key = item.get('originallink') or item.get('link')
-            if link_key and link_key not in merged:
-                merged[link_key] = item
+            title_key = normalize_title(item.get('title', ''))
+            if not link_key or link_key in merged:
+                continue
+            if title_key and title_key in seen_titles:
+                continue
+            merged[link_key] = item
+            if title_key:
+                seen_titles.add(title_key)
 
     def sort_key(item):
         dt = parse_rfc822_date(item.get('pubDate'))
         return dt or ""
 
     items = sorted(merged.values(), key=sort_key, reverse=True)[:max_total]
-    print(f"가져온 뉴스 개수(중복 제거 후): {len(items)}")
+    print(f"가져온 뉴스 개수(중복 제거 후, 최대 {max_total}건): {len(items)}")
     return items
 
 

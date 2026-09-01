@@ -9,26 +9,22 @@ from supabase import create_client, Client
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# NCP API HUB 인증 정보 (Access Key ID / Secret Key)
-NCP_ACCESS_KEY_ID = os.environ.get("NAVER_CLIENT_ID")
-NCP_SECRET_KEY = os.environ.get("NAVER_CLIENT_SECRET")
+API_KEY_ID = os.environ.get("NAVER_CLIENT_ID")
+API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 
 def fetch_naver_news():
-    print(f"Loaded Access Key: {NCP_ACCESS_KEY_ID[:4] if NCP_ACCESS_KEY_ID else 'None'}... (length: {len(NCP_ACCESS_KEY_ID) if NCP_ACCESS_KEY_ID else 0})")
-    print(f"Loaded Secret Key: {NCP_SECRET_KEY[:2] if NCP_SECRET_KEY else 'None'}... (length: {len(NCP_SECRET_KEY) if NCP_SECRET_KEY else 0})")
+    print(f"Loaded API Key ID: {API_KEY_ID[:4] if API_KEY_ID else 'None'}... (length: {len(API_KEY_ID) if API_KEY_ID else 0})")
+    print(f"Loaded API Key: {API_KEY[:2] if API_KEY else 'None'}... (length: {len(API_KEY) if API_KEY else 0})")
 
-    query = "채권 금리"
+    # 채권, 금리 및 거시경제 지표·핵심 인물(워시, 신현송 등)을 포함한 확장 OR 쿼리
+    query = "채권 OR 금리 OR 기준금리 OR 연준 OR CPI OR 물가 OR 고용 OR 한국은행 OR 총재 OR 워시 OR 신현송"
     encoded_query = urllib.parse.quote(query)
     
-    # NCP API HUB 엔드포인트 규격에 맞게 수정 필요 (발급받으신 문서의 URL 확인)
-    url = f"https://openapi.naver.com/v1/search/news.json?query={encoded_query}&display=30&sort=date"
+    url = f"https://openapi.naver.com/v1/search/news.json?query={encoded_query}&display=50&sort=date"
     
     request = urllib.request.Request(url)
-    
-    # NCP API HUB는 헤더 키로 X-NCP-APIGW-API-KEY-ID 등을 사용할 수 있습니다.
-    # 만약 기존 헤더를 그대로 유지해야 한다면 NCP 콘솔 내 API HUB 연동 가이드를 확인해 주세요.
-    request.add_header("X-Naver-Client-Id", NCP_ACCESS_KEY_ID.strip() if NCP_ACCESS_KEY_ID else "")
-    request.add_header("X-Naver-Client-Secret", NCP_SECRET_KEY.strip() if NCP_SECRET_KEY else "")
+    request.add_header("X-Naver-Client-Id", API_KEY_ID.strip() if API_KEY_ID else "")
+    request.add_header("X-Naver-Client-Secret", API_KEY.strip() if API_KEY else "")
     
     try:
         response = urllib.request.urlopen(request)
@@ -55,7 +51,7 @@ def main():
         print("Supabase 환경 변수가 설정되지 않았습니다.")
         return
 
-    if not NCP_ACCESS_KEY_ID or not NCP_SECRET_KEY:
+    if not API_KEY_ID or not API_KEY:
         print("NCP API 인증 정보가 설정되지 않았습니다.")
         return
 

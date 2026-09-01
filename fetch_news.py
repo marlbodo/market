@@ -17,7 +17,18 @@ API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 # we call the API once per keyword and merge/dedupe the results ourselves.
 # We also use this same list to filter by TITLE only (see fetch_naver_news_for_keyword),
 # so search and filtering stay consistent — no separate "content keyword" search.
-TITLE_FILTER_WORDS = ["채권", "금리", "연준", "CPI", "물가", "워시", "신현송"]
+TITLE_FILTER_WORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "고용", "한국은행", "총재", "워시", "신현송"]
+
+# Even when a title contains a TITLE_FILTER_WORDS match, it's often noise:
+# personal/retail loan-rate promos (생계비 융자금리, 은행 이벤트 금리) or
+# Chuseok grocery-price-control announcements (성수품 물가 안정), not actual
+# market rates / bond yields / policy rates. Titles containing any of these
+# are dropped even if they'd otherwise pass the TITLE_FILTER_WORDS check.
+TITLE_EXCLUDE_WORDS = [
+    "생계비", "용자금리", "융자금리", "햇살론", "페이백", "이벤트", "특판", "우대금리",
+    "성수품", "장바구니", "차례상",
+    "적금", "예금",
+]
 
 
 def normalize_title(title):
@@ -49,10 +60,12 @@ def fetch_naver_news_for_keyword(keyword, display=50):
             # Naver's full-text search also matches the keyword when it only
             # appears inside the body/summary. To keep the feed focused on
             # articles that are actually about the topic, only keep items
-            # whose title contains at least one word from TITLE_FILTER_WORDS.
+            # whose title contains at least one word from TITLE_FILTER_WORDS,
+            # and drop items whose title contains a TITLE_EXCLUDE_WORDS noise word.
             on_topic = [
                 it for it in items
                 if any(w in normalize_title(it.get('title', '')) for w in TITLE_FILTER_WORDS)
+                and not any(w in normalize_title(it.get('title', '')) for w in TITLE_EXCLUDE_WORDS)
             ]
             print(f"  '{keyword}': {len(items)}건 조회, 제목 매칭 {len(on_topic)}건")
             return on_topic

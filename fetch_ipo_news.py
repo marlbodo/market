@@ -59,7 +59,7 @@ def is_near_duplicate_title(title, existing_titles, threshold=0.6):
     return False
 
 
-def fetch_naver_ipo_news_for_keyword(keyword, display=50):
+def fetch_naver_ipo_news_for_keyword(keyword, display=100):
     encoded_query = urllib.parse.quote(keyword)
 
     # NAVER API HUB: no ".json" in the path. Response format is chosen

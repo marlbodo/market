@@ -19,11 +19,13 @@ def fetch_naver_news():
     query = "채권 OR 금리 OR 기준금리 OR 연준 OR CPI OR 물가 OR 고용 OR 한국은행 OR 총재 OR 워시 OR 신현송"
     encoded_query = urllib.parse.quote(query)
     
+    # [중요] NAVER API HUB 콘솔 가이드에 나오는 API Gateway 전용 URL로 변경해야 합니다.
+    # 예시: url = f"https://{API_GATEWAY_DOMAIN}/v1/search/news.json?query={encoded_query}&display=50&sort=date"
     url = f"https://openapi.naver.com/v1/search/news.json?query={encoded_query}&display=50&sort=date"
     
     request = urllib.request.Request(url)
     
-    # NCP API HUB 전용 헤더로 변경
+    # NAVER API HUB 인증 헤더
     request.add_header("X-NCP-APIGW-API-KEY-ID", API_KEY_ID.strip() if API_KEY_ID else "")
     request.add_header("X-NCP-APIGW-API-KEY", API_KEY.strip() if API_KEY else "")
     

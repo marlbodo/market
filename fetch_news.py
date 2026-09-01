@@ -8,7 +8,6 @@ from supabase import create_client, Client
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# NCP NAVER API HUB에서 발급받은 인증 키 정보
 API_KEY_ID = os.environ.get("NAVER_CLIENT_ID")
 API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 
@@ -19,20 +18,20 @@ def fetch_naver_news():
     query = "채권 OR 금리 OR 기준금리 OR 연준 OR CPI OR 물가 OR 고용 OR 한국은행 OR 총재 OR 워시 OR 신현송"
     encoded_query = urllib.parse.quote(query)
     
-    # NAVER API HUB 공식 문서 기준 뉴스 검색 엔드포인트 및 파라미터 조합
-    url = f"https://naverapihub.apigw.ntruss.com/search/v1/news?query={encoded_query}&display=50&sort=date"
+    url = f"https://naverapihub.apigw.ntruss.com/search/v1/news.json?query={encoded_query}&display=50&sort=date"
     
     request = urllib.request.Request(url)
-    
-    # API HUB 공통 인증 헤더 지정 (대소문자 및 키 이름 정확히 일치 필요)
     request.add_header("X-NCP-APIGW-API-KEY-ID", API_KEY_ID.strip() if API_KEY_ID else "")
     request.add_header("X-NCP-APIGW-API-KEY", API_KEY.strip() if API_KEY else "")
     
     try:
         response = urllib.request.urlopen(request)
+        print(f"네이버 API 응답 코드: {response.getcode()}")
         if response.getcode() == 200:
             data = json.loads(response.read().decode('utf-8'))
-            return data.get('items', [])
+            items = data.get('items', [])
+            print(f"가져온 뉴스 개수: {len(items)}")
+            return items
     except urllib.error.HTTPError as e:
         print(f"네이버 API HTTP 에러 코드: {e.code}, 사유: {e.reason}")
         try:

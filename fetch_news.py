@@ -16,15 +16,16 @@ def fetch_naver_news():
     print(f"Loaded API Key ID: {API_KEY_ID[:4] if API_KEY_ID else 'None'}... (length: {len(API_KEY_ID) if API_KEY_ID else 0})")
     print(f"Loaded API Key: {API_KEY[:2] if API_KEY else 'None'}... (length: {len(API_KEY) if API_KEY else 0})")
 
-    # 채권, 금리 및 거시경제 지표·핵심 인물(워시, 신현송 등)을 포함한 확장 OR 쿼리
     query = "채권 OR 금리 OR 기준금리 OR 연준 OR CPI OR 물가 OR 고용 OR 한국은행 OR 총재 OR 워시 OR 신현송"
     encoded_query = urllib.parse.quote(query)
     
     url = f"https://openapi.naver.com/v1/search/news.json?query={encoded_query}&display=50&sort=date"
     
     request = urllib.request.Request(url)
-    request.add_header("X-Naver-Client-Id", API_KEY_ID.strip() if API_KEY_ID else "")
-    request.add_header("X-Naver-Client-Secret", API_KEY.strip() if API_KEY else "")
+    
+    # NCP API HUB 전용 헤더로 변경
+    request.add_header("X-NCP-APIGW-API-KEY-ID", API_KEY_ID.strip() if API_KEY_ID else "")
+    request.add_header("X-NCP-APIGW-API-KEY", API_KEY.strip() if API_KEY else "")
     
     try:
         response = urllib.request.urlopen(request)

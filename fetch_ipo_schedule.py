@@ -404,28 +404,6 @@ def should_keep(entry, listing_date):
     return True
 
 
-def infer_status(entry, listing_date):
-    if listing_date:
-        return "상장예정" if listing_date > TODAY else "상장완료"
-
-    sub_s = parse_date(entry.get("subscription_start_date"))
-    sub_e = parse_date(entry.get("subscription_end_date"))
-    if sub_s and sub_e:
-        if sub_s <= TODAY <= sub_e:
-            return "청약중"
-        if sub_e < TODAY:
-            return "상장대기"  # 청약은 끝났지만 상장일 미확인
-
-    dfs = parse_date(entry.get("demand_forecast_start_date"))
-    dfe = parse_date(entry.get("demand_forecast_end_date"))
-    if dfs and dfe:
-        if dfs <= TODAY <= dfe:
-            return "수요예측중"
-        if dfe < TODAY:
-            return "청약대기"  # 수요예측은 끝났지만 청약일정 미확인
-    return "예정"
-
-
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
@@ -460,7 +438,6 @@ def main():
 
         entry.setdefault("source_urls", {})
         entry["listing_date"] = listing_date.isoformat() if listing_date else None
-        entry["status"] = infer_status(entry, listing_date)
 
         for f in FILL_FIELDS:
             if entry.get(f) is None:

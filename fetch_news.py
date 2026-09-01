@@ -12,18 +12,20 @@ API_KEY_ID = os.environ.get("NAVER_CLIENT_ID")
 API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 
 
-def fetch_naver_news():
-    print(f"Loaded API Key ID: {API_KEY_ID[:4] if API_KEY_ID else 'None'}... (length: {len(API_KEY_ID) if API_KEY_ID else 0})")
-    print(f"Loaded API Key: {API_KEY[:2] if API_KEY else 'None'}... (length: {len(API_KEY) if API_KEY else 0})")
+# The Naver search API has no boolean operator syntax (no "OR"/"AND" keywords) —
+# it's a plain full-text query. So instead of one query string joined with " OR ",
+# we call the API once per keyword and merge/dedupe the results ourselves.
+KEYWORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "고용", "한국은행", "총재", "워시", "신현송"]
 
-    query = "채권 OR 금리 OR 기준금리 OR 연준 OR CPI OR 물가 OR 고용 OR 한국은행 OR 총재 OR 워시 OR 신현송"
-    encoded_query = urllib.parse.quote(query)
+
+def fetch_naver_news_for_keyword(keyword, display=30):
+    encoded_query = urllib.parse.quote(keyword)
 
     # NAVER API HUB: no ".json" in the path. Response format is chosen
     # via the "format" query param (defaults to json anyway, but explicit is safer).
     url = (
         "https://naverapihub.apigw.ntruss.com/search/v1/news"
-        f"?query={encoded_query}&display=50&start=1&sort=date&format=json"
+        f"?query={encoded_query}&display={display}&start=1&sort=date&format=json"
     )
 
     request = urllib.request.Request(url)
@@ -32,27 +34,44 @@ def fetch_naver_news():
 
     try:
         response = urllib.request.urlopen(request)
-        print(f"네이버 API 응답 코드: {response.getcode()}")
         if response.getcode() == 200:
             data = json.loads(response.read().decode('utf-8'))
             items = data.get('items', [])
-            print(f"가져온 뉴스 개수: {len(items)}")
+            print(f"  '{keyword}': {len(items)}건")
             return items
     except urllib.error.HTTPError as e:
-        print(f"네이버 API HTTP 에러 코드: {e.code}, 사유: {e.reason}")
+        print(f"  '{keyword}' 에러 코드: {e.code}, 사유: {e.reason}")
         try:
             err_body = e.read().decode('utf-8')
-            print(f"에러 상세 내용: {err_body}")
-            # HUB nests errors under "error": {errorCode, message, details}
-            # while some legacy-style errors are flat {"errorCode": ...}.
             err_json = json.loads(err_body)
             err_obj = err_json.get("error", err_json)
-            print(f"파싱된 에러 코드: {err_obj.get('errorCode')}, 메시지: {err_obj.get('message') or err_obj.get('errorMessage')}")
+            print(f"  파싱된 에러 코드: {err_obj.get('errorCode')}, 메시지: {err_obj.get('message') or err_obj.get('errorMessage')}")
         except Exception:
             pass
     except Exception as e:
-        print(f"네이버 API 호출 에러: {e}")
+        print(f"  '{keyword}' 호출 에러: {e}")
     return []
+
+
+def fetch_naver_news(max_total=50):
+    print(f"Loaded API Key ID: {API_KEY_ID[:4] if API_KEY_ID else 'None'}... (length: {len(API_KEY_ID) if API_KEY_ID else 0})")
+    print(f"Loaded API Key: {API_KEY[:2] if API_KEY else 'None'}... (length: {len(API_KEY) if API_KEY else 0})")
+
+    # link -> item, to dedupe articles that match multiple keywords
+    merged = {}
+    for keyword in KEYWORDS:
+        for item in fetch_naver_news_for_keyword(keyword):
+            link_key = item.get('originallink') or item.get('link')
+            if link_key and link_key not in merged:
+                merged[link_key] = item
+
+    def sort_key(item):
+        dt = parse_rfc822_date(item.get('pubDate'))
+        return dt or ""
+
+    items = sorted(merged.values(), key=sort_key, reverse=True)[:max_total]
+    print(f"가져온 뉴스 개수(중복 제거 후): {len(items)}")
+    return items
 
 
 def parse_rfc822_date(date_str):

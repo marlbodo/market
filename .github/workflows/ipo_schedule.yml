@@ -1,0 +1,27 @@
+name: Daily IPO Schedule Fetcher
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 21 * * *' # 매일 새벽 6시 (KST 기준)
+jobs:
+  run-fetch-ipo-schedule:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install dependencies and run script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          pip install --upgrade pip
+          pip install supabase beautifulsoup4
+          python fetch_ipo_schedule.py

@@ -15,10 +15,19 @@ API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 # The Naver search API has no boolean operator syntax (no "OR"/"AND" keywords) —
 # it's a plain full-text query. So instead of one query string joined with " OR ",
 # we call the API once per keyword and merge/dedupe the results ourselves.
-KEYWORDS = ["채권", "금리"]
+# We also use this same list to filter by TITLE only (see fetch_naver_news_for_keyword),
+# so search and filtering stay consistent — no separate "content keyword" search.
+TITLE_FILTER_WORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "고용", "한국은행", "총재", "워시", "신현송"]
 
 
-def fetch_naver_news_for_keyword(keyword, display=30):
+def normalize_title(title):
+    # Strip Naver's <b> highlight tags and common HTML entities, then
+    # collapse whitespace, so near-identical titles compare equal.
+    clean = title.replace('<b>', '').replace('</b>', '').replace('&quot;', '"').replace('&amp;', '&')
+    return " ".join(clean.split()).strip()
+
+
+def fetch_naver_news_for_keyword(keyword, display=50):
     encoded_query = urllib.parse.quote(keyword)
 
     # NAVER API HUB: no ".json" in the path. Response format is chosen
@@ -37,8 +46,16 @@ def fetch_naver_news_for_keyword(keyword, display=30):
         if response.getcode() == 200:
             data = json.loads(response.read().decode('utf-8'))
             items = data.get('items', [])
-            print(f"  '{keyword}': {len(items)}건")
-            return items
+            # Naver's full-text search also matches the keyword when it only
+            # appears inside the body/summary. To keep the feed focused on
+            # articles that are actually about the topic, only keep items
+            # whose title contains at least one word from TITLE_FILTER_WORDS.
+            on_topic = [
+                it for it in items
+                if any(w in normalize_title(it.get('title', '')) for w in TITLE_FILTER_WORDS)
+            ]
+            print(f"  '{keyword}': {len(items)}건 조회, 제목 매칭 {len(on_topic)}건")
+            return on_topic
     except urllib.error.HTTPError as e:
         print(f"  '{keyword}' 에러 코드: {e.code}, 사유: {e.reason}")
         try:
@@ -53,13 +70,6 @@ def fetch_naver_news_for_keyword(keyword, display=30):
     return []
 
 
-def normalize_title(title):
-    # Strip Naver's <b> highlight tags and common HTML entities, then
-    # collapse whitespace, so near-identical titles compare equal.
-    clean = title.replace('<b>', '').replace('</b>', '').replace('&quot;', '"').replace('&amp;', '&')
-    return " ".join(clean.split()).strip()
-
-
 def fetch_naver_news(max_total=30):
     print(f"Loaded API Key ID: {API_KEY_ID[:4] if API_KEY_ID else 'None'}... (length: {len(API_KEY_ID) if API_KEY_ID else 0})")
     print(f"Loaded API Key: {API_KEY[:2] if API_KEY else 'None'}... (length: {len(API_KEY) if API_KEY else 0})")
@@ -69,7 +79,7 @@ def fetch_naver_news(max_total=30):
     # but with an identical or near-identical headline.
     merged = {}
     seen_titles = set()
-    for keyword in KEYWORDS:
+    for keyword in TITLE_FILTER_WORDS:
         for item in fetch_naver_news_for_keyword(keyword):
             # Prefer Naver's own internal link (news.naver.com) when available;
             # fall back to the original publisher's URL otherwise.

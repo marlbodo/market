@@ -33,7 +33,8 @@ def fetch_naver_news():
     query = "채권 OR 금리 OR 기준금리 OR 연준 OR CPI OR 물가 OR 고용 OR 한국은행 OR 총재 OR 워시 OR 신현송"
     encoded_query = urllib.parse.quote(query)
     
-    # API Gateway 서명 생성 시에는 쿼리 스트링을 포함한 URI 전체 경로가 들어가야 합니다.
+    # [주의] NCP API HUB 가이드에 명시된 정확한 경로(예: /apihub/v1/search/news.json 또는 제품별 고유 경로)를 확인해 넣어야 합니다.
+    # 현재 404가 나는 이유는 아래 URI 경로가 API Gateway에 등록된 리소스 경로와 다르기 때문입니다.
     uri = f"/v1/search/news.json?query={encoded_query}&display=50&sort=date"
     url = f"https://apigateway.apigw.ntruss.com{uri}"
     

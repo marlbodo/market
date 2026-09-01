@@ -45,27 +45,32 @@ def _fetch_html(url, encoding_candidates=("utf-8", "euc-kr", "cp949")):
     return raw.decode("utf-8", errors="ignore")
 
 
-def _iter_rows(html, href_pattern=r"fund/(index\.htm)?\?o=v&no=\d+"):
-    """종목 상세페이지로 연결되는 링크가 있는 <tr>을 순회하며
-    (종목명, [셀 텍스트...], <a> 태그)를 반환한다.
+_HEADER_NAMES = {"종목명", "기업명", "기업 명"}
+
+
+def _iter_rows(html, min_cells=3):
+    """<tr><td>...가 min_cells개 이상 있고 첫 칸이 종목명처럼 생긴 행을 순회하며
+    (종목명, [셀 텍스트...], 첫 칸 안의 <a> 태그 또는 None)을 반환한다.
+    페이지마다 상세페이지 링크의 href 형식이 달라서(o=v&no=... 가 아닌 경우도 있음)
+    href 패턴으로 필터링하지 않고 테이블 구조만으로 데이터 행을 판별한다.
     사이드바 위젯("MM/DD 종목명" 형식)은 이름이 날짜로 시작하므로 걸러낸다."""
     soup = BeautifulSoup(html, "html.parser")
     seen = set()
-    for a in soup.find_all("a", href=re.compile(href_pattern)):
-        name = a.get_text(strip=True)
-        if not name or re.match(r"^\d{2}[./]\d{2}", name):
+    for tr in soup.find_all("tr"):
+        tds = tr.find_all("td")
+        if len(tds) < min_cells:
             continue
-        tr = a.find_parent("tr")
-        if not tr:
+        name = tds[0].get_text(strip=True)
+        if not name or name in _HEADER_NAMES:
             continue
-        cells = [td.get_text(" ", strip=True) for td in tr.find_all("td")]
-        if not cells:
+        if re.match(r"^\d{2}[./]\d{2}", name):
             continue
+        cells = [td.get_text(" ", strip=True) for td in tds]
         key = (name, tuple(cells))
         if key in seen:
             continue
         seen.add(key)
-        yield name, cells, a
+        yield name, cells, tds[0].find("a")
 
 
 # --- 숫자/날짜 파서 ---------------------------------------------------------
@@ -170,6 +175,19 @@ def parse_date_slash(s):
     return f"{y}-{mo}-{d}"
 
 
+def _detail_url(a, label):
+    if a is None or not a.get("href"):
+        return {}
+    href = a["href"]
+    if href.startswith("http"):
+        url = href
+    elif href.startswith("/"):
+        url = "http://www.38.co.kr" + href
+    else:
+        url = "http://www.38.co.kr/html/fund/" + href
+    return {label: url}
+
+
 def parse_date(s):
     try:
         return datetime.strptime(s, "%Y-%m-%d").date()
@@ -209,7 +227,7 @@ def fetch_38_demand_schedule(max_pages=5):
                 "price_band_high": band_hi,
                 "confirmed_price": parse_price(cells[3]) if len(cells) > 3 else None,
                 "offering_amount_eok": parse_amount_eok(cells[4]) if len(cells) > 4 else None,
-                "source_urls": {"38_수요예측일정": "http://www.38.co.kr" + a["href"].replace("index.htm", "")},
+                "source_urls": _detail_url(a, "38_수요예측일정"),
             }
             results[normalize_name(name)] = entry
 
@@ -297,7 +315,7 @@ def fetch_38_subscription_schedule(max_pages=5):
                 "price_band_low": band_lo,
                 "price_band_high": band_hi,
                 "subscription_competition_rate": parse_ratio(cells[4]) if len(cells) > 4 else None,
-                "source_urls": {"38_청약일정": "http://www.38.co.kr" + a["href"].replace("index.htm", "")},
+                "source_urls": _detail_url(a, "38_청약일정"),
             }
             results[normalize_name(name)] = entry
 

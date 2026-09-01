@@ -9,21 +9,26 @@ from supabase import create_client, Client
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-NAVER_CLIENT_ID = os.environ.get("NAVER_CLIENT_ID")
-NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET")
+# NCP API HUB 인증 정보 (Access Key ID / Secret Key)
+NCP_ACCESS_KEY_ID = os.environ.get("NAVER_CLIENT_ID")
+NCP_SECRET_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 
 def fetch_naver_news():
-    # 디버깅을 위해 전달된 ID/Secret의 길이와 앞 두 글자 확인 (보안을 위해 전체 노출은 안 함)
-    print(f"Loaded NAVER_CLIENT_ID: {NAVER_CLIENT_ID[:4] if NAVER_CLIENT_ID else 'None'}... (length: {len(NAVER_CLIENT_ID) if NAVER_CLIENT_ID else 0})")
-    print(f"Loaded NAVER_CLIENT_SECRET: {NAVER_CLIENT_SECRET[:2] if NAVER_CLIENT_SECRET else 'None'}... (length: {len(NAVER_CLIENT_SECRET) if NAVER_CLIENT_SECRET else 0})")
+    print(f"Loaded Access Key: {NCP_ACCESS_KEY_ID[:4] if NCP_ACCESS_KEY_ID else 'None'}... (length: {len(NCP_ACCESS_KEY_ID) if NCP_ACCESS_KEY_ID else 0})")
+    print(f"Loaded Secret Key: {NCP_SECRET_KEY[:2] if NCP_SECRET_KEY else 'None'}... (length: {len(NCP_SECRET_KEY) if NCP_SECRET_KEY else 0})")
 
     query = "채권 금리"
     encoded_query = urllib.parse.quote(query)
+    
+    # NCP API HUB 엔드포인트 규격에 맞게 수정 필요 (발급받으신 문서의 URL 확인)
     url = f"https://openapi.naver.com/v1/search/news.json?query={encoded_query}&display=30&sort=date"
     
     request = urllib.request.Request(url)
-    request.add_header("X-Naver-Client-Id", NAVER_CLIENT_ID.strip() if NAVER_CLIENT_ID else "")
-    request.add_header("X-Naver-Client-Secret", NAVER_CLIENT_SECRET.strip() if NAVER_CLIENT_SECRET else "")
+    
+    # NCP API HUB는 헤더 키로 X-NCP-APIGW-API-KEY-ID 등을 사용할 수 있습니다.
+    # 만약 기존 헤더를 그대로 유지해야 한다면 NCP 콘솔 내 API HUB 연동 가이드를 확인해 주세요.
+    request.add_header("X-Naver-Client-Id", NCP_ACCESS_KEY_ID.strip() if NCP_ACCESS_KEY_ID else "")
+    request.add_header("X-Naver-Client-Secret", NCP_SECRET_KEY.strip() if NCP_SECRET_KEY else "")
     
     try:
         response = urllib.request.urlopen(request)
@@ -50,8 +55,8 @@ def main():
         print("Supabase 환경 변수가 설정되지 않았습니다.")
         return
 
-    if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
-        print("네이버 API 인증 정보가 설정되지 않았습니다.")
+    if not NCP_ACCESS_KEY_ID or not NCP_SECRET_KEY:
+        print("NCP API 인증 정보가 설정되지 않았습니다.")
         return
 
     news_items = fetch_naver_news()

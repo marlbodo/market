@@ -15,7 +15,7 @@ API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 # The Naver search API has no boolean operator syntax (no "OR"/"AND" keywords) —
 # it's a plain full-text query. So instead of one query string joined with " OR ",
 # we call the API once per keyword and merge/dedupe the results ourselves.
-KEYWORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "고용", "한국은행", "총재", "워시", "신현송"]
+KEYWORDS = ["채권", "금리"]
 
 
 def fetch_naver_news_for_keyword(keyword, display=30):

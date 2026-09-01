@@ -8,7 +8,7 @@ from supabase import create_client, Client
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# NAVER API HUB에서 발급받은 인증키 정보
+# NCP NAVER API HUB에서 발급받은 인증 키 정보
 API_KEY_ID = os.environ.get("NAVER_CLIENT_ID")
 API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 
@@ -19,12 +19,12 @@ def fetch_naver_news():
     query = "채권 OR 금리 OR 기준금리 OR 연준 OR CPI OR 물가 OR 고용 OR 한국은행 OR 총재 OR 워시 OR 신현송"
     encoded_query = urllib.parse.quote(query)
     
-    # NAVER API HUB 공식 뉴스 검색 엔드포인트 적용
-    url = f"https://naverapihub.apigw.ntruss.com/search/v1/news.json?query={encoded_query}&display=50&sort=date"
+    # NAVER API HUB 공식 문서 기준 뉴스 검색 엔드포인트 및 파라미터 조합
+    url = f"https://naverapihub.apigw.ntruss.com/search/v1/news?query={encoded_query}&display=50&sort=date"
     
     request = urllib.request.Request(url)
     
-    # NAVER API HUB 전용 인증 헤더 설정
+    # API HUB 공통 인증 헤더 지정 (대소문자 및 키 이름 정확히 일치 필요)
     request.add_header("X-NCP-APIGW-API-KEY-ID", API_KEY_ID.strip() if API_KEY_ID else "")
     request.add_header("X-NCP-APIGW-API-KEY", API_KEY.strip() if API_KEY else "")
     

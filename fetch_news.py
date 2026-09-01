@@ -15,7 +15,7 @@ API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 # The Naver search API has no boolean operator syntax (no "OR"/"AND" keywords) —
 # it's a plain full-text query. So instead of one query string joined with " OR ",
 # we call the API once per keyword and merge/dedupe the results ourselves.
-KEYWORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "고용", "한국은행", "총재", "워시", "신현송"]
+KEYWORDS = ["채권", "금리"]
 
 
 def fetch_naver_news_for_keyword(keyword, display=30):
@@ -71,7 +71,9 @@ def fetch_naver_news(max_total=30):
     seen_titles = set()
     for keyword in KEYWORDS:
         for item in fetch_naver_news_for_keyword(keyword):
-            link_key = item.get('originallink') or item.get('link')
+            # Prefer Naver's own internal link (news.naver.com) when available;
+            # fall back to the original publisher's URL otherwise.
+            link_key = item.get('link') or item.get('originallink')
             title_key = normalize_title(item.get('title', ''))
             if not link_key or link_key in merged:
                 continue
@@ -123,7 +125,9 @@ def main():
         for item in news_items:
             title = item.get('title', '').replace('<b>', '').replace('</b>', '').replace('&quot;', '"').replace('&amp;', '&')
             summary = item.get('description', '').replace('<b>', '').replace('</b>', '').replace('&quot;', '"').replace('&amp;', '&')
-            link = item.get('originallink') if item.get('originallink') else item.get('link')
+            # Prefer Naver's own internal link (news.naver.com) when available;
+            # fall back to the original publisher's URL otherwise.
+            link = item.get('link') if item.get('link') else item.get('originallink')
             pub_date = parse_rfc822_date(item.get('pubDate'))
 
             rows_to_insert.append({

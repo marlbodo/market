@@ -1,33 +1,52 @@
 import os
+import time
+import hmac
+import hashlib
+import base64
 import urllib.request
 import urllib.parse
 import json
-from datetime import datetime
 from email.utils import parsedate_to_datetime
 from supabase import create_client, Client
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-API_KEY_ID = os.environ.get("NAVER_CLIENT_ID")
-API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
+ACCESS_KEY = os.environ.get("NAVER_CLIENT_ID")
+SECRET_KEY = os.environ.get("NAVER_CLIENT_SECRET")
+
+def make_signature(method, uri, timestamp, access_key, secret_key):
+    space = " "
+    newLine = "\n"
+    
+    message = method + space + uri + newLine + timestamp + newLine + access_key
+    message = bytes(message, 'UTF-8')
+    secret_key = bytes(secret_key, 'UTF-8')
+    
+    sign_key = hmac.new(secret_key, message, digestmod=hashlib.sha256).digest()
+    return base64.b64encode(sign_key).decode('UTF-8')
 
 def fetch_naver_news():
-    print(f"Loaded API Key ID: {API_KEY_ID[:4] if API_KEY_ID else 'None'}... (length: {len(API_KEY_ID) if API_KEY_ID else 0})")
-    print(f"Loaded API Key: {API_KEY[:2] if API_KEY else 'None'}... (length: {len(API_KEY) if API_KEY else 0})")
+    print(f"Loaded Access Key: {ACCESS_KEY[:4] if ACCESS_KEY else 'None'}... (length: {len(ACCESS_KEY) if ACCESS_KEY else 0})")
+    print(f"Loaded Secret Key: {SECRET_KEY[:2] if SECRET_KEY else 'None'}... (length: {len(SECRET_KEY) if SECRET_KEY else 0})")
 
     query = "채권 OR 금리 OR 기준금리 OR 연준 OR CPI OR 물가 OR 고용 OR 한국은행 OR 총재 OR 워시 OR 신현송"
     encoded_query = urllib.parse.quote(query)
     
-    # [중요] NAVER API HUB 콘솔 가이드에 나오는 API Gateway 전용 URL로 변경해야 합니다.
-    # 예시: url = f"https://{API_GATEWAY_DOMAIN}/v1/search/news.json?query={encoded_query}&display=50&sort=date"
-    url = f"https://openapi.naver.com/v1/search/news.json?query={encoded_query}&display=50&sort=date"
+    # API Gateway 호출을 위한 URI 경로 (쿼리 스트링 포함)
+    uri = f"/v1/search/news.json?query={encoded_query}&display=50&sort=date"
+    
+    # API Gateway 기본 도메인 및 전체 URL 설정 (필요시 도메인 확인)
+    domain = "https://apigateway.apigw.ntruss.com" # 또는 해당 API HUB 가이드에 명시된 도메인
+    url = domain + uri
+    
+    timestamp = str(int(time.time() * 1000))
+    signature = make_signature("GET", uri, timestamp, ACCESS_KEY, SECRET_KEY)
     
     request = urllib.request.Request(url)
-    
-    # NAVER API HUB 인증 헤더
-    request.add_header("X-NCP-APIGW-API-KEY-ID", API_KEY_ID.strip() if API_KEY_ID else "")
-    request.add_header("X-NCP-APIGW-API-KEY", API_KEY.strip() if API_KEY else "")
+    request.add_header("x-ncp-apigw-timestamp", timestamp)
+    request.add_header("x-ncp-iam-access-key", ACCESS_KEY.strip())
+    request.add_header("x-ncp-apigw-signature-v2", signature)
     
     try:
         response = urllib.request.urlopen(request)
@@ -36,6 +55,11 @@ def fetch_naver_news():
             return data.get('items', [])
     except urllib.error.HTTPError as e:
         print(f"네이버 API HTTP 에러 코드: {e.code}, 사유: {e.reason}")
+        try:
+            err_body = e.read().decode('utf-8')
+            print(f"에러 상세 내용: {err_body}")
+        except:
+            pass
     except Exception as e:
         print(f"네이버 API 호출 에러: {e}")
     return []
@@ -54,7 +78,7 @@ def main():
         print("Supabase 환경 변수가 설정되지 않았습니다.")
         return
 
-    if not API_KEY_ID or not API_KEY:
+    if not ACCESS_KEY or not SECRET_KEY:
         print("NCP API 인증 정보가 설정되지 않았습니다.")
         return
 

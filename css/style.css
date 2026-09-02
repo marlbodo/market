@@ -262,20 +262,20 @@ img { max-width: 100%; display: block; }
   font-weight: 700;
   color: var(--text-muted);
   font-size: 10.5px;
-  text-align: left;
+  text-align: center;
 }
-.ipo-table th:nth-child(1), .ipo-table td:nth-child(1) { width: 15%; }
-.ipo-table th:nth-child(2), .ipo-table td:nth-child(2) { width: 17%; }
-.ipo-table th:nth-child(3), .ipo-table td:nth-child(3) { width: 15%; }
-.ipo-table th:nth-child(4), .ipo-table td:nth-child(4) { width: 13%; }
-.ipo-table th:nth-child(5), .ipo-table td:nth-child(5) { width: 40%; }
+.ipo-table th:nth-child(1), .ipo-table td:nth-child(1) { width: 22%; }
+.ipo-table th:nth-child(2), .ipo-table td:nth-child(2) { width: 30%; }
+.ipo-table th:nth-child(3), .ipo-table td:nth-child(3) { width: 25%; }
+.ipo-table th:nth-child(4), .ipo-table td:nth-child(4) { width: 23%; }
 
-.ipo-td-date { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; }
-.ipo-td-dow { color: var(--text-faint); margin-left: 2px; }
+.ipo-table tbody tr:hover td { background: var(--bg-subtle); }
+.ipo-table tbody td[title] { cursor: help; }
+
+.ipo-td-date { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; text-align: center; }
 .ipo-td-stock { font-weight: 700; font-size: 11.5px; word-break: keep-all; }
-.ipo-td-amount { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; }
+.ipo-td-amount { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; text-align: right; }
 .ipo-td-type { text-align: center; }
-.ipo-td-note { font-size: 10px; color: var(--text-muted); line-height: 1.5; word-break: keep-all; }
 
 /* ---------- Sidebar (우) ---------- */
 .research-card { padding: 14px 0; border-bottom: 1px solid var(--border); }

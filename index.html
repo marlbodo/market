@@ -72,9 +72,20 @@
           <span class="event-tag tag-subscription">청약</span>
           <span class="event-tag tag-listing">상장</span>
         </div>
-        <div id="ipo-schedule-list">
-          <div class="list-loading">일정을 불러오는 중…</div>
-        </div>
+        <table class="ipo-table">
+          <thead>
+            <tr>
+              <th>일자</th>
+              <th>종목명</th>
+              <th>공모금액</th>
+              <th>구분</th>
+              <th>비고</th>
+            </tr>
+          </thead>
+          <tbody id="ipo-schedule-list">
+            <tr><td colspan="5" class="list-loading">일정을 불러오는 중…</td></tr>
+          </tbody>
+        </table>
       </div>
 
       <div class="panel">

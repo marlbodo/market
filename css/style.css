@@ -168,57 +168,41 @@ img { max-width: 100%; display: block; }
 
 .list-empty, .list-loading { padding: 16px 0; font-size: 12.5px; color: var(--text-faint); }
 
-/* ---------- 주요지표 (좌측, 압축형 한 줄 리스트) ---------- */
-.rate-legend {
-  font-size: 11px;
+/* ---------- 주요금리 (좌측, 표) ---------- */
+.rate-table { width: 100%; border-collapse: collapse; }
+
+.rate-table th {
+  text-align: right;
+  font-weight: 600;
+  font-size: 10px;
   color: var(--text-faint);
-  margin-bottom: 8px;
-}
-
-.rate-row {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--border);
-}
-.rate-row:last-child { border-bottom: none; }
-
-.rate-name-cell {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  overflow: hidden;
-}
-.rate-name-cell .name {
-  font-size: 12.5px;
-  font-weight: 700;
+  padding: 5px 3px 8px;
+  border-bottom: 1px solid var(--border-strong);
   white-space: nowrap;
+}
+.rate-table th:first-child { text-align: left; }
+
+.rate-table td {
+  padding: 8px 3px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.rate-table tr:last-child td { border-bottom: none; }
+
+.rate-td-name {
+  text-align: left !important;
+  font-weight: 700;
+  font-size: 12.5px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.rate-name-cell .date { font-size: 10px; color: var(--text-faint); flex: none; }
+.rate-td-value { font-weight: 800; font-size: 13px; }
 
-.rate-value-cell {
-  flex: none;
-  width: 46px;
-  text-align: right;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.rate-deltas-inline {
-  flex: none;
-  display: flex;
-  gap: 7px;
-  font-size: 10.5px;
-  color: var(--text-faint);
-}
-.rate-deltas-inline .d { white-space: nowrap; }
-.rate-deltas-inline .d.up { color: var(--up); }
-.rate-deltas-inline .d.down { color: var(--down); }
+.rate-td-delta { color: var(--text-faint); }
+.rate-td-delta.up { color: var(--up); }
+.rate-td-delta.down { color: var(--down); }
 
 /* ---------- 공모주 일정 (중앙) ---------- */
 .tag-legend { display: flex; gap: 6px; margin-bottom: 12px; }

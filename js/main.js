@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-02-k (업데이트시각 제거, 타이틀 정리)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-02-m (뉴스 시각 KST 고정)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -145,7 +145,7 @@ async function loadIpoNews() {
       .from('ipo_news')
       .select('id, title, summary, link, article_published_at, created_at')
       .order('article_published_at', { ascending: false })
-      .limit(6);
+      .limit(10);
     if (error) throw error;
     renderNewsList(el, data);
   } catch (err) {

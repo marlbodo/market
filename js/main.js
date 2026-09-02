@@ -1,4 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
+console.log('%c[market] main.js v2026-09-02-c (금리 3자리·날짜범위조회)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -71,18 +72,25 @@ function deltaTd(base, compareRow) {
   const diff = Number(base.value) - Number(compareRow.value);
   const dir = diff > 0 ? 'up' : diff < 0 ? 'down' : '';
   const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '';
-  return `<td class="rate-td-delta ${dir}">${arrow}${Math.abs(diff).toFixed(2)}</td>`;
+  return `<td class="rate-td-delta ${dir}">${arrow}${Math.abs(diff).toFixed(3)}</td>`;
 }
 
 async function loadIndicators() {
   const el = document.getElementById('rate-list');
   const asofEl = document.getElementById('rate-asof');
   try {
+    // 행 개수 제한 대신 날짜 범위(최근 400일)로 가져와서, 지표별 데이터가 많아도
+    // 전월/전년 비교에 필요한 과거 데이터가 밀려나지 않게 함
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 400);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+
     const { data, error } = await db
       .from('interest_rates')
       .select('indicator, date, value')
+      .gte('date', cutoffStr)
       .order('date', { ascending: false })
-      .limit(2000);
+      .limit(10000);
     if (error) throw error;
 
     if (!data || data.length === 0) {
@@ -108,7 +116,7 @@ async function loadIndicators() {
         return `
           <tr>
             <td class="rate-td-name">${escapeHtml(name)}</td>
-            <td class="rate-td-value">${Number(current.value).toFixed(2)}</td>
+            <td class="rate-td-value">${Number(current.value).toFixed(3)}</td>
             ${deltaTd(current, dayRow)}
             ${deltaTd(current, monthRow)}
             ${deltaTd(current, yearRow)}

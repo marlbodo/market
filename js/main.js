@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-02-g (공모주 일정: 연도 제거·비고 툴팁화)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-02-h (공모주 일정 필터 추가)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -215,9 +215,12 @@ function buildIpoEvents(rows) {
   return events;
 }
 
+let ALL_IPO_EVENTS = [];
+let IPO_FILTER = 'all';
+
 function renderIpoEvents(el, events) {
   if (events.length === 0) {
-    el.innerHTML = '<tr><td colspan="4" class="list-empty">예정된 공모주 일정이 없습니다.</td></tr>';
+    el.innerHTML = '<tr><td colspan="4" class="list-empty">해당하는 일정이 없습니다.</td></tr>';
     return;
   }
   el.innerHTML = events.map((ev) => {
@@ -232,6 +235,25 @@ function renderIpoEvents(el, events) {
   }).join('');
 }
 
+function applyIpoFilter() {
+  const el = document.getElementById('ipo-schedule-list');
+  const filtered = IPO_FILTER === 'all' ? ALL_IPO_EVENTS : ALL_IPO_EVENTS.filter((ev) => ev.type === IPO_FILTER);
+  renderIpoEvents(el, filtered);
+}
+
+function setupIpoFilter() {
+  const row = document.getElementById('ipo-filter-row');
+  if (!row) return;
+  row.querySelectorAll('[data-ipo-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      row.querySelectorAll('[data-ipo-filter]').forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      IPO_FILTER = btn.getAttribute('data-ipo-filter');
+      applyIpoFilter();
+    });
+  });
+}
+
 async function loadIpoSchedule() {
   const el = document.getElementById('ipo-schedule-list');
   try {
@@ -240,8 +262,8 @@ async function loadIpoSchedule() {
       .select('*');
     if (error) throw error;
 
-    const events = buildIpoEvents(data || []);
-    renderIpoEvents(el, events);
+    ALL_IPO_EVENTS = buildIpoEvents(data || []);
+    applyIpoFilter();
   } catch (err) {
     console.error('공모주 일정', err);
     const msg = (err && err.message) ? err.message : String(err);
@@ -260,6 +282,7 @@ function setUpdatedAt() {
 // ---------- init ----------
 document.addEventListener('DOMContentLoaded', () => {
   setUpdatedAt();
+  setupIpoFilter();
   loadFinancialNews();
   loadIndicators();
   loadIpoNews();

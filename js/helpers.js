@@ -25,7 +25,7 @@ function escapeHtml(str) {
   }[c]));
 }
 
-// ---------- 뉴스 리스트 공통 렌더러 ----------
+// ---------- 뉴스 리스트 공통 렌더러 (요약/원문보기 버튼을 제목 옆에 배치) ----------
 function renderNewsList(el, rows) {
   if (!rows || rows.length === 0) {
     el.innerHTML = '<li class="list-empty">불러올 뉴스가 없습니다.</li>';
@@ -39,10 +39,12 @@ function renderNewsList(el, rows) {
         <div class="news-row">
           <span class="news-date">${formatDateShort(row.article_published_at || row.created_at)}</span>
           <div class="news-body">
-            <a class="news-title" href="${escapeHtml(row.link)}" target="_blank" rel="noopener">${escapeHtml(row.title)}</a>
-            <div class="news-actions">
-              ${hasSummary ? `<button class="pill-btn" data-summary-toggle="${uid}">요약</button>` : ''}
-              <a class="pill-btn" href="${escapeHtml(row.link)}" target="_blank" rel="noopener">원문보기</a>
+            <div class="news-title-row">
+              <a class="news-title" href="${escapeHtml(row.link)}" target="_blank" rel="noopener">${escapeHtml(row.title)}</a>
+              <div class="news-actions">
+                ${hasSummary ? `<button class="pill-btn" data-summary-toggle="${uid}">요약</button>` : ''}
+                <a class="pill-btn" href="${escapeHtml(row.link)}" target="_blank" rel="noopener">원문보기</a>
+              </div>
             </div>
             ${hasSummary ? `<p class="news-summary" id="summary-${uid}">${escapeHtml(row.summary)}</p>` : ''}
           </div>

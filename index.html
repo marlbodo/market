@@ -67,10 +67,11 @@
         <div class="panel-head">
           <h2><span class="dot"></span>공모주 일정</h2>
         </div>
-        <div class="tag-legend">
-          <span class="event-tag tag-forecast">수요예측</span>
-          <span class="event-tag tag-subscription">청약</span>
-          <span class="event-tag tag-listing">상장</span>
+        <div class="tag-legend" id="ipo-filter-row">
+          <button class="ipo-filter-btn is-active" data-ipo-filter="all">전체</button>
+          <button class="ipo-filter-btn" data-ipo-filter="forecast">수요예측</button>
+          <button class="ipo-filter-btn" data-ipo-filter="subscription">청약</button>
+          <button class="ipo-filter-btn" data-ipo-filter="listing">상장</button>
         </div>
         <table class="ipo-table">
           <thead>

@@ -66,6 +66,7 @@
       <div class="panel">
         <div class="panel-head">
           <h2><span class="dot"></span>공모주 일정</h2>
+          <a href="pages/ipo-schedule-all.html" class="panel-more" id="ipo-schedule-more-link">자세히 보기</a>
         </div>
         <div class="tag-legend" id="ipo-filter-row">
           <button class="ipo-filter-btn is-active" data-ipo-filter="all">전체</button>
@@ -155,6 +156,10 @@
   document.getElementById('news-more-link').addEventListener('click', function (e) {
     e.preventDefault();
     window.open(this.href, 'newsAll', 'width=720,height=880,scrollbars=yes,resizable=yes');
+  });
+  document.getElementById('ipo-schedule-more-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    window.open(this.href, 'ipoScheduleAll', 'width=760,height=880,scrollbars=yes,resizable=yes');
   });
 </script>
 </body>

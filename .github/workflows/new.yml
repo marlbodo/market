@@ -3,7 +3,7 @@ name: Daily Financial News Fetcher
 on:
   workflow_dispatch:
   schedule:
-    - cron: '14 22 * * *' # 매일 아침 7시 14분 (KST 기준)
+    - cron: '08 00 * * *' # 매일 아침 7시 14분 (KST 기준)
 
 jobs:
   run-fetch-news:

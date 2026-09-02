@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>공모주(IPO) 뉴스 전체보기 — 데일리 마켓 브리핑</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  body { background: var(--bg-subtle); }
+  .popup-wrap { max-width: 640px; margin: 0 auto; padding: 20px 20px 40px; }
+  .popup-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 14px; margin-bottom: 8px; border-bottom: 2px solid var(--text);
+  }
+  .popup-head h1 { font-size: 16px; margin: 0; }
+  .popup-close { font-size: 12.5px; color: var(--text-muted); border: 1px solid var(--border-strong); border-radius: var(--radius-s); padding: 4px 10px; }
+  .news-list { background: var(--bg); padding: 0 16px; border: 1px solid var(--border); }
+</style>
+</head>
+<body>
+  <div class="popup-wrap">
+    <div class="popup-head">
+      <h1>공모주(IPO) 뉴스 전체보기</h1>
+      <button class="popup-close" onclick="window.close()">닫기</button>
+    </div>
+    <ul class="news-list" id="news-list-all">
+      <li class="list-loading">뉴스를 불러오는 중…</li>
+    </ul>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-client.js"></script>
+<script src="../js/helpers.js"></script>
+<script>
+  (async function () {
+    const el = document.getElementById('news-list-all');
+    const { data, error } = await db
+      .from('ipo_news')
+      .select('id, title, summary, link, article_published_at, created_at')
+      .order('article_published_at', { ascending: false })
+      .limit(30);
+
+    if (error) {
+      console.error(error);
+      el.innerHTML = '<li class="list-empty">뉴스를 불러오지 못했습니다.</li>';
+      return;
+    }
+    renderNewsList(el, data);
+  })();
+</script>
+</body>
+</html>

@@ -7,6 +7,18 @@ function formatDateShort(iso) {
   return `${mm}.${dd}`;
 }
 
+function formatDateTimeShort(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  // 접속자의 로컬 시간대와 무관하게 항상 한국시간(KST)으로 고정
+  const parts = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(d);
+  const get = (type) => (parts.find((p) => p.type === type) || {}).value || '';
+  return `${get('month')}.${get('day')} ${get('hour')}:${get('minute')}`;
+}
+
 function formatDateFull(dateStr) {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
@@ -37,7 +49,7 @@ function renderNewsList(el, rows) {
     return `
       <li class="news-item">
         <div class="news-row">
-          <span class="news-date">${formatDateShort(row.article_published_at || row.created_at)}</span>
+          <span class="news-date">${formatDateTimeShort(row.article_published_at || row.created_at)}</span>
           <div class="news-body">
             <div class="news-title-row">
               <a class="news-title" href="${escapeHtml(row.link)}" target="_blank" rel="noopener">${escapeHtml(row.title)}</a>

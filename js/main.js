@@ -54,6 +54,18 @@ async function loadFinancialNews() {
   }
 }
 
+// ---------- 주요지표 정렬 순서 ----------
+const RATE_ORDER = [
+  '기준금리', 'CD', '산금6M', '산금1년', '은행AA+1년',
+  '국고3년', '국고5년', '국고10년', '공사3년', '공사5년',
+  '미국정책금리', '미국10년',
+];
+function rateSortKey(name) {
+  const norm = name.replace(/\s+/g, '');
+  const idx = RATE_ORDER.findIndex((k) => norm.includes(k) || k.includes(norm));
+  return idx === -1 ? 999 : idx;
+}
+
 // ---------- 주요지표 현황 (전일·전월말·전년말 대비, 압축형 한 줄) ----------
 function inlineDelta(label, base, compareRow) {
   if (!compareRow) return `<span class="d">${label} -</span>`;
@@ -84,33 +96,37 @@ async function loadIndicators() {
       byIndicator[row.indicator].push(row);
     });
 
-    const rows_html = Object.entries(byIndicator).map(([name, rows]) => {
-      const current = rows[0];
-      const dayRow = rows[1] || null;
+    const rows_html = Object.entries(byIndicator)
+      .sort((a, b) => rateSortKey(a[0]) - rateSortKey(b[0]) || a[0].localeCompare(b[0], 'ko'))
+      .map(([name, rows]) => {
+        const current = rows[0];
+        const dayRow = rows[1] || null;
 
-      const monthTarget = prevMonthEnd(current.date);
-      const monthRow = findOnOrBefore(rows.slice(1), monthTarget);
+        const monthTarget = prevMonthEnd(current.date);
+        const monthRow = findOnOrBefore(rows.slice(1), monthTarget);
 
-      const yearTarget = prevYearEnd(current.date);
-      const yearRow = findOnOrBefore(rows.slice(1), yearTarget);
+        const yearTarget = prevYearEnd(current.date);
+        const yearRow = findOnOrBefore(rows.slice(1), yearTarget);
 
-      return `
-        <div class="rate-row">
-          <div class="rate-name-cell">
-            <span class="name">${escapeHtml(name)}</span>
-            <span class="date">(${formatDateShort(current.date)})</span>
-          </div>
-          <div class="rate-value-cell">${Number(current.value).toFixed(2)}</div>
-          <div class="rate-deltas-inline">
-            ${inlineDelta('일', current, dayRow)}
-            ${inlineDelta('월', current, monthRow)}
-            ${inlineDelta('년', current, yearRow)}
-          </div>
-        </div>`;
-    }).join('');
+        return `
+          <div class="rate-row">
+            <div class="rate-name-cell">
+              <span class="name">${escapeHtml(name)}</span>
+            </div>
+            <div class="rate-value-cell">${Number(current.value).toFixed(2)}</div>
+            <div class="rate-deltas-inline">
+              ${inlineDelta('일', current, dayRow)}
+              ${inlineDelta('월', current, monthRow)}
+              ${inlineDelta('년', current, yearRow)}
+            </div>
+          </div>`;
+      }).join('');
+
+    // 기준일: 각 지표 최신 날짜 중 가장 최근 날짜 하나만 상단에 표시
+    const latestDate = data.reduce((max, r) => (r.date > max ? r.date : max), data[0].date);
 
     el.innerHTML = rows_html
-      ? `<div class="rate-legend">일 · 전일대비 / 월 · 전월말대비 / 년 · 전년말대비</div>${rows_html}`
+      ? `<div class="rate-legend">${formatDateFull(latestDate)} 기준 · 일=전일대비 · 월=전월말대비 · 년=전년말대비</div>${rows_html}`
       : '<div class="list-empty">지표 데이터가 아직 없습니다.</div>';
   } catch (err) {
     showError(el, '주요지표', err);

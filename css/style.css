@@ -168,41 +168,52 @@ img { max-width: 100%; display: block; }
 
 .list-empty, .list-loading { padding: 16px 0; font-size: 12.5px; color: var(--text-faint); }
 
-/* ---------- 주요금리 (좌측, 표) ---------- */
-.rate-table { width: 100%; border-collapse: collapse; }
-
-.rate-table th {
-  text-align: right;
-  font-weight: 600;
-  font-size: 10px;
-  color: var(--text-faint);
-  padding: 5px 3px 8px;
-  border-bottom: 1px solid var(--border-strong);
-  white-space: nowrap;
+/* ---------- 주요금리 (좌측, 격자형 표) ---------- */
+.rate-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border-strong);
+  table-layout: fixed;
 }
-.rate-table th:first-child { text-align: left; }
 
+.rate-table th,
 .rate-table td {
-  padding: 8px 3px;
-  border-bottom: 1px solid var(--border);
-  text-align: right;
-  font-size: 12px;
+  border: 1px solid var(--border);
+  padding: 7px 4px;
+  font-size: 11px;
+  text-align: center;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.rate-table tr:last-child td { border-bottom: none; }
+
+.rate-table thead th {
+  background: var(--bg-subtle);
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  padding: 8px 4px;
+}
+
+.rate-table th:first-child,
+.rate-table td:first-child { width: 26%; }
 
 .rate-td-name {
   text-align: left !important;
   font-weight: 700;
-  font-size: 12.5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 12px;
 }
-.rate-td-value { font-weight: 800; font-size: 13px; }
+.rate-td-value { font-weight: 800; font-size: 12.5px; }
 
 .rate-td-delta { color: var(--text-faint); }
 .rate-td-delta.up { color: var(--up); }
 .rate-td-delta.down { color: var(--down); }
+
+.rate-note {
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
 
 /* ---------- 공모주 일정 (중앙) ---------- */
 .tag-legend { display: flex; gap: 6px; margin-bottom: 12px; }

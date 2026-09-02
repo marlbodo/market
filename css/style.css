@@ -1,284 +1,236 @@
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+// helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
 
-:root {
-  --bg: #ffffff;
-  --bg-subtle: #f6f7f9;
-  --text: #14171f;
-  --text-muted: #6b7280;
-  --text-faint: #9aa0ab;
-  --border: #e6e8ec;
-  --border-strong: #d6dae1;
+const TODAY = new Date().toISOString().slice(0, 10);
 
-  --accent: #16305c;        /* 채권·금리 */
-  --accent-soft: #eaf0fb;
-  --amber: #b7791f;         /* 공모주 */
-  --amber-soft: #fbf0dd;
-  --teal: #0f7a6b;          /* 리서치 */
-  --teal-soft: #e1f3ef;
-
-  --up: #d6483d;
-  --down: #2d6fe0;
-  --radius-s: 3px;
-  --max-width: 1280px;
-  font-variant-numeric: tabular-nums;
+// ---------- 날짜 유틸 ----------
+function dayGap(dateA, dateB) {
+  const a = new Date(`${dateA}T00:00:00`);
+  const b = new Date(`${dateB}T00:00:00`);
+  return Math.round((a - b) / 86400000);
+}
+function dowKo(dateStr) {
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  return days[new Date(`${dateStr}T00:00:00`).getDay()];
+}
+// 기준일이 속한 달의 "전월 말일" (예: 2026-09-01 → 2026-08-31)
+function prevMonthEnd(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  const eom = new Date(d.getFullYear(), d.getMonth(), 0); // day 0 = 이전 달 마지막 날
+  return eom.toISOString().slice(0, 10);
+}
+// 기준일이 속한 연도의 "전년도 12월 31일"
+function prevYearEnd(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  return `${d.getFullYear() - 1}-12-31`;
+}
+// rows는 날짜 내림차순 정렬 상태. targetDate 이하인 것 중 가장 최근(=가장 가까운) 것을 찾음
+function findOnOrBefore(rows, targetDate) {
+  for (const r of rows) {
+    if (r.date <= targetDate) return r;
+  }
+  return null;
 }
 
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 15px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
+// 진단용: 에러가 나면 스피너에 멈춰있지 않고 실제 에러를 화면에 표시
+function showError(el, label, err) {
+  console.error(label, err);
+  const msg = (err && err.message) ? err.message : String(err);
+  el.innerHTML = `<div class="list-empty">⚠ ${label} 실패: ${escapeHtml(msg)}</div>`;
 }
 
-a { color: inherit; text-decoration: none; }
-button { font-family: inherit; cursor: pointer; background: none; border: none; }
-img { max-width: 100%; display: block; }
-
-.wrap { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
-
-/* ---------- Signature bar ---------- */
-.brand-bar { display: flex; height: 4px; }
-.brand-bar span { flex: 1; }
-.brand-bar .c1 { background: var(--accent); }
-.brand-bar .c2 { background: var(--amber); }
-.brand-bar .c3 { background: var(--teal); }
-
-/* ---------- Header ---------- */
-.site-header { border-bottom: 1px solid var(--border); }
-
-.site-header .wrap {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding-top: 22px;
-  padding-bottom: 18px;
-  flex-wrap: wrap;
-  gap: 8px;
+// ---------- 최신 채권·금리 뉴스 ----------
+async function loadFinancialNews() {
+  const el = document.getElementById('news-list');
+  try {
+    const { data, error } = await db
+      .from('financial_news')
+      .select('id, title, summary, link, article_published_at, created_at')
+      .order('article_published_at', { ascending: false })
+      .limit(10);
+    if (error) throw error;
+    renderNewsList(el, data);
+  } catch (err) {
+    showError(el, '채권·금리 뉴스', err);
+  }
 }
 
-.brand { display: flex; align-items: baseline; gap: 10px; }
-.brand-mark { font-size: 21px; font-weight: 800; letter-spacing: -0.02em; color: var(--accent); }
-.brand-tagline { font-size: 13px; color: var(--text-faint); }
-.header-meta { font-size: 12.5px; color: var(--text-faint); }
-
-/* ---------- 3-column layout ---------- */
-.layout {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
-  padding: 36px 0 64px;
-  align-items: start;
+// ---------- 주요지표 현황 (전일·전월말·전년말 대비, 압축형 한 줄) ----------
+function inlineDelta(label, base, compareRow) {
+  if (!compareRow) return `<span class="d">${label} -</span>`;
+  const diff = Number(base.value) - Number(compareRow.value);
+  const dir = diff > 0 ? 'up' : diff < 0 ? 'down' : '';
+  const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '';
+  return `<span class="d ${dir}">${label} ${arrow}${Math.abs(diff).toFixed(2)}</span>`;
 }
 
-.col { min-width: 0; }
+async function loadIndicators() {
+  const el = document.getElementById('rate-list');
+  try {
+    const { data, error } = await db
+      .from('interest_rates')
+      .select('indicator, date, value')
+      .order('date', { ascending: false })
+      .limit(2000);
+    if (error) throw error;
 
-.panel { margin-bottom: 40px; }
-.panel:last-child { margin-bottom: 0; }
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div class="list-empty">지표 데이터가 아직 없습니다.</div>';
+      return;
+    }
 
-.panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--text);
+    const byIndicator = {};
+    data.forEach((row) => {
+      if (!byIndicator[row.indicator]) byIndicator[row.indicator] = [];
+      byIndicator[row.indicator].push(row);
+    });
+
+    const rows_html = Object.entries(byIndicator).map(([name, rows]) => {
+      const current = rows[0];
+      const dayRow = rows[1] || null;
+
+      const monthTarget = prevMonthEnd(current.date);
+      const monthRow = findOnOrBefore(rows.slice(1), monthTarget);
+
+      const yearTarget = prevYearEnd(current.date);
+      const yearRow = findOnOrBefore(rows.slice(1), yearTarget);
+
+      return `
+        <div class="rate-row">
+          <div class="rate-name-cell">
+            <span class="name">${escapeHtml(name)}</span>
+            <span class="date">(${formatDateShort(current.date)})</span>
+          </div>
+          <div class="rate-value-cell">${Number(current.value).toFixed(2)}</div>
+          <div class="rate-deltas-inline">
+            ${inlineDelta('일', current, dayRow)}
+            ${inlineDelta('월', current, monthRow)}
+            ${inlineDelta('년', current, yearRow)}
+          </div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = rows_html
+      ? `<div class="rate-legend">일 · 전일대비 / 월 · 전월말대비 / 년 · 전년말대비</div>${rows_html}`
+      : '<div class="list-empty">지표 데이터가 아직 없습니다.</div>';
+  } catch (err) {
+    showError(el, '주요지표', err);
+  }
 }
 
-.panel-head h2 {
-  font-size: 15.5px;
-  font-weight: 700;
-  margin: 0;
-  letter-spacing: -0.01em;
-  display: flex;
-  align-items: center;
+// ---------- 공모주 뉴스 ----------
+async function loadIpoNews() {
+  const el = document.getElementById('ipo-news-list');
+  try {
+    const { data, error } = await db
+      .from('ipo_news')
+      .select('id, title, summary, link, article_published_at, created_at')
+      .order('article_published_at', { ascending: false })
+      .limit(6);
+    if (error) throw error;
+    renderNewsList(el, data);
+  } catch (err) {
+    showError(el, '공모주 뉴스', err);
+  }
 }
 
-.dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 8px;
-  background: var(--accent);
-}
-.col-ipo .dot { background: var(--amber); }
-.col-research .dot { background: var(--teal); }
+// ---------- 공모주 일정: 오늘 이후 모든 일정(수요예측/청약/상장) ----------
+function buildIpoEvents(rows) {
+  const events = [];
 
-.panel-more {
-  font-size: 12px;
-  color: var(--text-muted);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-s);
-  padding: 4px 10px;
-  flex: none;
-}
-.panel-more:hover { border-color: var(--accent); color: var(--accent); }
+  rows.forEach((r) => {
+    if (r.demand_forecast_start_date && r.demand_forecast_start_date >= TODAY) {
+      events.push({
+        date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측 시작',
+        stock: r.stock_name,
+        sub: r.demand_forecast_end_date ? `~${formatDateFull(r.demand_forecast_end_date)} 마감` : '',
+      });
+    } else if (r.demand_forecast_end_date && r.demand_forecast_end_date >= TODAY) {
+      events.push({
+        date: r.demand_forecast_end_date, type: 'forecast', label: '수요예측 마감',
+        stock: r.stock_name, sub: '',
+      });
+    }
 
-/* ---------- News list ---------- */
-.news-list { list-style: none; margin: 0; padding: 0; }
+    if (r.subscription_start_date && r.subscription_start_date >= TODAY) {
+      events.push({
+        date: r.subscription_start_date, type: 'subscription', label: '청약 시작',
+        stock: r.stock_name,
+        sub: r.subscription_end_date ? `~${formatDateFull(r.subscription_end_date)} 마감` : '',
+      });
+    } else if (r.subscription_end_date && r.subscription_end_date >= TODAY) {
+      events.push({
+        date: r.subscription_end_date, type: 'subscription', label: '청약 마감',
+        stock: r.stock_name, sub: '',
+      });
+    }
 
-.news-item { padding: 13px 0; border-bottom: 1px solid var(--border); }
-.news-item:first-child { padding-top: 0; }
+    if (r.listing_date && r.listing_date >= TODAY) {
+      let sub = '';
+      if (r.confirmed_price) sub = `확정가 ${formatNumber(r.confirmed_price)}원`;
+      else if (r.price_band_low && r.price_band_high) sub = `밴드 ${formatNumber(r.price_band_low)}~${formatNumber(r.price_band_high)}원`;
+      events.push({ date: r.listing_date, type: 'listing', label: '상장일', stock: r.stock_name, sub });
+    }
+  });
 
-.news-row { display: flex; align-items: flex-start; gap: 12px; }
-
-.news-date { flex: none; width: 40px; padding-top: 2px; font-size: 11.5px; color: var(--text-faint); }
-
-.news-body { flex: 1; min-width: 0; }
-
-.news-title-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.news-title { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.45; color: var(--text); display: block; }
-.news-title:hover { color: var(--accent); }
-
-.news-actions { flex: none; display: flex; gap: 6px; margin-top: 1px; }
-
-.pill-btn {
-  font-size: 11.5px;
-  color: var(--text-muted);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-s);
-  padding: 3px 8px;
-}
-.pill-btn:hover { border-color: var(--accent); color: var(--accent); }
-.pill-btn.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-.news-summary {
-  display: none;
-  margin: 9px 0 0;
-  padding: 10px 11px;
-  background: var(--bg-subtle);
-  border-left: 2px solid var(--accent);
-  font-size: 12.5px;
-  color: var(--text-muted);
-  line-height: 1.55;
-}
-.news-summary.is-open { display: block; }
-
-.list-empty, .list-loading { padding: 16px 0; font-size: 12.5px; color: var(--text-faint); }
-
-/* ---------- 주요지표 (좌측) ---------- */
-.rate-card { padding: 15px 0; border-bottom: 1px solid var(--border); }
-.rate-card:first-child { padding-top: 0; }
-
-.rate-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-.rate-name { font-size: 13.5px; font-weight: 700; }
-.rate-value { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
-
-.rate-deltas {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-.rate-delta {
-  background: var(--bg-subtle);
-  border-radius: var(--radius-s);
-  padding: 6px 4px;
-  text-align: center;
-}
-.rate-delta .label { font-size: 10px; color: var(--text-faint); margin-bottom: 3px; }
-.rate-delta .val { font-size: 12px; font-weight: 700; color: var(--text-muted); }
-.rate-delta.up .val { color: var(--up); }
-.rate-delta.down .val { color: var(--down); }
-
-.rate-date { margin-top: 9px; font-size: 11px; color: var(--text-faint); }
-
-/* ---------- 공모주 일정 (중앙) ---------- */
-.tag-legend { display: flex; gap: 6px; margin-bottom: 12px; }
-
-.event-tag {
-  flex: none;
-  font-size: 10.5px;
-  font-weight: 700;
-  padding: 3px 7px;
-  border-radius: var(--radius-s);
-}
-.tag-forecast { background: var(--amber-soft); color: var(--amber); }
-.tag-subscription { background: var(--teal-soft); color: var(--teal); }
-.tag-listing { background: var(--accent-soft); color: var(--accent); }
-
-.event-date-head {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-  padding: 14px 0 7px;
-  border-top: 1px solid var(--border);
-}
-.event-date-head:first-child { border-top: none; padding-top: 0; }
-.event-dow { font-weight: 400; color: var(--text-faint); }
-
-.event-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
-.event-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.event-stock { font-size: 13px; font-weight: 600; }
-.event-sub { font-size: 11px; color: var(--text-faint); }
-
-/* ---------- Sidebar (우) ---------- */
-.research-card { padding: 14px 0; border-bottom: 1px solid var(--border); }
-.research-card:first-child { padding-top: 0; }
-.research-kicker { font-size: 11px; color: var(--teal); font-weight: 700; margin-bottom: 5px; }
-.research-title { font-size: 13px; font-weight: 600; line-height: 1.4; margin-bottom: 5px; }
-.research-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
-
-.app-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 13px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-  margin-bottom: 10px;
-}
-.app-card:hover { border-color: var(--teal); }
-.app-name { font-size: 13px; font-weight: 600; }
-.app-desc { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
-.app-go {
-  flex: none;
-  font-size: 11.5px;
-  color: var(--teal);
-  border: 1px solid var(--teal);
-  border-radius: var(--radius-s);
-  padding: 5px 9px;
-}
-.app-go:hover { background: var(--teal); color: #fff; }
-
-/* ---------- Footer ---------- */
-.site-footer {
-  border-top: 1px solid var(--border);
-  padding: 22px 0 40px;
-  font-size: 12px;
-  color: var(--text-faint);
+  events.sort((a, b) => {
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return a.stock.localeCompare(b.stock, 'ko');
+  });
+  return events;
 }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; gap: 8px; }
-  .panel { margin-bottom: 32px; }
+function renderIpoEvents(el, events) {
+  if (events.length === 0) {
+    el.innerHTML = '<div class="list-empty">예정된 공모주 일정이 없습니다.</div>';
+    return;
+  }
+  let html = '';
+  let lastDate = null;
+  events.forEach((ev) => {
+    if (ev.date !== lastDate) {
+      html += `<div class="event-date-head">${formatDateFull(ev.date)} <span class="event-dow">(${dowKo(ev.date)})</span></div>`;
+      lastDate = ev.date;
+    }
+    html += `
+      <div class="event-row">
+        <span class="event-tag tag-${ev.type}">${ev.label}</span>
+        <div class="event-body">
+          <span class="event-stock">${escapeHtml(ev.stock)}</span>
+          ${ev.sub ? `<span class="event-sub">${escapeHtml(ev.sub)}</span>` : ''}
+        </div>
+      </div>`;
+  });
+  el.innerHTML = html;
 }
 
-@media (max-width: 480px) {
-  .wrap { padding: 0 16px; }
-  .rate-deltas { gap: 4px; }
-  .news-title-row { flex-direction: column; gap: 6px; }
+async function loadIpoSchedule() {
+  const el = document.getElementById('ipo-schedule-list');
+  try {
+    const { data, error } = await db
+      .from('ipo_schedule')
+      .select('*');
+    if (error) throw error;
+
+    const events = buildIpoEvents(data || []);
+    renderIpoEvents(el, events);
+  } catch (err) {
+    showError(el, '공모주 일정', err);
+  }
 }
 
-/* ---------- Focus ---------- */
-a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+// ---------- 헤더 업데이트 시각 ----------
+function setUpdatedAt() {
+  const el = document.getElementById('updated-at');
+  if (!el) return;
+  const now = new Date();
+  el.textContent = `업데이트 ${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} 기준`;
+}
 
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+// ---------- init ----------
+document.addEventListener('DOMContentLoaded', () => {
+  setUpdatedAt();
+  loadFinancialNews();
+  loadIndicators();
+  loadIpoNews();
+  loadIpoSchedule();
+});

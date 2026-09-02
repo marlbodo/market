@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-02-c (금리 3자리·날짜범위조회)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-02-d (지표별 targeted 조회로 전년대비 수정)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -22,13 +22,6 @@ function firstOfMonth(dateStr) {
 function firstOfYear(dateStr) {
   const d = new Date(`${dateStr}T00:00:00`);
   return `${d.getFullYear()}-01-01`;
-}
-// rows는 날짜 내림차순 정렬 상태. thresholdDate보다 "작은" 날짜 중 가장 큰(=가장 가까운) 것을 찾음
-function latestBefore(rows, thresholdDate) {
-  for (const r of rows) {
-    if (r.date < thresholdDate) return r;
-  }
-  return null;
 }
 
 // 진단용: 에러가 나면 스피너에 멈춰있지 않고 실제 에러를 화면에 표시
@@ -79,52 +72,60 @@ async function loadIndicators() {
   const el = document.getElementById('rate-list');
   const asofEl = document.getElementById('rate-asof');
   try {
-    // 행 개수 제한 대신 날짜 범위(최근 400일)로 가져와서, 지표별 데이터가 많아도
-    // 전월/전년 비교에 필요한 과거 데이터가 밀려나지 않게 함
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 400);
-    const cutoffStr = cutoff.toISOString().slice(0, 10);
-
-    const { data, error } = await db
+    // 1) 지표별 "현재값" 가져오기 (모든 지표가 최신일자를 공유한다고 가정, 여유 있게 60행)
+    const { data: latestRows, error: latestErr } = await db
       .from('interest_rates')
       .select('indicator, date, value')
-      .gte('date', cutoffStr)
       .order('date', { ascending: false })
-      .limit(10000);
-    if (error) throw error;
+      .limit(60);
+    if (latestErr) throw latestErr;
 
-    if (!data || data.length === 0) {
+    if (!latestRows || latestRows.length === 0) {
       el.innerHTML = '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
       if (asofEl) asofEl.textContent = '-';
       return;
     }
 
-    const byIndicator = {};
-    data.forEach((row) => {
-      if (!byIndicator[row.indicator]) byIndicator[row.indicator] = [];
-      byIndicator[row.indicator].push(row);
+    const currentByIndicator = {};
+    latestRows.forEach((row) => {
+      if (!currentByIndicator[row.indicator]) currentByIndicator[row.indicator] = row; // 먼저 나온(=가장 최신) 것만 유지
     });
+    const indicatorList = Object.entries(currentByIndicator); // [ [name, currentRow], ... ]
 
-    const rows_html = Object.entries(byIndicator)
-      .sort((a, b) => rateSortKey(a[0]) - rateSortKey(b[0]) || a[0].localeCompare(b[0], 'ko'))
-      .map(([name, rows]) => {
-        const current = rows[0];
-        const dayRow = latestBefore(rows, current.date);
-        const monthRow = latestBefore(rows, firstOfMonth(current.date));
-        const yearRow = latestBefore(rows, firstOfYear(current.date));
+    // 2) 지표 하나당, 특정 날짜보다 "작은" 날짜 중 가장 큰 값을 정확히 targeted 조회
+    const fetchBefore = async (name, thresholdDate) => {
+      const { data, error } = await db
+        .from('interest_rates')
+        .select('date, value')
+        .eq('indicator', name)
+        .lt('date', thresholdDate)
+        .order('date', { ascending: false })
+        .limit(1);
+      if (error) { console.error('fetchBefore', name, error); return null; }
+      return (data && data[0]) ? data[0] : null;
+    };
 
-        return `
-          <tr>
-            <td class="rate-td-name">${escapeHtml(name)}</td>
-            <td class="rate-td-value">${Number(current.value).toFixed(3)}</td>
-            ${deltaTd(current, dayRow)}
-            ${deltaTd(current, monthRow)}
-            ${deltaTd(current, yearRow)}
-          </tr>`;
-      }).join('');
+    const results = await Promise.all(indicatorList.map(async ([name, current]) => {
+      const [dayRow, monthRow, yearRow] = await Promise.all([
+        fetchBefore(name, current.date),
+        fetchBefore(name, firstOfMonth(current.date)),
+        fetchBefore(name, firstOfYear(current.date)),
+      ]);
+      return { name, current, dayRow, monthRow, yearRow };
+    }));
 
-    // 기준일: 각 지표 최신 날짜 중 가장 최근 날짜 하나 (헤더 오른쪽에 표시)
-    const latestDate = data.reduce((max, r) => (r.date > max ? r.date : max), data[0].date);
+    results.sort((a, b) => rateSortKey(a.name) - rateSortKey(b.name) || a.name.localeCompare(b.name, 'ko'));
+
+    const rows_html = results.map((r) => `
+      <tr>
+        <td class="rate-td-name">${escapeHtml(r.name)}</td>
+        <td class="rate-td-value">${Number(r.current.value).toFixed(3)}</td>
+        ${deltaTd(r.current, r.dayRow)}
+        ${deltaTd(r.current, r.monthRow)}
+        ${deltaTd(r.current, r.yearRow)}
+      </tr>`).join('');
+
+    const latestDate = indicatorList.reduce((max, [, row]) => (row.date > max ? row.date : max), indicatorList[0][1].date);
     if (asofEl) asofEl.textContent = `${formatDateFull(latestDate)} 기준`;
 
     el.innerHTML = rows_html || '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';

@@ -3,7 +3,7 @@ name: Daily IPO News Fetcher
 on:
   workflow_dispatch:
   schedule:
-    - cron: '06 00 * * *' # 매일 아침 7시 37분 (KST 기준)
+    - cron: '37 18 * * *' # 매일 아침 7시 37분 (KST 기준)
 
 jobs:
   run-fetch-ipo-news:

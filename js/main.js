@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-02-i (수요예측시작·청약마감만 표시, 필터버튼 색상)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-02-j (표 줄무늬·호버, 일정 개수 표시)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -231,8 +231,10 @@ function renderIpoEvents(el, events) {
 
 function applyIpoFilter() {
   const el = document.getElementById('ipo-schedule-list');
+  const countEl = document.getElementById('ipo-count');
   const filtered = IPO_FILTER === 'all' ? ALL_IPO_EVENTS : ALL_IPO_EVENTS.filter((ev) => ev.type === IPO_FILTER);
   renderIpoEvents(el, filtered);
+  if (countEl) countEl.textContent = `일정: ${filtered.length}개`;
 }
 
 function setupIpoFilter() {

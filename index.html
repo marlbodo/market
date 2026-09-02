@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마켓노트 — 채권·금리·공모주 브리핑</title>
+<meta name="description" content="매일 아침 채권·금리·공모주 뉴스를 한 페이지에서 확인하는 마켓노트">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <div class="brand">
+      <span class="brand-mark">마켓노트</span>
+      <span class="brand-tagline">채권 · 금리 · 공모주 데일리 브리핑</span>
+    </div>
+    <div class="header-meta" id="updated-at"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout">
+
+    <!-- ===== Main column ===== -->
+    <main class="main-col">
+
+      <section class="panel" id="news">
+        <div class="panel-head">
+          <h2>최신 금융 뉴스</h2>
+          <a href="pages/news-all.html" class="panel-more" id="news-more-link">더보기</a>
+        </div>
+        <ul class="news-list" id="news-list">
+          <li class="list-loading">뉴스를 불러오는 중…</li>
+        </ul>
+      </section>
+
+      <section class="panel" id="rates">
+        <div class="panel-head">
+          <h2>주요지표 현황</h2>
+        </div>
+        <div class="indicator-grid" id="indicator-grid">
+          <div class="list-loading">지표를 불러오는 중…</div>
+        </div>
+      </section>
+
+      <section class="panel" id="ipo">
+        <div class="panel-head">
+          <h2>공모주 소식</h2>
+        </div>
+
+        <div class="tab-row">
+          <button class="tab-btn is-active" data-ipo-tab="tab-ipo-news">공모주 뉴스</button>
+          <button class="tab-btn" data-ipo-tab="tab-ipo-schedule">공모주 일정</button>
+        </div>
+
+        <div class="tab-panel is-active" id="tab-ipo-news">
+          <ul class="news-list" id="ipo-news-list">
+            <li class="list-loading">공모주 뉴스를 불러오는 중…</li>
+          </ul>
+        </div>
+
+        <div class="tab-panel" id="tab-ipo-schedule">
+          <table class="ipo-table">
+            <thead>
+              <tr>
+                <th>종목명</th>
+                <th>공모가 밴드</th>
+                <th>청약기간</th>
+                <th>상장일</th>
+                <th>청약경쟁률</th>
+              </tr>
+            </thead>
+            <tbody id="ipo-schedule-body">
+              <tr><td colspan="5" class="list-loading">일정을 불러오는 중…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ===== Sidebar ===== -->
+    <aside class="side-col">
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>리서치센터</h2>
+        </div>
+        <div class="research-card">
+          <div class="research-kicker">금리 리포트</div>
+          <div class="research-title">국고채 3년물, 연내 추가 인하 반영 속도</div>
+          <div class="research-desc">최근 금통위 의사록 톤 변화와 시장금리 반영 속도를 짚어본 주간 요약입니다.</div>
+        </div>
+        <div class="research-card">
+          <div class="research-kicker">AI 인사이트</div>
+          <div class="research-title">이번 주 채권시장 리스크 3가지</div>
+          <div class="research-desc">환율 변동성, 발행 물량, 해외 장기금리 흐름을 AI가 자동으로 정리한 요약입니다.</div>
+        </div>
+        <div class="research-card">
+          <div class="research-kicker">공모주 분석</div>
+          <div class="research-title">최근 공모주 시장 온도 점검</div>
+          <div class="research-desc">최근 상장 종목들의 수요예측·상장 첫날 성적을 모아 정리한 자료입니다.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>유용한 앱</h2>
+        </div>
+        <a class="app-card" href="apps/repo-fund-simulator.html">
+          <div>
+            <div class="app-name">레포펀드 시뮬레이터</div>
+            <div class="app-desc">투자 기간·금리로 예상 수익을 계산해보세요</div>
+          </div>
+          <span class="app-go">바로가기</span>
+        </a>
+      </section>
+
+    </aside>
+
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    마켓노트는 공개 뉴스와 공시 데이터를 자동으로 수집·요약합니다. 투자 판단의 참고 자료이며, 투자 권유가 아닙니다.
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/helpers.js"></script>
+<script src="js/main.js"></script>
+<script>
+  // 더보기 버튼: 새 창(팝업)으로 전체 리스트 열기
+  document.getElementById('news-more-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    window.open(this.href, 'newsAll', 'width=720,height=880,scrollbars=yes,resizable=yes');
+  });
+</script>
+</body>
+</html>

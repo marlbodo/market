@@ -3,17 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>마켓노트 — 채권·금리·공모주 브리핑</title>
-<meta name="description" content="매일 아침 채권·금리·공모주 뉴스를 한 페이지에서 확인하는 마켓노트">
+<title>데일리 마켓 브리핑</title>
+<meta name="description" content="채권·금리·공모주·리서치를 한 번에 보는 데일리 마켓 브리핑">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
+<div class="brand-bar"><span class="c1"></span><span class="c2"></span><span class="c3"></span></div>
+
 <header class="site-header">
   <div class="wrap">
     <div class="brand">
-      <span class="brand-mark">마켓노트</span>
-      <span class="brand-tagline">채권 · 금리 · 공모주 데일리 브리핑</span>
+      <span class="brand-mark">데일리 마켓 브리핑</span>
+      <span class="brand-tagline">채권 · 금리 · 공모주 · 리서치</span>
     </div>
     <div class="header-meta" id="updated-at"></div>
   </div>
@@ -22,70 +24,64 @@
 <div class="wrap">
   <div class="layout">
 
-    <!-- ===== Main column ===== -->
-    <main class="main-col">
+    <!-- ===== 좌: 채권·금리 ===== -->
+    <section class="col col-rate">
 
-      <section class="panel" id="news">
+      <div class="panel">
         <div class="panel-head">
-          <h2>최신 금융 뉴스</h2>
+          <h2><span class="dot"></span>주요지표 현황</h2>
+        </div>
+        <div id="rate-list">
+          <div class="list-loading">지표를 불러오는 중…</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2><span class="dot"></span>최신 채권·금리 뉴스</h2>
           <a href="pages/news-all.html" class="panel-more" id="news-more-link">더보기</a>
         </div>
         <ul class="news-list" id="news-list">
           <li class="list-loading">뉴스를 불러오는 중…</li>
         </ul>
-      </section>
+      </div>
 
-      <section class="panel" id="rates">
+    </section>
+
+    <!-- ===== 중: 공모주 ===== -->
+    <section class="col col-ipo">
+
+      <div class="panel">
         <div class="panel-head">
-          <h2>주요지표 현황</h2>
+          <h2><span class="dot"></span>공모주 뉴스</h2>
         </div>
-        <div class="indicator-grid" id="indicator-grid">
-          <div class="list-loading">지표를 불러오는 중…</div>
-        </div>
-      </section>
+        <ul class="news-list" id="ipo-news-list">
+          <li class="list-loading">공모주 뉴스를 불러오는 중…</li>
+        </ul>
+      </div>
 
-      <section class="panel" id="ipo">
+      <div class="panel">
         <div class="panel-head">
-          <h2>공모주 소식</h2>
+          <h2><span class="dot"></span>공모주 일정</h2>
         </div>
-
-        <div class="tab-row">
-          <button class="tab-btn is-active" data-ipo-tab="tab-ipo-news">공모주 뉴스</button>
-          <button class="tab-btn" data-ipo-tab="tab-ipo-schedule">공모주 일정</button>
+        <div class="tag-legend">
+          <span class="event-tag tag-forecast">수요예측</span>
+          <span class="event-tag tag-subscription">청약</span>
+          <span class="event-tag tag-listing">상장</span>
         </div>
-
-        <div class="tab-panel is-active" id="tab-ipo-news">
-          <ul class="news-list" id="ipo-news-list">
-            <li class="list-loading">공모주 뉴스를 불러오는 중…</li>
-          </ul>
+        <div id="ipo-schedule-list">
+          <div class="list-loading">일정을 불러오는 중…</div>
         </div>
+      </div>
 
-        <div class="tab-panel" id="tab-ipo-schedule">
-          <table class="ipo-table">
-            <thead>
-              <tr>
-                <th>종목명</th>
-                <th>공모가 밴드</th>
-                <th>청약기간</th>
-                <th>상장일</th>
-                <th>청약경쟁률</th>
-              </tr>
-            </thead>
-            <tbody id="ipo-schedule-body">
-              <tr><td colspan="5" class="list-loading">일정을 불러오는 중…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+    </section>
 
-    </main>
+    <!-- ===== 우: 리서치센터 / 유용한 앱 ===== -->
+    <aside class="col col-research">
 
-    <!-- ===== Sidebar ===== -->
-    <aside class="side-col">
-
-      <section class="panel">
+      <div class="panel">
         <div class="panel-head">
-          <h2>리서치센터</h2>
+          <h2><span class="dot"></span>리서치센터</h2>
         </div>
         <div class="research-card">
           <div class="research-kicker">금리 리포트</div>
@@ -102,11 +98,11 @@
           <div class="research-title">최근 공모주 시장 온도 점검</div>
           <div class="research-desc">최근 상장 종목들의 수요예측·상장 첫날 성적을 모아 정리한 자료입니다.</div>
         </div>
-      </section>
+      </div>
 
-      <section class="panel">
+      <div class="panel">
         <div class="panel-head">
-          <h2>유용한 앱</h2>
+          <h2><span class="dot"></span>유용한 앱</h2>
         </div>
         <a class="app-card" href="apps/repo-fund-simulator.html">
           <div>
@@ -115,7 +111,7 @@
           </div>
           <span class="app-go">바로가기</span>
         </a>
-      </section>
+      </div>
 
     </aside>
 
@@ -124,7 +120,7 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    마켓노트는 공개 뉴스와 공시 데이터를 자동으로 수집·요약합니다. 투자 판단의 참고 자료이며, 투자 권유가 아닙니다.
+    데일리 마켓 브리핑은 공개 뉴스와 공시 데이터를 자동으로 수집·요약합니다. 투자 판단의 참고 자료이며, 투자 권유가 아닙니다.
   </div>
 </footer>
 
@@ -133,7 +129,6 @@
 <script src="js/helpers.js"></script>
 <script src="js/main.js"></script>
 <script>
-  // 더보기 버튼: 새 창(팝업)으로 전체 리스트 열기
   document.getElementById('news-more-link').addEventListener('click', function (e) {
     e.preventDefault();
     window.open(this.href, 'newsAll', 'width=720,height=880,scrollbars=yes,resizable=yes');

@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-02-f (확약률 %표기 수정)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-02-g (공모주 일정: 연도 제거·비고 툴팁화)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -156,7 +156,7 @@ async function loadIpoNews() {
 // ---------- 공모주 일정: 오늘 이후 모든 일정(수요예측/청약/상장) — 표 형식 ----------
 function formatEok(n) {
   if (n === null || n === undefined) return '-';
-  return `${formatNumber(n)}억원`;
+  return `${Math.round(Number(n)).toLocaleString('ko-KR')}억원`;
 }
 function formatRatio(n, suffix) {
   if (n === null || n === undefined) return null;
@@ -217,17 +217,19 @@ function buildIpoEvents(rows) {
 
 function renderIpoEvents(el, events) {
   if (events.length === 0) {
-    el.innerHTML = '<tr><td colspan="5" class="list-empty">예정된 공모주 일정이 없습니다.</td></tr>';
+    el.innerHTML = '<tr><td colspan="4" class="list-empty">예정된 공모주 일정이 없습니다.</td></tr>';
     return;
   }
-  el.innerHTML = events.map((ev) => `
+  el.innerHTML = events.map((ev) => {
+    const titleAttr = ev.note ? ` title="${escapeHtml(ev.note)}"` : '';
+    return `
     <tr>
-      <td class="ipo-td-date">${formatDateFull(ev.date)}<span class="ipo-td-dow">(${dowKo(ev.date)})</span></td>
-      <td class="ipo-td-stock">${escapeHtml(ev.stock)}</td>
-      <td class="ipo-td-amount">${formatEok(ev.amount)}</td>
-      <td class="ipo-td-type"><span class="event-tag tag-${ev.type}">${ev.label}</span></td>
-      <td class="ipo-td-note">${ev.note ? escapeHtml(ev.note) : '-'}</td>
-    </tr>`).join('');
+      <td class="ipo-td-date"${titleAttr}>${formatDateShort(ev.date)}(${dowKo(ev.date)})</td>
+      <td class="ipo-td-stock"${titleAttr}>${escapeHtml(ev.stock)}</td>
+      <td class="ipo-td-amount"${titleAttr}>${formatEok(ev.amount)}</td>
+      <td class="ipo-td-type"${titleAttr}><span class="event-tag tag-${ev.type}">${ev.label}</span></td>
+    </tr>`;
+  }).join('');
 }
 
 async function loadIpoSchedule() {
@@ -243,7 +245,7 @@ async function loadIpoSchedule() {
   } catch (err) {
     console.error('공모주 일정', err);
     const msg = (err && err.message) ? err.message : String(err);
-    el.innerHTML = `<tr><td colspan="5" class="list-empty">⚠ 공모주 일정 실패: ${escapeHtml(msg)}</td></tr>`;
+    el.innerHTML = `<tr><td colspan="4" class="list-empty">⚠ 공모주 일정 실패: ${escapeHtml(msg)}</td></tr>`;
   }
 }
 

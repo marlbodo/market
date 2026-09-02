@@ -1,7 +1,7 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
 console.log('%c[market] main.js v2026-09-02-m (뉴스 시각 KST 고정)', 'color:#16305c;font-weight:bold');
 
-const TODAY = new Date().toISOString().slice(0, 10);
+const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 
 // ---------- 날짜 유틸 ----------
 function dayGap(dateA, dateB) {

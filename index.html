@@ -129,7 +129,7 @@
         <div class="panel-head">
           <h2><span class="dot"></span>유용한 앱(준비중)</h2>
         </div>
-        <a class="app-card" href="apps/repo-fund-simulator.html">
+        <a class="app-card" href="apps/repo-fund-simulator.html" id="repo-fund-link">
           <div>
             <div class="app-name">레포펀드 시뮬레이터</div>
             <div class="app-desc">투자 기간·금리로 예상 수익을 계산해보세요</div>
@@ -165,6 +165,10 @@
   document.getElementById('ipo-news-more-link').addEventListener('click', function (e) {
     e.preventDefault();
     window.open(this.href, 'ipoNewsAll', 'width=720,height=880,scrollbars=yes,resizable=yes');
+  });
+  document.getElementById('repo-fund-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    window.open(this.href, 'repoFundSimulator', 'width=480,height=720,scrollbars=yes,resizable=yes');
   });
 </script>
 </body>

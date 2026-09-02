@@ -20,6 +20,8 @@
   --down: #2d6fe0;
   --radius-s: 3px;
   --max-width: 1280px;
+  --bg-zebra: #f7f8fa;
+  --bg-hover: #eef1f6;
   font-variant-numeric: tabular-nums;
 }
 
@@ -209,6 +211,9 @@ img { max-width: 100%; display: block; }
 .rate-td-delta.up { color: var(--up); }
 .rate-td-delta.down { color: var(--down); }
 
+.rate-table tbody tr:nth-child(even) td { background: var(--bg-zebra); }
+.rate-table tbody tr:hover td { background: var(--bg-hover); }
+
 .rate-note {
   margin-top: 6px;
   font-size: 10.5px;
@@ -216,7 +221,9 @@ img { max-width: 100%; display: block; }
 }
 
 /* ---------- 공모주 일정 (중앙) ---------- */
-.tag-legend { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.tag-legend { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+
+.ipo-count { margin-left: auto; font-size: 11.5px; color: var(--text-faint); font-weight: 600; }
 
 .ipo-filter-btn {
   font-size: 11px;
@@ -290,7 +297,8 @@ img { max-width: 100%; display: block; }
 .ipo-table th:nth-child(3), .ipo-table td:nth-child(3) { width: 19%; }
 .ipo-table th:nth-child(4), .ipo-table td:nth-child(4) { width: 25%; }
 
-.ipo-table tbody tr:hover td { background: var(--bg-subtle); }
+.ipo-table tbody tr:nth-child(even) td { background: var(--bg-zebra); }
+.ipo-table tbody tr:hover td { background: var(--bg-hover); }
 .ipo-table tbody td[title] { cursor: help; }
 
 .ipo-td-date { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; text-align: center; }

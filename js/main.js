@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-02-h (공모주 일정 필터 추가)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-02-i (수요예측시작·청약마감만 표시, 필터버튼 색상)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -174,25 +174,19 @@ function buildIpoEvents(rows) {
   rows.forEach((r) => {
     const base = { stock: r.stock_name, amount: r.offering_amount_eok };
 
-    // 수요예측
+    // 수요예측 시작만 표시
     if (r.demand_forecast_start_date && r.demand_forecast_start_date >= TODAY) {
       events.push({ ...base, date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측 시작', note: '' });
-    } else if (r.demand_forecast_end_date && r.demand_forecast_end_date >= TODAY) {
-      events.push({ ...base, date: r.demand_forecast_end_date, type: 'forecast', label: '수요예측 마감', note: '' });
     }
 
-    // 청약: 기관경쟁률 · 확약률
-    const subNoteParts = [];
-    const inst = formatRatio(r.institutional_competition_rate, ':1');
-    const lockup = formatPercent(r.lockup_commitment_ratio);
-    if (inst) subNoteParts.push(`기관경쟁률 ${inst}`);
-    if (lockup) subNoteParts.push(`확약률 ${lockup}`);
-    const subNote = subNoteParts.join(' · ');
-
-    if (r.subscription_start_date && r.subscription_start_date >= TODAY) {
-      events.push({ ...base, date: r.subscription_start_date, type: 'subscription', label: '청약 시작', note: subNote });
-    } else if (r.subscription_end_date && r.subscription_end_date >= TODAY) {
-      events.push({ ...base, date: r.subscription_end_date, type: 'subscription', label: '청약 마감', note: subNote });
+    // 청약 마감만 표시 (기관경쟁률 · 확약률)
+    if (r.subscription_end_date && r.subscription_end_date >= TODAY) {
+      const subNoteParts = [];
+      const inst = formatRatio(r.institutional_competition_rate, ':1');
+      const lockup = formatPercent(r.lockup_commitment_ratio);
+      if (inst) subNoteParts.push(`기관경쟁률 ${inst}`);
+      if (lockup) subNoteParts.push(`확약률 ${lockup}`);
+      events.push({ ...base, date: r.subscription_end_date, type: 'subscription', label: '청약 마감', note: subNoteParts.join(' · ') });
     }
 
     // 상장: 기관경쟁률 · 확약률 · 청약(개인)경쟁률

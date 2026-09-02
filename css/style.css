@@ -216,7 +216,22 @@ img { max-width: 100%; display: block; }
 }
 
 /* ---------- 공모주 일정 (중앙) ---------- */
-.tag-legend { display: flex; gap: 6px; margin-bottom: 12px; }
+.tag-legend { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+
+.ipo-filter-btn {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  background: var(--bg);
+}
+.ipo-filter-btn:hover { border-color: var(--text-faint); }
+.ipo-filter-btn.is-active[data-ipo-filter="all"] { background: var(--text); border-color: var(--text); color: #fff; }
+.ipo-filter-btn.is-active[data-ipo-filter="forecast"] { background: var(--amber); border-color: var(--amber); color: #fff; }
+.ipo-filter-btn.is-active[data-ipo-filter="subscription"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+.ipo-filter-btn.is-active[data-ipo-filter="listing"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 .event-tag {
   flex: none;
@@ -264,10 +279,10 @@ img { max-width: 100%; display: block; }
   font-size: 10.5px;
   text-align: center;
 }
-.ipo-table th:nth-child(1), .ipo-table td:nth-child(1) { width: 22%; }
-.ipo-table th:nth-child(2), .ipo-table td:nth-child(2) { width: 30%; }
-.ipo-table th:nth-child(3), .ipo-table td:nth-child(3) { width: 25%; }
-.ipo-table th:nth-child(4), .ipo-table td:nth-child(4) { width: 23%; }
+.ipo-table th:nth-child(1), .ipo-table td:nth-child(1) { width: 18%; }
+.ipo-table th:nth-child(2), .ipo-table td:nth-child(2) { width: 38%; }
+.ipo-table th:nth-child(3), .ipo-table td:nth-child(3) { width: 19%; }
+.ipo-table th:nth-child(4), .ipo-table td:nth-child(4) { width: 25%; }
 
 .ipo-table tbody tr:hover td { background: var(--bg-subtle); }
 .ipo-table tbody td[title] { cursor: help; }

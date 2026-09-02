@@ -130,7 +130,7 @@ img { max-width: 100%; display: block; }
 
 .news-row { display: flex; align-items: flex-start; gap: 12px; }
 
-.news-date { flex: none; width: 40px; padding-top: 2px; font-size: 11.5px; color: var(--text-faint); }
+.news-date { flex: none; width: 62px; padding-top: 2px; font-size: 11px; color: var(--text-faint); line-height: 1.3; }
 
 .news-body { flex: 1; min-width: 0; }
 

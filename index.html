@@ -14,10 +14,9 @@
 <header class="site-header">
   <div class="wrap">
     <div class="brand">
-      <span class="brand-mark">데일리 마켓 브리핑</span>
+      <a href="index.html" class="brand-mark">데일리 마켓 브리핑</a>
       <span class="brand-tagline">채권 · 금리 · 공모주 · 리서치</span>
     </div>
-    <div class="header-meta" id="updated-at"></div>
   </div>
 </header>
 
@@ -50,7 +49,7 @@
 
       <div class="panel">
         <div class="panel-head">
-          <h2><span class="dot"></span>최신 채권·금리 뉴스</h2>
+          <h2><span class="dot"></span>채권(금리) 뉴스</h2>
           <a href="pages/news-all.html" class="panel-more" id="news-more-link">더보기</a>
         </div>
         <ul class="news-list" id="news-list">
@@ -65,7 +64,7 @@
 
       <div class="panel">
         <div class="panel-head">
-          <h2><span class="dot"></span>공모주 일정</h2>
+          <h2><span class="dot"></span>공모주(IPO) 일정</h2>
           <a href="pages/ipo-schedule-all.html" class="panel-more" id="ipo-schedule-more-link">자세히 보기</a>
         </div>
         <div class="tag-legend" id="ipo-filter-row">
@@ -92,7 +91,8 @@
 
       <div class="panel">
         <div class="panel-head">
-          <h2><span class="dot"></span>공모주 뉴스</h2>
+          <h2><span class="dot"></span>공모주(IPO) 뉴스</h2>
+          <a href="pages/ipo-news-all.html" class="panel-more" id="ipo-news-more-link">더보기</a>
         </div>
         <ul class="news-list" id="ipo-news-list">
           <li class="list-loading">공모주 뉴스를 불러오는 중…</li>
@@ -106,7 +106,7 @@
 
       <div class="panel">
         <div class="panel-head">
-          <h2><span class="dot"></span>리서치센터</h2>
+          <h2><span class="dot"></span>리서치센터(준비중)</h2>
         </div>
         <div class="research-card">
           <div class="research-kicker">금리 리포트</div>
@@ -127,14 +127,13 @@
 
       <div class="panel">
         <div class="panel-head">
-          <h2><span class="dot"></span>유용한 앱</h2>
+          <h2><span class="dot"></span>유용한 앱(준비중)</h2>
         </div>
         <a class="app-card" href="apps/repo-fund-simulator.html">
           <div>
             <div class="app-name">레포펀드 시뮬레이터</div>
             <div class="app-desc">투자 기간·금리로 예상 수익을 계산해보세요</div>
           </div>
-          <span class="app-go">바로가기</span>
         </a>
       </div>
 
@@ -145,7 +144,8 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    데일리 마켓 브리핑은 공개 뉴스와 공시 데이터를 자동으로 수집·요약합니다. 투자 판단의 참고 자료이며, 투자 권유가 아닙니다.
+    데일리 마켓 브리핑은 공개 뉴스와 공시 데이터를 자동으로 수집·요약합니다. 투자 판단의 참고 자료이며, 투자 권유가 아닙니다.<br>
+    <a href="https://marlbodo.github.io/market">https://marlbodo.github.io/market</a>
   </div>
 </footer>
 
@@ -161,6 +161,10 @@
   document.getElementById('ipo-schedule-more-link').addEventListener('click', function (e) {
     e.preventDefault();
     window.open(this.href, 'ipoScheduleAll', 'width=760,height=880,scrollbars=yes,resizable=yes');
+  });
+  document.getElementById('ipo-news-more-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    window.open(this.href, 'ipoNewsAll', 'width=720,height=880,scrollbars=yes,resizable=yes');
   });
 </script>
 </body>

@@ -4,8 +4,10 @@
   --bg: #ffffff;
   --bg-subtle: #f6f7f9;
   --text: #14171f;
-  --text-muted: #6b7280;
-  --text-faint: #9aa0ab;
+  /* 수정 */
+  --text-muted: #2b2e34;
+  --text-faint: #494c53;
+  
   --border: #e6e8ec;
   --border-strong: #d6dae1;
 

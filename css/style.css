@@ -227,7 +227,13 @@ img { max-width: 100%; display: block; }
   color: var(--text-muted);
   background: var(--bg);
 }
-.ipo-filter-btn:hover { border-color: var(--text-faint); }
+.ipo-filter-btn:hover { filter: brightness(0.97); }
+
+.ipo-filter-btn[data-ipo-filter="all"] { border-color: var(--border-strong); color: var(--text-muted); }
+.ipo-filter-btn[data-ipo-filter="forecast"] { border-color: var(--amber); color: var(--amber); background: var(--amber-soft); }
+.ipo-filter-btn[data-ipo-filter="subscription"] { border-color: var(--teal); color: var(--teal); background: var(--teal-soft); }
+.ipo-filter-btn[data-ipo-filter="listing"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
 .ipo-filter-btn.is-active[data-ipo-filter="all"] { background: var(--text); border-color: var(--text); color: #fff; }
 .ipo-filter-btn.is-active[data-ipo-filter="forecast"] { background: var(--amber); border-color: var(--amber); color: #fff; }
 .ipo-filter-btn.is-active[data-ipo-filter="subscription"] { background: var(--teal); border-color: var(--teal); color: #fff; }

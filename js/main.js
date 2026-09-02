@@ -12,21 +12,20 @@ function dowKo(dateStr) {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   return days[new Date(`${dateStr}T00:00:00`).getDay()];
 }
-// 기준일이 속한 달의 "전월 말일" (예: 2026-09-01 → 2026-08-31)
-function prevMonthEnd(dateStr) {
+// 기준일이 속한 달의 1일 (예: 2026-09-01 → 2026-09-01, 2026-09-15 → 2026-09-01)
+function firstOfMonth(dateStr) {
   const d = new Date(`${dateStr}T00:00:00`);
-  const eom = new Date(d.getFullYear(), d.getMonth(), 0); // day 0 = 이전 달 마지막 날
-  return eom.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
-// 기준일이 속한 연도의 "전년도 12월 31일"
-function prevYearEnd(dateStr) {
+// 기준일이 속한 연도의 1월 1일
+function firstOfYear(dateStr) {
   const d = new Date(`${dateStr}T00:00:00`);
-  return `${d.getFullYear() - 1}-12-31`;
+  return `${d.getFullYear()}-01-01`;
 }
-// rows는 날짜 내림차순 정렬 상태. targetDate 이하인 것 중 가장 최근(=가장 가까운) 것을 찾음
-function findOnOrBefore(rows, targetDate) {
+// rows는 날짜 내림차순 정렬 상태. thresholdDate보다 "작은" 날짜 중 가장 큰(=가장 가까운) 것을 찾음
+function latestBefore(rows, thresholdDate) {
   for (const r of rows) {
-    if (r.date <= targetDate) return r;
+    if (r.date < thresholdDate) return r;
   }
   return null;
 }
@@ -102,13 +101,9 @@ async function loadIndicators() {
       .sort((a, b) => rateSortKey(a[0]) - rateSortKey(b[0]) || a[0].localeCompare(b[0], 'ko'))
       .map(([name, rows]) => {
         const current = rows[0];
-        const dayRow = rows[1] || null;
-
-        const monthTarget = prevMonthEnd(current.date);
-        const monthRow = findOnOrBefore(rows.slice(1), monthTarget);
-
-        const yearTarget = prevYearEnd(current.date);
-        const yearRow = findOnOrBefore(rows.slice(1), yearTarget);
+        const dayRow = latestBefore(rows, current.date);
+        const monthRow = latestBefore(rows, firstOfMonth(current.date));
+        const yearRow = latestBefore(rows, firstOfYear(current.date));
 
         return `
           <tr>

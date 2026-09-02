@@ -3,16 +3,6 @@
 const TODAY = new Date().toISOString().slice(0, 10);
 
 // ---------- 날짜 유틸 ----------
-function addMonths(dateStr, delta) {
-  const d = new Date(`${dateStr}T00:00:00`);
-  d.setMonth(d.getMonth() + delta);
-  return d.toISOString().slice(0, 10);
-}
-function addYears(dateStr, delta) {
-  const d = new Date(`${dateStr}T00:00:00`);
-  d.setFullYear(d.getFullYear() + delta);
-  return d.toISOString().slice(0, 10);
-}
 function dayGap(dateA, dateB) {
   const a = new Date(`${dateA}T00:00:00`);
   const b = new Date(`${dateB}T00:00:00`);
@@ -22,7 +12,18 @@ function dowKo(dateStr) {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   return days[new Date(`${dateStr}T00:00:00`).getDay()];
 }
-// rows는 날짜 내림차순 정렬 상태. targetDate 이하인 것 중 가장 최근 것을 찾음
+// 기준일이 속한 달의 "전월 말일" (예: 2026-09-01 → 2026-08-31)
+function prevMonthEnd(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  const eom = new Date(d.getFullYear(), d.getMonth(), 0); // day 0 = 이전 달 마지막 날
+  return eom.toISOString().slice(0, 10);
+}
+// 기준일이 속한 연도의 "전년도 12월 31일"
+function prevYearEnd(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  return `${d.getFullYear() - 1}-12-31`;
+}
+// rows는 날짜 내림차순 정렬 상태. targetDate 이하인 것 중 가장 최근(=가장 가까운) 것을 찾음
 function findOnOrBefore(rows, targetDate) {
   for (const r of rows) {
     if (r.date <= targetDate) return r;
@@ -53,15 +54,13 @@ async function loadFinancialNews() {
   }
 }
 
-// ---------- 주요지표 현황 (전일·전월·전년 대비) ----------
-function deltaCell(label, base, compareRow) {
-  if (!compareRow) {
-    return `<div class="rate-delta"><div class="label">${label}</div><div class="val">-</div></div>`;
-  }
+// ---------- 주요지표 현황 (전일·전월말·전년말 대비, 압축형 한 줄) ----------
+function inlineDelta(label, base, compareRow) {
+  if (!compareRow) return `<span class="d">${label} -</span>`;
   const diff = Number(base.value) - Number(compareRow.value);
   const dir = diff > 0 ? 'up' : diff < 0 ? 'down' : '';
-  const sign = diff > 0 ? '+' : '';
-  return `<div class="rate-delta ${dir}"><div class="label">${label}</div><div class="val">${sign}${diff.toFixed(2)}</div></div>`;
+  const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '';
+  return `<span class="d ${dir}">${label} ${arrow}${Math.abs(diff).toFixed(2)}</span>`;
 }
 
 async function loadIndicators() {
@@ -85,35 +84,34 @@ async function loadIndicators() {
       byIndicator[row.indicator].push(row);
     });
 
-    const cards = Object.entries(byIndicator).map(([name, rows]) => {
+    const rows_html = Object.entries(byIndicator).map(([name, rows]) => {
       const current = rows[0];
       const dayRow = rows[1] || null;
-      const dayLabel = (dayRow && dayGap(current.date, dayRow.date) > 3)
-        ? `${dayGap(current.date, dayRow.date)}일전대비`
-        : '전일대비';
 
-      const monthTarget = addMonths(current.date, -1);
+      const monthTarget = prevMonthEnd(current.date);
       const monthRow = findOnOrBefore(rows.slice(1), monthTarget);
 
-      const yearTarget = addYears(current.date, -1);
+      const yearTarget = prevYearEnd(current.date);
       const yearRow = findOnOrBefore(rows.slice(1), yearTarget);
 
       return `
-        <div class="rate-card">
-          <div class="rate-top">
-            <span class="rate-name">${escapeHtml(name)}</span>
-            <span class="rate-value">${Number(current.value).toFixed(2)}%</span>
+        <div class="rate-row">
+          <div class="rate-name-cell">
+            <span class="name">${escapeHtml(name)}</span>
+            <span class="date">(${formatDateShort(current.date)})</span>
           </div>
-          <div class="rate-deltas">
-            ${deltaCell(dayLabel, current, dayRow)}
-            ${deltaCell('전월대비', current, monthRow)}
-            ${deltaCell('전년대비', current, yearRow)}
+          <div class="rate-value-cell">${Number(current.value).toFixed(2)}</div>
+          <div class="rate-deltas-inline">
+            ${inlineDelta('일', current, dayRow)}
+            ${inlineDelta('월', current, monthRow)}
+            ${inlineDelta('년', current, yearRow)}
           </div>
-          <div class="rate-date">${formatDateFull(current.date)} 기준</div>
         </div>`;
     }).join('');
 
-    el.innerHTML = cards || '<div class="list-empty">지표 데이터가 아직 없습니다.</div>';
+    el.innerHTML = rows_html
+      ? `<div class="rate-legend">일 · 전일대비 / 월 · 전월말대비 / 년 · 전년말대비</div>${rows_html}`
+      : '<div class="list-empty">지표 데이터가 아직 없습니다.</div>';
   } catch (err) {
     showError(el, '주요지표', err);
   }

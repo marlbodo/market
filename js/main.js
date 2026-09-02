@@ -66,17 +66,18 @@ function rateSortKey(name) {
   return idx === -1 ? 999 : idx;
 }
 
-// ---------- 주요지표 현황 (전일·전월말·전년말 대비, 압축형 한 줄) ----------
-function inlineDelta(label, base, compareRow) {
-  if (!compareRow) return `<span class="d">${label} -</span>`;
+// ---------- 주요금리 (전일·전월말·전년말 대비, 표 형태) ----------
+function deltaTd(base, compareRow) {
+  if (!compareRow) return '<td class="rate-td-delta">-</td>';
   const diff = Number(base.value) - Number(compareRow.value);
   const dir = diff > 0 ? 'up' : diff < 0 ? 'down' : '';
   const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '';
-  return `<span class="d ${dir}">${label} ${arrow}${Math.abs(diff).toFixed(2)}</span>`;
+  return `<td class="rate-td-delta ${dir}">${arrow}${Math.abs(diff).toFixed(2)}</td>`;
 }
 
 async function loadIndicators() {
   const el = document.getElementById('rate-list');
+  const asofEl = document.getElementById('rate-asof');
   try {
     const { data, error } = await db
       .from('interest_rates')
@@ -86,7 +87,8 @@ async function loadIndicators() {
     if (error) throw error;
 
     if (!data || data.length === 0) {
-      el.innerHTML = '<div class="list-empty">지표 데이터가 아직 없습니다.</div>';
+      el.innerHTML = '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
+      if (asofEl) asofEl.textContent = '-';
       return;
     }
 
@@ -109,27 +111,25 @@ async function loadIndicators() {
         const yearRow = findOnOrBefore(rows.slice(1), yearTarget);
 
         return `
-          <div class="rate-row">
-            <div class="rate-name-cell">
-              <span class="name">${escapeHtml(name)}</span>
-            </div>
-            <div class="rate-value-cell">${Number(current.value).toFixed(2)}</div>
-            <div class="rate-deltas-inline">
-              ${inlineDelta('일', current, dayRow)}
-              ${inlineDelta('월', current, monthRow)}
-              ${inlineDelta('년', current, yearRow)}
-            </div>
-          </div>`;
+          <tr>
+            <td class="rate-td-name">${escapeHtml(name)}</td>
+            <td class="rate-td-value">${Number(current.value).toFixed(2)}</td>
+            ${deltaTd(current, dayRow)}
+            ${deltaTd(current, monthRow)}
+            ${deltaTd(current, yearRow)}
+          </tr>`;
       }).join('');
 
-    // 기준일: 각 지표 최신 날짜 중 가장 최근 날짜 하나만 상단에 표시
+    // 기준일: 각 지표 최신 날짜 중 가장 최근 날짜 하나 (헤더 오른쪽에 표시)
     const latestDate = data.reduce((max, r) => (r.date > max ? r.date : max), data[0].date);
+    if (asofEl) asofEl.textContent = `${formatDateFull(latestDate)} 기준`;
 
-    el.innerHTML = rows_html
-      ? `<div class="rate-legend">${formatDateFull(latestDate)} 기준 · 일=전일대비 · 월=전월말대비 · 년=전년말대비</div>${rows_html}`
-      : '<div class="list-empty">지표 데이터가 아직 없습니다.</div>';
+    el.innerHTML = rows_html || '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
   } catch (err) {
-    showError(el, '주요지표', err);
+    console.error('주요금리', err);
+    if (asofEl) asofEl.textContent = '오류';
+    const msg = (err && err.message) ? err.message : String(err);
+    el.innerHTML = `<tr><td colspan="5" class="list-empty">⚠ 주요금리 실패: ${escapeHtml(msg)}</td></tr>`;
   }
 }
 

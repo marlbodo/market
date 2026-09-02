@@ -30,21 +30,27 @@ function findOnOrBefore(rows, targetDate) {
   return null;
 }
 
+// 진단용: 에러가 나면 스피너에 멈춰있지 않고 실제 에러를 화면에 표시
+function showError(el, label, err) {
+  console.error(label, err);
+  const msg = (err && err.message) ? err.message : String(err);
+  el.innerHTML = `<div class="list-empty">⚠ ${label} 실패: ${escapeHtml(msg)}</div>`;
+}
+
 // ---------- 최신 채권·금리 뉴스 ----------
 async function loadFinancialNews() {
   const el = document.getElementById('news-list');
-  const { data, error } = await db
-    .from('financial_news')
-    .select('id, title, summary, link, article_published_at, created_at')
-    .order('article_published_at', { ascending: false })
-    .limit(8);
-
-  if (error) {
-    console.error(error);
-    el.innerHTML = '<li class="list-empty">뉴스를 불러오지 못했습니다.</li>';
-    return;
+  try {
+    const { data, error } = await db
+      .from('financial_news')
+      .select('id, title, summary, link, article_published_at, created_at')
+      .order('article_published_at', { ascending: false })
+      .limit(10);
+    if (error) throw error;
+    renderNewsList(el, data);
+  } catch (err) {
+    showError(el, '채권·금리 뉴스', err);
   }
-  renderNewsList(el, data);
 }
 
 // ---------- 주요지표 현황 (전일·전월·전년 대비) ----------
@@ -60,70 +66,73 @@ function deltaCell(label, base, compareRow) {
 
 async function loadIndicators() {
   const el = document.getElementById('rate-list');
-  const { data, error } = await db
-    .from('interest_rates')
-    .select('indicator, date, value')
-    .order('date', { ascending: false })
-    .limit(2000);
+  try {
+    const { data, error } = await db
+      .from('interest_rates')
+      .select('indicator, date, value')
+      .order('date', { ascending: false })
+      .limit(2000);
+    if (error) throw error;
 
-  if (error || !data || data.length === 0) {
-    console.error(error);
-    el.innerHTML = '<div class="list-empty">지표 데이터가 없습니다.</div>';
-    return;
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div class="list-empty">지표 데이터가 아직 없습니다.</div>';
+      return;
+    }
+
+    const byIndicator = {};
+    data.forEach((row) => {
+      if (!byIndicator[row.indicator]) byIndicator[row.indicator] = [];
+      byIndicator[row.indicator].push(row);
+    });
+
+    const cards = Object.entries(byIndicator).map(([name, rows]) => {
+      const current = rows[0];
+      const dayRow = rows[1] || null;
+      const dayLabel = (dayRow && dayGap(current.date, dayRow.date) > 3)
+        ? `${dayGap(current.date, dayRow.date)}일전대비`
+        : '전일대비';
+
+      const monthTarget = addMonths(current.date, -1);
+      const monthRow = findOnOrBefore(rows.slice(1), monthTarget);
+
+      const yearTarget = addYears(current.date, -1);
+      const yearRow = findOnOrBefore(rows.slice(1), yearTarget);
+
+      return `
+        <div class="rate-card">
+          <div class="rate-top">
+            <span class="rate-name">${escapeHtml(name)}</span>
+            <span class="rate-value">${Number(current.value).toFixed(2)}%</span>
+          </div>
+          <div class="rate-deltas">
+            ${deltaCell(dayLabel, current, dayRow)}
+            ${deltaCell('전월대비', current, monthRow)}
+            ${deltaCell('전년대비', current, yearRow)}
+          </div>
+          <div class="rate-date">${formatDateFull(current.date)} 기준</div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = cards || '<div class="list-empty">지표 데이터가 아직 없습니다.</div>';
+  } catch (err) {
+    showError(el, '주요지표', err);
   }
-
-  const byIndicator = {};
-  data.forEach((row) => {
-    if (!byIndicator[row.indicator]) byIndicator[row.indicator] = [];
-    byIndicator[row.indicator].push(row);
-  });
-
-  const cards = Object.entries(byIndicator).map(([name, rows]) => {
-    const current = rows[0];
-    const dayRow = rows[1] || null;
-    const dayLabel = dayRow && dayGap(current.date, dayRow.date) > 3
-      ? `${dayGap(current.date, dayRow.date)}일전대비`
-      : '전일대비';
-
-    const monthTarget = addMonths(current.date, -1);
-    const monthRow = findOnOrBefore(rows.slice(1), monthTarget);
-
-    const yearTarget = addYears(current.date, -1);
-    const yearRow = findOnOrBefore(rows.slice(1), yearTarget);
-
-    return `
-      <div class="rate-card">
-        <div class="rate-top">
-          <span class="rate-name">${escapeHtml(name)}</span>
-          <span class="rate-value">${Number(current.value).toFixed(2)}%</span>
-        </div>
-        <div class="rate-deltas">
-          ${deltaCell(dayLabel, current, dayRow)}
-          ${deltaCell('전월대비', current, monthRow)}
-          ${deltaCell('전년대비', current, yearRow)}
-        </div>
-        <div class="rate-date">${formatDateFull(current.date)} 기준</div>
-      </div>`;
-  }).join('');
-
-  el.innerHTML = cards || '<div class="list-empty">지표 데이터가 없습니다.</div>';
 }
 
 // ---------- 공모주 뉴스 ----------
 async function loadIpoNews() {
   const el = document.getElementById('ipo-news-list');
-  const { data, error } = await db
-    .from('ipo_news')
-    .select('id, title, summary, link, article_published_at, created_at')
-    .order('article_published_at', { ascending: false })
-    .limit(6);
-
-  if (error) {
-    console.error(error);
-    el.innerHTML = '<li class="list-empty">공모주 뉴스를 불러오지 못했습니다.</li>';
-    return;
+  try {
+    const { data, error } = await db
+      .from('ipo_news')
+      .select('id, title, summary, link, article_published_at, created_at')
+      .order('article_published_at', { ascending: false })
+      .limit(6);
+    if (error) throw error;
+    renderNewsList(el, data);
+  } catch (err) {
+    showError(el, '공모주 뉴스', err);
   }
-  renderNewsList(el, data);
 }
 
 // ---------- 공모주 일정: 오늘 이후 모든 일정(수요예측/청약/상장) ----------
@@ -131,7 +140,6 @@ function buildIpoEvents(rows) {
   const events = [];
 
   rows.forEach((r) => {
-    // 수요예측
     if (r.demand_forecast_start_date && r.demand_forecast_start_date >= TODAY) {
       events.push({
         date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측 시작',
@@ -145,7 +153,6 @@ function buildIpoEvents(rows) {
       });
     }
 
-    // 청약
     if (r.subscription_start_date && r.subscription_start_date >= TODAY) {
       events.push({
         date: r.subscription_start_date, type: 'subscription', label: '청약 시작',
@@ -159,7 +166,6 @@ function buildIpoEvents(rows) {
       });
     }
 
-    // 상장
     if (r.listing_date && r.listing_date >= TODAY) {
       let sub = '';
       if (r.confirmed_price) sub = `확정가 ${formatNumber(r.confirmed_price)}원`;
@@ -201,18 +207,17 @@ function renderIpoEvents(el, events) {
 
 async function loadIpoSchedule() {
   const el = document.getElementById('ipo-schedule-list');
-  const { data, error } = await db
-    .from('ipo_schedule')
-    .select('*');
+  try {
+    const { data, error } = await db
+      .from('ipo_schedule')
+      .select('*');
+    if (error) throw error;
 
-  if (error || !data) {
-    console.error(error);
-    el.innerHTML = '<div class="list-empty">공모주 일정을 불러오지 못했습니다.</div>';
-    return;
+    const events = buildIpoEvents(data || []);
+    renderIpoEvents(el, events);
+  } catch (err) {
+    showError(el, '공모주 일정', err);
   }
-
-  const events = buildIpoEvents(data);
-  renderIpoEvents(el, events);
 }
 
 // ---------- 헤더 업데이트 시각 ----------

@@ -34,14 +34,26 @@
   .detail-table th:nth-child(3), .detail-table td:nth-child(3) { width: 13%; white-space: nowrap; text-align: right; color: var(--text-muted); }
   .detail-table th:nth-child(4), .detail-table td:nth-child(4) { width: 16%; text-align: center; }
   .detail-table th:nth-child(5), .detail-table td:nth-child(5) { width: 36%; color: var(--text-muted); }
+
+  .detail-table tbody tr:nth-child(even) td { background: var(--bg-zebra); }
+  .detail-table tbody tr:hover td { background: var(--bg-hover); }
 </style>
 </head>
 <body>
   <div class="popup-wrap">
     <div class="popup-head">
-      <h1>공모주 일정 전체보기 (오늘 이후)</h1>
+      <h1>공모주 일정 전체보기</h1>
       <button class="popup-close" onclick="window.close()">닫기</button>
     </div>
+
+    <div class="tag-legend" id="detail-filter-row">
+      <button class="ipo-filter-btn is-active" data-ipo-filter="all">전체</button>
+      <button class="ipo-filter-btn" data-ipo-filter="forecast">수요예측</button>
+      <button class="ipo-filter-btn" data-ipo-filter="subscription">청약</button>
+      <button class="ipo-filter-btn" data-ipo-filter="listing">상장</button>
+      <span class="ipo-count" id="detail-count">일정: -</span>
+    </div>
+
     <table class="detail-table">
       <thead>
         <tr>
@@ -63,6 +75,8 @@
 <script src="../js/helpers.js"></script>
 <script>
   const TODAY = new Date().toISOString().slice(0, 10);
+  let ALL_DETAIL_EVENTS = [];
+  let DETAIL_FILTER = 'all';
 
   function dowKo(dateStr) {
     const days = ['일', '월', '화', '수', '목', '금', '토'];
@@ -131,7 +145,7 @@
 
   function renderDetail(el, events) {
     if (events.length === 0) {
-      el.innerHTML = '<tr><td colspan="5" class="list-empty">예정된 공모주 일정이 없습니다.</td></tr>';
+      el.innerHTML = '<tr><td colspan="5" class="list-empty">해당하는 일정이 없습니다.</td></tr>';
       return;
     }
     el.innerHTML = events.map((ev) => `
@@ -144,12 +158,30 @@
       </tr>`).join('');
   }
 
+  function applyDetailFilter() {
+    const el = document.getElementById('detail-body');
+    const countEl = document.getElementById('detail-count');
+    const filtered = DETAIL_FILTER === 'all' ? ALL_DETAIL_EVENTS : ALL_DETAIL_EVENTS.filter((ev) => ev.type === DETAIL_FILTER);
+    renderDetail(el, filtered);
+    if (countEl) countEl.textContent = `일정: ${filtered.length}개`;
+  }
+
+  document.getElementById('detail-filter-row').querySelectorAll('[data-ipo-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#detail-filter-row [data-ipo-filter]').forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      DETAIL_FILTER = btn.getAttribute('data-ipo-filter');
+      applyDetailFilter();
+    });
+  });
+
   (async function () {
     const el = document.getElementById('detail-body');
     try {
       const { data, error } = await db.from('ipo_schedule').select('*');
       if (error) throw error;
-      renderDetail(el, buildAllIpoEvents(data || []));
+      ALL_DETAIL_EVENTS = buildAllIpoEvents(data || []);
+      applyDetailFilter();
     } catch (err) {
       console.error(err);
       el.innerHTML = `<tr><td colspan="5" class="list-empty">⚠ 불러오기 실패: ${escapeHtml(err.message || String(err))}</td></tr>`;

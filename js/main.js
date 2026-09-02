@@ -56,9 +56,9 @@ async function loadFinancialNews() {
 
 // ---------- 주요지표 정렬 순서 ----------
 const RATE_ORDER = [
-  '기준금리', 'CD', '산금6M', '산금1년', '은행AA+1년',
-  '국고3년', '국고5년', '국고10년', '공사3년', '공사5년',
-  '미국정책금리', '미국10년',
+  '기준금리', 'CD', '산금6M', '산금1Y', '은행AA+1Y',
+  '국고3Y', '국고5Y', '국고10Y', '공사3Y', '공사5Y',
+  '미국정책금리', '미국10Y',
 ];
 function rateSortKey(name) {
   const norm = name.replace(/\s+/g, '');

@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-02-d (지표별 targeted 조회로 전년대비 수정)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-02-f (확약률 %표기 수정)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -153,42 +153,58 @@ async function loadIpoNews() {
   }
 }
 
-// ---------- 공모주 일정: 오늘 이후 모든 일정(수요예측/청약/상장) ----------
+// ---------- 공모주 일정: 오늘 이후 모든 일정(수요예측/청약/상장) — 표 형식 ----------
+function formatEok(n) {
+  if (n === null || n === undefined) return '-';
+  return `${formatNumber(n)}억원`;
+}
+function formatRatio(n, suffix) {
+  if (n === null || n === undefined) return null;
+  return `${Number(n).toLocaleString('ko-KR')}${suffix}`;
+}
+function formatPercent(n) {
+  if (n === null || n === undefined) return null;
+  // DB에 저장된 값 자체가 이미 %값 (예: 0.17 → 0.17%)
+  return `${Number(n).toFixed(2)}%`;
+}
+
 function buildIpoEvents(rows) {
   const events = [];
 
   rows.forEach((r) => {
+    const base = { stock: r.stock_name, amount: r.offering_amount_eok };
+
+    // 수요예측
     if (r.demand_forecast_start_date && r.demand_forecast_start_date >= TODAY) {
-      events.push({
-        date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측 시작',
-        stock: r.stock_name,
-        sub: r.demand_forecast_end_date ? `~${formatDateFull(r.demand_forecast_end_date)} 마감` : '',
-      });
+      events.push({ ...base, date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측 시작', note: '' });
     } else if (r.demand_forecast_end_date && r.demand_forecast_end_date >= TODAY) {
-      events.push({
-        date: r.demand_forecast_end_date, type: 'forecast', label: '수요예측 마감',
-        stock: r.stock_name, sub: '',
-      });
+      events.push({ ...base, date: r.demand_forecast_end_date, type: 'forecast', label: '수요예측 마감', note: '' });
     }
+
+    // 청약: 기관경쟁률 · 확약률
+    const subNoteParts = [];
+    const inst = formatRatio(r.institutional_competition_rate, ':1');
+    const lockup = formatPercent(r.lockup_commitment_ratio);
+    if (inst) subNoteParts.push(`기관경쟁률 ${inst}`);
+    if (lockup) subNoteParts.push(`확약률 ${lockup}`);
+    const subNote = subNoteParts.join(' · ');
 
     if (r.subscription_start_date && r.subscription_start_date >= TODAY) {
-      events.push({
-        date: r.subscription_start_date, type: 'subscription', label: '청약 시작',
-        stock: r.stock_name,
-        sub: r.subscription_end_date ? `~${formatDateFull(r.subscription_end_date)} 마감` : '',
-      });
+      events.push({ ...base, date: r.subscription_start_date, type: 'subscription', label: '청약 시작', note: subNote });
     } else if (r.subscription_end_date && r.subscription_end_date >= TODAY) {
-      events.push({
-        date: r.subscription_end_date, type: 'subscription', label: '청약 마감',
-        stock: r.stock_name, sub: '',
-      });
+      events.push({ ...base, date: r.subscription_end_date, type: 'subscription', label: '청약 마감', note: subNote });
     }
 
+    // 상장: 기관경쟁률 · 확약률 · 청약(개인)경쟁률
     if (r.listing_date && r.listing_date >= TODAY) {
-      let sub = '';
-      if (r.confirmed_price) sub = `확정가 ${formatNumber(r.confirmed_price)}원`;
-      else if (r.price_band_low && r.price_band_high) sub = `밴드 ${formatNumber(r.price_band_low)}~${formatNumber(r.price_band_high)}원`;
-      events.push({ date: r.listing_date, type: 'listing', label: '상장일', stock: r.stock_name, sub });
+      const listNoteParts = [];
+      const inst2 = formatRatio(r.institutional_competition_rate, ':1');
+      const lockup2 = formatPercent(r.lockup_commitment_ratio);
+      const sub2 = formatRatio(r.subscription_competition_rate, ':1');
+      if (inst2) listNoteParts.push(`기관경쟁률 ${inst2}`);
+      if (lockup2) listNoteParts.push(`확약률 ${lockup2}`);
+      if (sub2) listNoteParts.push(`청약경쟁률 ${sub2}`);
+      events.push({ ...base, date: r.listing_date, type: 'listing', label: '상장', note: listNoteParts.join(' · ') });
     }
   });
 
@@ -201,26 +217,17 @@ function buildIpoEvents(rows) {
 
 function renderIpoEvents(el, events) {
   if (events.length === 0) {
-    el.innerHTML = '<div class="list-empty">예정된 공모주 일정이 없습니다.</div>';
+    el.innerHTML = '<tr><td colspan="5" class="list-empty">예정된 공모주 일정이 없습니다.</td></tr>';
     return;
   }
-  let html = '';
-  let lastDate = null;
-  events.forEach((ev) => {
-    if (ev.date !== lastDate) {
-      html += `<div class="event-date-head">${formatDateFull(ev.date)} <span class="event-dow">(${dowKo(ev.date)})</span></div>`;
-      lastDate = ev.date;
-    }
-    html += `
-      <div class="event-row">
-        <span class="event-tag tag-${ev.type}">${ev.label}</span>
-        <div class="event-body">
-          <span class="event-stock">${escapeHtml(ev.stock)}</span>
-          ${ev.sub ? `<span class="event-sub">${escapeHtml(ev.sub)}</span>` : ''}
-        </div>
-      </div>`;
-  });
-  el.innerHTML = html;
+  el.innerHTML = events.map((ev) => `
+    <tr>
+      <td class="ipo-td-date">${formatDateFull(ev.date)}<span class="ipo-td-dow">(${dowKo(ev.date)})</span></td>
+      <td class="ipo-td-stock">${escapeHtml(ev.stock)}</td>
+      <td class="ipo-td-amount">${formatEok(ev.amount)}</td>
+      <td class="ipo-td-type"><span class="event-tag tag-${ev.type}">${ev.label}</span></td>
+      <td class="ipo-td-note">${ev.note ? escapeHtml(ev.note) : '-'}</td>
+    </tr>`).join('');
 }
 
 async function loadIpoSchedule() {
@@ -234,7 +241,9 @@ async function loadIpoSchedule() {
     const events = buildIpoEvents(data || []);
     renderIpoEvents(el, events);
   } catch (err) {
-    showError(el, '공모주 일정', err);
+    console.error('공모주 일정', err);
+    const msg = (err && err.message) ? err.message : String(err);
+    el.innerHTML = `<tr><td colspan="5" class="list-empty">⚠ 공모주 일정 실패: ${escapeHtml(msg)}</td></tr>`;
   }
 }
 

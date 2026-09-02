@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-02-m (뉴스 시각 KST 고정)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-03 (금리표 기준일 헤더 이동)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 
@@ -70,7 +70,7 @@ function deltaTd(base, compareRow) {
 
 async function loadIndicators() {
   const el = document.getElementById('rate-list');
-  const asofEl = document.getElementById('rate-asof');
+  const dateThEl = document.getElementById('rate-date-th');
   try {
     // 1) 지표별 "현재값" 가져오기 (모든 지표가 최신일자를 공유한다고 가정, 여유 있게 60행)
     const { data: latestRows, error: latestErr } = await db
@@ -82,7 +82,7 @@ async function loadIndicators() {
 
     if (!latestRows || latestRows.length === 0) {
       el.innerHTML = '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
-      if (asofEl) asofEl.textContent = '-';
+      if (dateThEl) dateThEl.textContent = '금리';
       return;
     }
 
@@ -126,12 +126,12 @@ async function loadIndicators() {
       </tr>`).join('');
 
     const latestDate = indicatorList.reduce((max, [, row]) => (row.date > max ? row.date : max), indicatorList[0][1].date);
-    if (asofEl) asofEl.textContent = `${formatDateFull(latestDate)} 기준`;
+    if (dateThEl) dateThEl.textContent = formatDateShort(latestDate);
 
     el.innerHTML = rows_html || '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
   } catch (err) {
     console.error('주요금리', err);
-    if (asofEl) asofEl.textContent = '오류';
+    if (dateThEl) dateThEl.textContent = '오류';
     const msg = (err && err.message) ? err.message : String(err);
     el.innerHTML = `<tr><td colspan="5" class="list-empty">⚠ 주요금리 실패: ${escapeHtml(msg)}</td></tr>`;
   }

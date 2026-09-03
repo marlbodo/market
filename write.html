@@ -120,13 +120,20 @@
     try {
       let file_url = null, file_name = null, file_type = null, file_path = null;
 
+      // 수정
       if (file) {
-        file_path = `${Date.now()}_${file.name}`;
+        const extMatch = file.name.match(/\.[^.]+$/);
+        const ext = extMatch ? extMatch[0] : '';
+        const safeBase = file.name
+          .replace(/\.[^.]+$/, '')       // 확장자 떼고
+          .replace(/[^a-zA-Z0-9가-힣_-]/g, '_')  // 대괄호 등 특수문자만 _ 로 치환 (한글은 유지)
+          .replace(/_+/g, '_');
+        file_path = `${Date.now()}_${safeBase}${ext}`;
         const { error: upErr } = await client.storage.from(BUCKET).upload(file_path, file);
         if (upErr) throw upErr;
         const { data: pub } = client.storage.from(BUCKET).getPublicUrl(file_path);
         file_url = pub.publicUrl;
-        file_name = file.name;
+        file_name = file.name; // 원본 이름은 그대로 저장 (화면 표시용)
         file_type = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : null;
       }
 

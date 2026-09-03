@@ -20,7 +20,7 @@ API_KEY = os.environ.get("NAVER_CLIENT_SECRET")
 # We also use this same list to filter by TITLE only (see fetch_naver_news_for_keyword),
 # so search and filtering stay consistent — no separate "content keyword" search.
 # ("고용" removed — too broad, matches unrelated things like 장애인 의무고용.)
-TITLE_FILTER_WORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "한국은행", "총재", "워시", "신현송"]
+TITLE_FILTER_WORDS = ["채권", "금리", "기준금리", "연준", "CPI", "물가", "한국은행", "워시", "신현송"]
 
 # Even when a title contains a TITLE_FILTER_WORDS match, it's often noise:
 # personal/retail loan-rate promos (생계비 융자금리, 은행 이벤트 금리), Chuseok

@@ -234,7 +234,7 @@ img { max-width: 100%; display: block; }
 /* 수정 */
 .ipo-legend-note {
   margin: -4px 0 10px;
-  font-size: 9.5px;
+  font-size: 10px;
   color: var(--text-faint);
 }
 

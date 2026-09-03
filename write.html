@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>리서치 자료 관리</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .wrap { max-width: 720px; }
+  .write-box { padding: 24px 0; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .field input[type="text"], .field textarea {
+    width: 100%; padding: 9px 10px; border: 1px solid var(--border-strong);
+    border-radius: var(--radius-s); font-family: inherit; font-size: 13.5px; color: var(--text);
+  }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .submit-btn {
+    padding: 9px 18px; background: var(--accent); color: #fff; border-radius: var(--radius-s);
+    font-size: 13.5px; font-weight: 700;
+  }
+  .submit-btn:disabled { opacity: 0.5; cursor: default; }
+  .status-msg { margin-top: 10px; font-size: 12.5px; }
+  .status-msg.ok { color: var(--teal); }
+  .status-msg.err { color: var(--up); }
+
+  .report-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .report-row .r-title { font-weight: 700; font-size: 13.5px; }
+  .report-row .r-meta { font-size: 11.5px; color: var(--text-faint); margin-top: 2px; }
+  .delete-btn {
+    padding: 8px 16px; background: var(--up); color: #fff; border-radius: var(--radius-s);
+    font-size: 12.5px; font-weight: 700; margin-top: 14px;
+  }
+  .delete-btn:disabled { opacity: 0.4; cursor: default; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header style="padding: 24px 0 8px;">
+    <h1 style="font-size: 19px; margin: 0;">리서치 자료 관리</h1>
+    <p style="font-size: 12.5px; color: var(--text-faint); margin: 4px 0 0;">
+      <a href="index.html" style="color: var(--accent);">← 메인으로</a>
+    </p>
+  </header>
+
+  <!-- ===== 글쓰기 ===== -->
+  <section class="write-box">
+    <h2 style="font-size: 15px; border-bottom: 2px solid var(--text); padding-bottom: 8px;">새 리서치 자료 등록</h2>
+
+    <div class="field">
+      <label for="f-title">제목</label>
+      <input type="text" id="f-title" placeholder="예: 국고채 3년물, 연내 추가 인하 반영 속도">
+    </div>
+
+    <div class="field">
+      <label for="f-summary">요약</label>
+      <textarea id="f-summary" placeholder="한 줄~몇 줄 요약을 입력하세요"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="f-file">첨부파일 (pdf / html / xlsx 등)</label>
+      <input type="file" id="f-file">
+    </div>
+
+    <button class="submit-btn" id="submit-btn">등록</button>
+    <div class="status-msg" id="submit-status"></div>
+  </section>
+
+  <!-- ===== 삭제 ===== -->
+  <section class="write-box">
+    <h2 style="font-size: 15px; border-bottom: 2px solid var(--text); padding-bottom: 8px;">등록된 자료 (선택 삭제)</h2>
+    <div id="report-list">
+      <div class="list-loading">불러오는 중…</div>
+    </div>
+    <button class="delete-btn" id="delete-btn" disabled>선택 삭제</button>
+    <div class="status-msg" id="delete-status"></div>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://hnxvsopwxiamexnxczhj.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_1_9-bKTcV3sBQkv10ru__w_iW-51pKt';
+  const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const BUCKET = 'files';
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+  }
+
+  // ---------- 등록 ----------
+  const submitBtn = document.getElementById('submit-btn');
+  const submitStatus = document.getElementById('submit-status');
+
+  submitBtn.addEventListener('click', async () => {
+    const title = document.getElementById('f-title').value.trim();
+    const summary = document.getElementById('f-summary').value.trim();
+    const fileInput = document.getElementById('f-file');
+    const file = fileInput.files[0];
+
+    if (!title || !summary) {
+      submitStatus.textContent = '제목과 요약을 입력해주세요.';
+      submitStatus.className = 'status-msg err';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitStatus.textContent = '등록 중…';
+    submitStatus.className = 'status-msg';
+
+    try {
+      let file_url = null, file_name = null, file_type = null, file_path = null;
+
+      if (file) {
+        file_path = `${Date.now()}_${file.name}`;
+        const { error: upErr } = await client.storage.from(BUCKET).upload(file_path, file);
+        if (upErr) throw upErr;
+        const { data: pub } = client.storage.from(BUCKET).getPublicUrl(file_path);
+        file_url = pub.publicUrl;
+        file_name = file.name;
+        file_type = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : null;
+      }
+
+      const { error: insErr } = await client.from('research_reports').insert({
+        title, summary, file_url, file_name, file_type, file_path,
+      });
+      if (insErr) throw insErr;
+
+      submitStatus.textContent = '등록 완료.';
+      submitStatus.className = 'status-msg ok';
+      document.getElementById('f-title').value = '';
+      document.getElementById('f-summary').value = '';
+      fileInput.value = '';
+      loadReportList();
+    } catch (err) {
+      console.error(err);
+      submitStatus.textContent = `등록 실패: ${err.message || err}`;
+      submitStatus.className = 'status-msg err';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  // ---------- 목록 + 삭제 ----------
+  const listEl = document.getElementById('report-list');
+  const deleteBtn = document.getElementById('delete-btn');
+  const deleteStatus = document.getElementById('delete-status');
+
+  async function loadReportList() {
+    listEl.innerHTML = '<div class="list-loading">불러오는 중…</div>';
+    try {
+      const { data, error } = await client
+        .from('research_reports')
+        .select('id, title, created_at, file_name, file_path')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        listEl.innerHTML = '<div class="list-empty">등록된 자료가 없습니다.</div>';
+        deleteBtn.disabled = true;
+        return;
+      }
+
+      listEl.innerHTML = data.map((r) => `
+        <label class="report-row">
+          <input type="checkbox" class="r-check" value="${r.id}" data-file-path="${escapeHtml(r.file_path || '')}">
+          <div>
+            <div class="r-title">${escapeHtml(r.title)}</div>
+            <div class="r-meta">${new Date(r.created_at).toLocaleString('ko-KR')}${r.file_name ? ' · ' + escapeHtml(r.file_name) : ''}</div>
+          </div>
+        </label>`).join('');
+
+      listEl.querySelectorAll('.r-check').forEach((cb) => {
+        cb.addEventListener('change', () => {
+          const any = listEl.querySelectorAll('.r-check:checked').length > 0;
+          deleteBtn.disabled = !any;
+        });
+      });
+      deleteBtn.disabled = true;
+    } catch (err) {
+      console.error(err);
+      listEl.innerHTML = `<div class="list-empty">⚠ 목록 실패: ${escapeHtml(err.message || String(err))}</div>`;
+    }
+  }
+
+  deleteBtn.addEventListener('click', async () => {
+    const checked = Array.from(listEl.querySelectorAll('.r-check:checked'));
+    if (checked.length === 0) return;
+    if (!confirm(`선택한 ${checked.length}개 자료를 삭제할까요?`)) return;
+
+    deleteBtn.disabled = true;
+    deleteStatus.textContent = '삭제 중…';
+    deleteStatus.className = 'status-msg';
+
+    try {
+      const ids = checked.map((cb) => Number(cb.value));
+      const filePaths = checked.map((cb) => cb.getAttribute('data-file-path')).filter(Boolean);
+
+      if (filePaths.length > 0) {
+        const { error: rmErr } = await client.storage.from(BUCKET).remove(filePaths);
+        if (rmErr) console.error('스토리지 파일 삭제 실패(무시하고 진행):', rmErr);
+      }
+
+      const { error: delErr } = await client.from('research_reports').delete().in('id', ids);
+      if (delErr) throw delErr;
+
+      deleteStatus.textContent = '삭제 완료.';
+      deleteStatus.className = 'status-msg ok';
+      loadReportList();
+    } catch (err) {
+      console.error(err);
+      deleteStatus.textContent = `삭제 실패: ${err.message || err}`;
+      deleteStatus.className = 'status-msg err';
+    }
+  });
+
+  loadReportList();
+</script>
+</body>
+</html>

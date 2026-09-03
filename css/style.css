@@ -234,7 +234,7 @@ img { max-width: 100%; display: block; }
 //추가
 .ipo-legend-note {
   margin: -4px 0 10px;
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-muted);
 }
 

@@ -276,7 +276,7 @@ async function loadResearchReports() {
       .from('research_reports')
       .select('id, title, summary, file_url, file_name')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(5);
     if (error) throw error;
 
     if (!data || data.length === 0) {

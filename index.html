@@ -106,6 +106,7 @@
       <div class="panel">
         <div class="panel-head">
           <h2><span class="dot"></span>리서치센터</h2>
+          <a href="pages/research-all.html" class="panel-more" id="research-more-link">더보기</a>
         </div>
         <div id="research-list">
           <div class="list-loading">자료를 불러오는 중…</div>
@@ -156,6 +157,10 @@
   document.getElementById('repo-fund-link').addEventListener('click', function (e) {
     e.preventDefault();
     window.open(this.href, 'repoFundSimulator', 'width=480,height=720,scrollbars=yes,resizable=yes');
+  });
+  document.getElementById('research-more-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    window.open(this.href, 'researchAll', 'width=720,height=880,scrollbars=yes,resizable=yes');
   });
 </script>
 </body>

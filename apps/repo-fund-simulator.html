@@ -3,45 +3,700 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>레포펀드 시뮬레이터 — 데일리 마켓 브리핑</title>
-<link rel="stylesheet" href="../css/style.css">
+<title>레포펀드 시뮬레이터</title>
 <style>
-  .stub-wrap {
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 100px 24px;
-    text-align: center;
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+  :root {
+    --bg: #f5f6f9;
+    --panel: #ffffff;
+    --text: #14171f;
+    --text-muted: #14171f;
+    --text-faint: #14171f;
+    --border: #e6e8ec;
+    --accent: #4a4ee0;
+    --accent-soft: #eeeeff;
+    --up: #d6483d;
+    --down: #2d6fe0;
+    --teal: #0f7a6b;
+    --radius: 10px;
+    font-variant-numeric: tabular-nums;
   }
-  .stub-kicker { font-size: 12.5px; color: var(--accent); margin-bottom: 10px; }
-  .stub-title { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
-  .stub-desc { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin-bottom: 26px; }
-  .stub-back {
-    display: inline-block;
-    font-size: 13px;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-s);
-    padding: 8px 16px;
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 14px; line-height: 1.5;
   }
-  .stub-back:hover { border-color: var(--accent); color: var(--accent); }
+  .wrap { max-width: 1360px; margin: 0 auto; padding: 24px; }
+
+  .action-bar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 14px; }
+  .action-btn {
+    font-size: 12.5px; font-weight: 700; padding: 8px 16px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text-muted); cursor: pointer;
+  }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .action-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .action-btn.primary:hover { opacity: 0.9; color: #fff; }
+
+  /* header */
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .top-title { display: flex; align-items: center; gap: 12px; }
+  .top-icon { width: 42px; height: 42px; border-radius: 10px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .top-title h1 { font-size: 19px; margin: 0; display: flex; align-items: center; gap: 8px; }
+  .badge { font-size: 10.5px; font-weight: 700; color: var(--teal); background: #e1f3ef; padding: 2px 8px; border-radius: 20px; }
+  .top-sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+  .top-period { font-size: 12.5px; color: var(--text-muted); background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; }
+  .top-period b { color: var(--text); }
+
+  /* layout */
+  .grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 18px; }
+  .panel-title { font-size: 14px; font-weight: 700; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+  .panel-title .ic { width: 22px; height: 22px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+  .field-label .unit { font-size: 10px; color: var(--accent); background: var(--accent-soft); padding: 1px 6px; border-radius: 4px; }
+  .field input[type=number], .field input[type=date], .field input[type=text] {
+    width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 7px;
+    font-family: inherit; font-size: 14px; font-weight: 700; color: var(--text); background: #fbfbfd;
+  }
+  .field input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .field-hint { font-size: 10.5px; color: var(--text-faint); margin-top: 4px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .derived-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .derived-item { background: #fbfbfd; border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; text-align: center; }
+  .derived-item .dl { font-size: 10px; color: var(--text-faint); }
+  .derived-item .dv { font-size: 15px; font-weight: 800; color: var(--accent); margin-top: 2px; }
+
+  /* meeting schedule rows */
+  .meet-header-row { display: grid; grid-template-columns: 1fr 62px 62px 26px; gap: 6px; font-size: 9.5px; color: var(--text-faint); font-weight: 700; margin-bottom: 5px; text-align: center; }
+  .meet-header-row span:first-child { text-align: left; }
+  .meet-row { display: grid; grid-template-columns: 1fr 62px 62px 26px; gap: 6px; align-items: center; margin-bottom: 8px; }
+  .meet-row input { padding: 7px 6px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 700; text-align: center; }
+  .meet-date { text-align: left !important; }
+  .meet-repo { color: var(--accent); }
+  .meet-repo.is-override { border-color: var(--accent); background: var(--accent-soft); }
+  .meet-del { width: 26px; height: 26px; border-radius: 6px; background: #fbeceb; color: var(--up); font-size: 14px; font-weight: 700; border: none; cursor: pointer; }
+  .meet-add { width: 100%; padding: 7px; font-size: 12px; font-weight: 700; color: var(--accent); border: 1px dashed var(--accent); border-radius: 7px; background: var(--accent-soft); cursor: pointer; margin-top: 4px; }
+
+  /* KPI cards */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  @media (max-width: 760px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+  .kpi-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .kpi-card.hi { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .kpi-label-ko { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+  .kpi-label-en { font-size: 10px; color: var(--text-faint); margin-bottom: 8px; letter-spacing: 0.02em; }
+  .kpi-value { font-size: 26px; font-weight: 800; }
+  .kpi-value.up { color: var(--up); }
+  .kpi-value.down { color: var(--down); }
+  .kpi-note { font-size: 10.5px; color: var(--text-faint); margin-top: 6px; }
+
+  /* charts */
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  @media (max-width: 980px) { .chart-row { grid-template-columns: 1fr; } }
+  .chart-panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+  .chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+  .chart-head h3 { font-size: 14px; margin: 0; }
+  .chart-tag { font-size: 10px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 20px; }
+  .chart-sub { font-size: 11px; color: var(--text-faint); margin-bottom: 12px; }
+  .chart-box { height: 230px; }
+  .chart-foot { font-size: 10.5px; color: var(--text-faint); margin-top: 10px; line-height: 1.6; background: #fbfbfd; padding: 10px 12px; border-radius: 7px; }
+
+  /* table */
+  .table-panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 18px; }
+  table.rpt { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.rpt th, table.rpt td { padding: 9px 6px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  table.rpt th { color: var(--text-faint); font-weight: 700; font-size: 10.5px; text-align: center; }
+  table.rpt th:first-child, table.rpt td:first-child { text-align: left; }
+  table.rpt th:first-child { text-align: center; }
+  table.rpt td.pos { color: var(--up); }
+  table.rpt td.neg { color: var(--down); }
+  table.rpt td.yield-badge { }
+  .ybadge { display: inline-block; background: #fbfbfd; border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font-weight: 800; }
+
+  .note-panel { background: var(--accent-soft); border: 1px solid #d6d8ff; border-radius: var(--radius); padding: 16px 20px; font-size: 12.5px; color: var(--text); line-height: 1.7; }
+  .note-panel b { color: var(--accent); }
+
+  .guide-panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+  .guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 12px; }
+  @media (max-width: 760px) { .guide-grid { grid-template-columns: 1fr; } }
+  .guide-item h4 { font-size: 12.5px; margin: 0 0 6px; }
+  .guide-item p { font-size: 11.5px; color: var(--text-muted); line-height: 1.7; margin: 0; }
+/* ---------- 인쇄(PDF 저장) 전용 스타일: 깔끔한 리포트 느낌 ---------- */
+@media print {
+  @page { size: A4 portrait; margin: 14mm; }
+  body { background: #fff; font-size: 11.5px; }
+  .action-bar { display: none !important; }
+  .wrap { max-width: 100%; padding: 0; }
+  .top-period { border: none; background: none; padding: 0; }
+  .grid { grid-template-columns: 1fr; gap: 12px; }
+  .kpi-row { grid-template-columns: repeat(4, 1fr); }
+  .chart-row { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .panel, .kpi-card, .chart-panel, .table-panel, .note-panel, .guide-panel {
+    box-shadow: none !important; border-color: #d9d9dd !important;
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  .kpi-card.hi { box-shadow: none !important; }
+  .meet-del, .meet-add, .meet-header-row span:last-child { display: none !important; }
+  input {
+    border: none !important; background: transparent !important;
+    padding: 2px 0 !important; color: #000 !important;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .meet-repo.is-override { background: none !important; text-decoration: underline; }
+  .meet-row { grid-template-columns: 1fr 62px 62px; }
+  .field input:focus { outline: none; }
+  .chart-box { height: 190px; }
+  a[href]::after { content: none !important; }
+}
 </style>
 </head>
 <body>
-  <header class="site-header">
-    <div class="wrap">
-      <div class="brand">
-        <a href="../index.html" class="brand-mark">데일리 마켓 브리핑</a>
+
+<div class="wrap">
+
+  <div class="action-bar">
+    <button class="action-btn" id="btn-close" type="button">✕ 닫기</button>
+    <button class="action-btn primary" id="btn-pdf" type="button">⬇ PDF로 저장</button>
+  </div>
+
+  <div class="top">
+    <div class="top-title">
+      <div class="top-icon">📊</div>
+      <div>
+        <h1>레포펀드 시뮬레이터</h1>
       </div>
     </div>
-  </header>
-
-  <div class="stub-wrap">
-    <div class="stub-kicker">유용한 앱</div>
-    <div class="stub-title">레포펀드 시뮬레이터</div>
-    <p class="stub-desc">
-      투자 기간과 금리를 입력해 예상 수익을 계산해보는 도구를 준비하고 있습니다.<br>
-      곧 이 자리에서 바로 사용하실 수 있게 만들어드릴게요.
-    </p>
-    <a class="stub-back" href="../index.html">← 데일리 마켓 브리핑으로 돌아가기</a>
+    <div class="top-period" id="period-display">기간 계산 중…</div>
   </div>
+
+  <div class="grid">
+
+    <!-- ===== 좌측: 입력 ===== -->
+    <div class="col-input">
+
+      <div class="panel">
+        <h2 class="panel-title"><span class="ic">1</span>펀드 기본 및 비용</h2>
+        <div class="field">
+          <div class="field-label">펀드 설정액 (NAV) <span class="unit">억원</span></div>
+          <input type="number" id="in-nav" value="100" step="1">
+        </div>
+        <div class="field">
+          <div class="field-label">펀드 총보수 <span class="unit">bp</span></div>
+          <input type="number" id="in-fee" value="8" step="0.5">
+          <div class="field-hint">연간 운용사·신탁 보수 합계 (8bp = 0.08%)</div>
+        </div>
+        <div class="field field-row">
+          <div>
+            <div class="field-label">펀드 가입일</div>
+            <input type="date" id="in-start" value="2026-09-03">
+          </div>
+          <div>
+            <div class="field-label">환매 예정일</div>
+            <input type="date" id="in-end" value="2026-12-31">
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-title"><span class="ic">2</span>자산 포트폴리오 편성</h2>
+        <div class="field">
+          <div class="field-label">채권 편입비율 <span class="unit">%</span></div>
+          <input type="number" id="in-bondratio" value="300" step="10">
+          <div class="field-hint">NAV 대비 채권 총 보유 비중</div>
+        </div>
+        <div class="field">
+          <div class="field-label">CD 편입비율 <span class="unit">%</span></div>
+          <input type="number" id="in-cdratio" value="50" step="5">
+          <div class="field-hint">NAV 대비 CD(1년물) 보유 비중</div>
+        </div>
+        <div class="derived-box">
+          <div class="derived-item"><div class="dl">레버리지(레포조달)</div><div class="dv" id="derived-leverage">-</div></div>
+          <div class="derived-item"><div class="dl">채권 매수액</div><div class="dv" id="derived-bond-amt">-</div></div>
+          <div class="derived-item"><div class="dl">CD 매수액</div><div class="dv" id="derived-cd-amt">-</div></div>
+        </div>
+        <div class="field-hint" style="margin: -6px 0 14px;">레버리지 = 채권비율 + CD비율 - 100%</div>
+
+        <div class="field field-row">
+          <div>
+            <div class="field-label">채권 현재금리 <span class="unit">%</span></div>
+            <input type="number" id="in-bondyield" value="3.70" step="0.01">
+          </div>
+          <div>
+            <div class="field-label">CD 현재금리 <span class="unit">%</span></div>
+            <input type="number" id="in-cdyield" value="3.20" step="0.01">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label">채권 만기일</div>
+          <input type="date" id="in-maturity" value="2027-07-31">
+          <div class="field-hint">듀레이션 = (만기일 − 기준일) ÷ 365 로 자동 계산됩니다</div>
+        </div>
+        <div class="field">
+          <div class="field-label">펀드 환매시점 예상 시장금리 <span class="unit">%</span></div>
+          <input type="number" id="in-endyield" value="3.70" step="0.01">
+        </div>
+        <div class="field-hint">펀드 환매시점 예상 금리가 채권 현재금리와 다르면 만기평가손익(MTM)이 발생합니다</div>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-title"><span class="ic">3</span>금통위 기준금리 일정</h2>
+        <div class="field">
+          <div class="field-label">시작일 적용 기준금리 <span class="unit">%</span></div>
+          <input type="number" id="in-baserate0" value="3.00" step="0.25">
+        </div>
+        <div class="field">
+          <div class="field-label">레포 스프레드 (기준금리 대비) <span class="unit">bp</span></div>
+          <input type="number" id="in-spread" value="5" step="1">
+          <div class="field-hint">레포금리 = 그 시점 기준금리 + 스프레드</div>
+        </div>
+        <div class="field-label" style="margin-top: 16px;">금통위 회차별 기준금리 변경</div>
+        <div class="field-hint" style="margin: -2px 0 8px;">2027년 일정은 아직 미발표 상태라 2026년 패턴(연 8회, 2·4주차 목요일)을 따라 추정한 날짜입니다. 공식 발표 후 직접 수정하세요. 레포금리는 기준금리+스프레드로 자동 계산되며, 직접 입력하면 그 값으로 고정됩니다(더블클릭하면 자동계산으로 복귀).</div>
+        <div class="meet-header-row"><span>날짜</span><span>기준금리</span><span>레포금리</span><span></span></div>
+        <div id="meet-rows"></div>
+        <button class="meet-add" id="meet-add-btn" type="button">+ 회차 추가</button>
+      </div>
+
+    </div>
+
+    <!-- ===== 우측: 결과 ===== -->
+    <div class="col-output">
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label-ko">현재 예상 수익률</div>
+          <div class="kpi-label-en">Initial Expected Yield</div>
+          <div class="kpi-value" id="kpi-initial">-</div>
+          <div class="kpi-note">시작일 기준금리 유지 가정 시 연환산</div>
+        </div>
+        <div class="kpi-card hi">
+          <div class="kpi-label-ko">시뮬레이션 결과 수익률</div>
+          <div class="kpi-label-en">Scenario Portfolio Yield</div>
+          <div class="kpi-value" id="kpi-scenario">-</div>
+          <div class="kpi-note" id="kpi-scenario-note">-</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label-ko">총 누적 캐리수익</div>
+          <div class="kpi-label-en">Accumulated Carry Profit</div>
+          <div class="kpi-value" id="kpi-carry">-</div>
+          <div class="kpi-note">억원 · 기간 합산</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label-ko">기말 평가손익</div>
+          <div class="kpi-label-en">Ending Position MTM</div>
+          <div class="kpi-value" id="kpi-mtm">-</div>
+          <div class="kpi-note">환매시점 기준금리 변동분 1회 반영</div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-panel">
+          <div class="chart-head"><h3>누적 수익 트렌드</h3><span class="chart-tag">LINE TREND</span></div>
+          <div class="chart-sub">월별 캐리수익 누계 추이 (기말 평가손익은 마지막 지점에 가산)</div>
+          <div class="chart-box"><canvas id="chart-line"></canvas></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-head"><h3>월별 수익 분포</h3><span class="chart-tag">BAR DISTRIBUTION</span></div>
+          <div class="chart-sub">개별 월 단위 캐리수익 구성</div>
+          <div class="chart-box"><canvas id="chart-bar"></canvas></div>
+        </div>
+      </div>
+
+      <div class="table-panel">
+        <h2 class="panel-title"><span class="ic">📋</span>월별 예측 운용 명세표</h2>
+        <div style="overflow-x:auto;">
+        <table class="rpt">
+          <thead>
+            <tr>
+              <th>조회월</th><th>일수</th><th>채권</th><th>CD</th><th>이자수익</th>
+              <th>레포비용</th><th>총보수</th><th>월순수익</th><th>잔존듀레이션</th><th>월말PVBP</th><th>수익률</th>
+            </tr>
+          </thead>
+          <tbody id="report-body"></tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="note-panel" id="note-panel"></div>
+
+    </div>
+  </div>
+
+  <div class="guide-panel" style="margin-top: 18px;">
+    <h2 class="panel-title"><span class="ic">?</span>레포 연계 펀드 운용 매커니즘 설명 (Internal Operations Guide)</h2>
+    <div class="guide-grid">
+      <div class="guide-item">
+        <h4>1. 만기일 기반 듀레이션 자동 계산</h4>
+        <p>입력한 채권 만기일과 기준일(오늘 또는 종료일)의 차이(잔존일수)를 365로 나눠 매일 자동으로 듀레이션을 계산합니다. 만기일에 가까워질수록 듀레이션이 줄어들며, 금리 변동에 대한 평가손익 민감도(PVBP)도 함께 감소합니다.</p>
+      </div>
+      <div class="guide-item">
+        <h4>2. 레포 레버리지 편입규모 산식</h4>
+        <p>채권 편입비율과 CD 편입비율(둘 다 NAV 대비 직접 입력)의 합에서 100%를 뺀 값이 레포조달(레버리지) 비율이 됩니다. CD는 복잡도를 낮추기 위해 별도 만기 감쇄 없이 현재금리를 그대로 적용합니다.</p>
+      </div>
+      <div class="guide-item">
+        <h4>3. 기말 채권 시가평가손익 (Mark-to-Market)</h4>
+        <p>운용기간 중에는 캐리수익만 매일 누적되며, 금리 변동에 따른 채권 평가손익은 종료일에 (초기금리-종료시점 시장금리)×잔존듀레이션×채권편입액으로 1회만 가산됩니다.</p>
+      </div>
+      <div class="guide-item">
+        <h4>4. 금통위 연쇄 동기화 (Cascading Sync)</h4>
+        <p>회차별로 입력한 기준금리가 해당 날짜부터 적용되며, 레포금리는 그 시점 기준금리+스프레드로 즉시 갱신됩니다. 기준금리가 전혀 안 바뀌면 시뮬레이션 결과 수익률은 초기 예상 수익률과 동일하게 수렴합니다.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script>
+  Chart.register(ChartDataLabels);
+  // ---------- 유틸 ----------
+  function fmtEok(n) { return `${n.toFixed(3)}억원`; }
+  function fmtPct(n) { return `${n.toFixed(3)}%`; }
+  function fmtPct2(n) { return `${n.toFixed(3)}%`; }
+  function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+  function addDaysISO(dateObj) { return dateObj.toISOString().slice(0, 10); }
+  function monthKey(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+  function monthLabel(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+
+  // ---------- 금통위 회차 행 관리 ----------
+  const DEFAULT_MEETINGS = [
+    { date: '2026-10-22', rate: 3.00, repoOverride: null },
+    { date: '2026-11-26', rate: 3.00, repoOverride: null },
+    { date: '2027-01-14', rate: 3.00, repoOverride: null }, // 2027년 공식 일정 미발표 · 2026년 패턴(연 8회, 2·4주차 목요일) 기준 추정치
+    { date: '2027-02-25', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-04-08', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-05-27', rate: 3.00, repoOverride: null }, // 〃
+  ];
+  let meetings = DEFAULT_MEETINGS.map((m) => ({ ...m }));
+
+  const meetRowsEl = document.getElementById('meet-rows');
+  function currentSpreadBp() {
+    return Number(document.getElementById('in-spread').value) || 0;
+  }
+  function repoDisplayValue(m) {
+    const hasOverride = m.repoOverride !== null && m.repoOverride !== undefined && !Number.isNaN(m.repoOverride);
+    return hasOverride ? m.repoOverride : (m.rate + currentSpreadBp() / 100);
+  }
+  function isOverridden(m) {
+    return m.repoOverride !== null && m.repoOverride !== undefined && !Number.isNaN(m.repoOverride);
+  }
+  function renderMeetRows() {
+    meetRowsEl.innerHTML = meetings.map((m, i) => `
+      <div class="meet-row" data-idx="${i}">
+        <input type="date" class="meet-date" value="${m.date}">
+        <input type="number" class="meet-rate" value="${m.rate}" step="0.25" title="기준금리">
+        <input type="number" class="meet-repo ${isOverridden(m) ? 'is-override' : ''}" value="${repoDisplayValue(m).toFixed(2)}" step="0.01" title="레포금리 (직접 입력 시 고정, 더블클릭 시 자동계산으로 복귀)">
+        <button class="meet-del" type="button" title="삭제">×</button>
+      </div>`).join('');
+
+    meetRowsEl.querySelectorAll('.meet-row').forEach((row) => {
+      const idx = Number(row.getAttribute('data-idx'));
+
+      row.querySelector('.meet-date').addEventListener('change', (e) => {
+        meetings[idx].date = e.target.value;
+        renderMeetRows();
+        recalc();
+      });
+
+      row.querySelector('.meet-rate').addEventListener('input', (e) => {
+        const newRate = Number(e.target.value);
+        meetings[idx].rate = newRate;
+        // 이 회차보다 이후 날짜의 회차들도 같은 기준금리로 자동 갱신
+        for (let j = idx + 1; j < meetings.length; j++) meetings[j].rate = newRate;
+        // 포커스 유지를 위해 전체 재렌더링 대신 필요한 값만 직접 갱신
+        meetRowsEl.querySelectorAll('.meet-row').forEach((r2) => {
+          const i2 = Number(r2.getAttribute('data-idx'));
+          if (i2 > idx) r2.querySelector('.meet-rate').value = newRate;
+          if (i2 >= idx && !isOverridden(meetings[i2])) {
+            r2.querySelector('.meet-repo').value = repoDisplayValue(meetings[i2]).toFixed(2);
+          }
+        });
+        recalc();
+      });
+
+      const repoInput = row.querySelector('.meet-repo');
+      repoInput.addEventListener('input', (e) => {
+        meetings[idx].repoOverride = Number(e.target.value);
+        repoInput.classList.add('is-override');
+        recalc();
+      });
+      repoInput.addEventListener('dblclick', () => {
+        meetings[idx].repoOverride = null;
+        repoInput.value = repoDisplayValue(meetings[idx]).toFixed(2);
+        repoInput.classList.remove('is-override');
+        recalc();
+      });
+
+      row.querySelector('.meet-del').addEventListener('click', () => {
+        meetings.splice(idx, 1);
+        renderMeetRows();
+        recalc();
+      });
+    });
+  }
+  function refreshAutoRepoDisplays() {
+    meetRowsEl.querySelectorAll('.meet-row').forEach((row) => {
+      const i = Number(row.getAttribute('data-idx'));
+      if (!isOverridden(meetings[i])) row.querySelector('.meet-repo').value = repoDisplayValue(meetings[i]).toFixed(2);
+    });
+  }
+  document.getElementById('in-spread').addEventListener('input', refreshAutoRepoDisplays);
+  document.getElementById('meet-add-btn').addEventListener('click', () => {
+    const lastDate = meetings.length ? meetings[meetings.length - 1].date : document.getElementById('in-start').value;
+    const d = new Date(`${lastDate}T00:00:00`);
+    d.setMonth(d.getMonth() + 1);
+    meetings.push({ date: addDaysISO(d), rate: meetings.length ? meetings[meetings.length - 1].rate : 3.0, repoOverride: null });
+    renderMeetRows();
+    recalc();
+  });
+  renderMeetRows();
+
+  // ---------- 기준금리 스케줄 조회 ----------
+  function baseRateOn(dateObj, baseRate0, schedule) {
+    let rate = baseRate0;
+    const sorted = [...schedule].filter((m) => m.date).sort((a, b) => a.date.localeCompare(b.date));
+    for (const m of sorted) {
+      // 금통위 당일은 전날까지 조달한 금리로 운용 중이므로, 새 금리는 다음날부터 적용
+      if (dateObj > new Date(`${m.date}T00:00:00`)) rate = m.rate;
+      else break;
+    }
+    return rate;
+  }
+  // ---------- 레포금리 스케줄 조회 (회차별 override 반영) ----------
+  function repoRateOn(dateObj, baseRate0, spreadBp, schedule) {
+    let repo = baseRate0 + spreadBp / 100;
+    const sorted = [...schedule].filter((m) => m.date).sort((a, b) => a.date.localeCompare(b.date));
+    for (const m of sorted) {
+      if (dateObj > new Date(`${m.date}T00:00:00`)) {
+        const overridden = m.repoOverride !== null && m.repoOverride !== undefined && !Number.isNaN(m.repoOverride);
+        repo = overridden ? m.repoOverride : (m.rate + spreadBp / 100);
+      } else break;
+    }
+    return repo;
+  }
+
+  // ---------- 차트 인스턴스 ----------
+  let lineChart, barChart;
+  function ensureCharts() {
+    const lineCtx = document.getElementById('chart-line').getContext('2d');
+    const barCtx = document.getElementById('chart-bar').getContext('2d');
+    lineChart = new Chart(lineCtx, {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: '누적 캐리수익(억원)', data: [], borderColor: '#4a4ee0', backgroundColor: 'rgba(74,78,224,0.08)', fill: true, tension: 0.3, pointRadius: 3 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 22 } },
+        plugins: {
+          legend: { display: false },
+          datalabels: {
+            align: 'top', anchor: 'end', offset: 4,
+            color: '#4a4ee0', font: { weight: '800', size: 11 },
+            formatter: (v) => `${v.toFixed(3)}억`,
+          },
+        },
+        scales: { y: { ticks: { callback: (v) => `${v}억` } } },
+      },
+    });
+    barChart = new Chart(barCtx, {
+      type: 'bar',
+      data: { labels: [], datasets: [{ label: '월 순수익(억원)', data: [], backgroundColor: '#4a4ee0', borderRadius: 4 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 22 } },
+        plugins: {
+          legend: { display: false },
+          datalabels: {
+            align: 'end', anchor: 'end', offset: 2,
+            color: (ctx) => (ctx.dataset.data[ctx.dataIndex] >= 0 ? '#4a4ee0' : '#d6483d'),
+            font: { weight: '800', size: 11 },
+            formatter: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(3)}억`,
+          },
+        },
+        scales: { y: { ticks: { callback: (v) => `${v}억` } } },
+      },
+    });
+  }
+
+  // ---------- 메인 계산 ----------
+  function recalc() {
+    const nav = Number(document.getElementById('in-nav').value) || 0;
+    const feeBp = Number(document.getElementById('in-fee').value) || 0;
+    const startStr = document.getElementById('in-start').value;
+    const endStr = document.getElementById('in-end').value;
+    const bondRatioPct = Number(document.getElementById('in-bondratio').value) || 0;
+    const cdRatioPct = Number(document.getElementById('in-cdratio').value) || 0;
+    const bondYieldPct = Number(document.getElementById('in-bondyield').value) || 0;
+    const cdYieldPct = Number(document.getElementById('in-cdyield').value) || 0;
+    const maturityStr = document.getElementById('in-maturity').value;
+    const endYieldPct = Number(document.getElementById('in-endyield').value) || 0;
+    const baseRate0 = Number(document.getElementById('in-baserate0').value) || 0;
+    const spreadBp = Number(document.getElementById('in-spread').value) || 0;
+
+    if (!startStr || !endStr || !maturityStr) return;
+    const start = new Date(`${startStr}T00:00:00`);
+    const end = new Date(`${endStr}T00:00:00`);
+    const maturity = new Date(`${maturityStr}T00:00:00`);
+    if (end <= start) return;
+
+    function durationOn(dateObj) {
+      return Math.max(daysBetween(dateObj, maturity) / 365, 0);
+    }
+
+    const leverageRatioPct = Math.max(bondRatioPct + cdRatioPct - 100, 0);
+    const cdAmt = nav * cdRatioPct / 100;
+    const bondAmt = nav * bondRatioPct / 100;
+
+    document.getElementById('derived-leverage').textContent = `${leverageRatioPct.toFixed(0)}%`;
+    document.getElementById('derived-bond-amt').textContent = `${bondAmt.toFixed(1)}억`;
+    document.getElementById('derived-cd-amt').textContent = `${cdAmt.toFixed(1)}억`;
+
+    const totalDays = daysBetween(start, end);
+    document.getElementById('period-display').innerHTML =
+      `📅 ${startStr} ~ ${endStr} <b>(총 ${totalDays}일간 시뮬레이션)</b>`;
+
+    // 일별 루프 → 월별 집계
+    const monthMap = new Map(); // key -> { days, carry, bondAvgAmt, cdAvgAmt, interest, repoCost, fee, durationEnd }
+    // 초일 불산입 · 말일 산입: 가입일 당일은 제외하고 그 다음날부터 계산 시작
+    let cursor = new Date(start);
+    cursor.setDate(cursor.getDate() + 1);
+    let cumulativeCarry = 0;
+    const lineLabels = [], linePoints = [];
+    let lastMonthKey = null;
+
+    // baseline(초기 기준금리 유지) 비교용
+    let baselineCarry = 0;
+
+    while (cursor <= end) {
+      const key = monthKey(cursor);
+      if (!monthMap.has(key)) {
+        monthMap.set(key, { days: 0, interest: 0, repoCost: 0, fee: 0, carry: 0, durationEnd: 0 });
+      }
+      const bucket = monthMap.get(key);
+
+      const elapsedDays = daysBetween(start, cursor);
+      const durationToday = durationOn(cursor);
+
+      const repoRateToday = repoRateOn(cursor, baseRate0, spreadBp, meetings);
+
+      const dailyInterest = (bondRatioPct / 100 * bondYieldPct / 100 + cdRatioPct / 100 * cdYieldPct / 100) * nav / 365;
+      const dailyRepoCost = (leverageRatioPct / 100) * (repoRateToday / 100) * nav / 365;
+      const dailyFee = nav * (feeBp / 10000) / 365;
+      const dailyNet = dailyInterest - dailyRepoCost - dailyFee;
+
+      const baselineRepoRate = baseRate0 + spreadBp / 100;
+      const baselineDailyRepoCost = (leverageRatioPct / 100) * (baselineRepoRate / 100) * nav / 365;
+      const baselineDailyNet = dailyInterest - baselineDailyRepoCost - dailyFee;
+
+      bucket.days += 1;
+      bucket.interest += dailyInterest;
+      bucket.repoCost += dailyRepoCost;
+      bucket.fee += dailyFee;
+      bucket.carry += dailyNet;
+      bucket.durationEnd = durationToday;
+
+      cumulativeCarry += dailyNet;
+      baselineCarry += baselineDailyNet;
+
+      if (key !== lastMonthKey) {
+        lineLabels.push(key);
+        lastMonthKey = key;
+      }
+
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    // 기말 평가손익(MTM): 종료시점 잔존듀레이션 기준, 1회만
+    const finalElapsed = daysBetween(start, end);
+    const finalDuration = durationOn(end);
+    const yieldDelta = (bondYieldPct - endYieldPct) / 100; // 금리 하락(=시장금리<초기금리)이면 +평가익
+    const mtm = bondAmt * yieldDelta * finalDuration;
+
+    // baseline final (MTM 없이, 기준금리 유지 가정이므로 평가손익도 0으로 둠)
+    const totalDaysAll = Math.max(finalElapsed, 1);
+    const initialAnnualYield = (baselineCarry / nav) * (365 / totalDaysAll) * 100;
+    const scenarioAnnualYield = ((cumulativeCarry + mtm) / nav) * (365 / totalDaysAll) * 100;
+
+    document.getElementById('kpi-initial').textContent = fmtPct2(initialAnnualYield);
+    document.getElementById('kpi-scenario').textContent = fmtPct2(scenarioAnnualYield);
+    const stable = Math.abs(scenarioAnnualYield - initialAnnualYield) < 0.005;
+    document.getElementById('kpi-scenario-note').innerHTML = stable
+      ? '<span style="color:#0f7a6b;">● Condition Stable</span>'
+      : (scenarioAnnualYield > initialAnnualYield ? '<span style="color:#d6483d;">● 초기 대비 상회</span>' : '<span style="color:#2d6fe0;">● 초기 대비 하회</span>');
+
+    document.getElementById('kpi-carry').textContent = fmtEok(cumulativeCarry);
+    const mtmEl = document.getElementById('kpi-mtm');
+    mtmEl.textContent = fmtEok(mtm);
+    mtmEl.className = 'kpi-value ' + (mtm > 0 ? 'up' : mtm < 0 ? 'down' : '');
+
+    // ---------- 라인차트 (월별 누적) ----------
+    let running = 0;
+    const monthKeysSorted = [...monthMap.keys()].sort();
+    const lineData = monthKeysSorted.map((k, i) => {
+      running += monthMap.get(k).carry;
+      const isLast = i === monthKeysSorted.length - 1;
+      return Number((running + (isLast ? mtm : 0)).toFixed(3));
+    });
+    lineChart.data.labels = monthKeysSorted;
+    lineChart.data.datasets[0].data = lineData;
+    lineChart.update();
+
+    // ---------- 바차트 (월별 순수익) ----------
+    const barData = monthKeysSorted.map((k) => Number(monthMap.get(k).carry.toFixed(3)));
+    barChart.data.labels = monthKeysSorted;
+    barChart.data.datasets[0].data = barData;
+    barChart.update();
+
+    // ---------- 월별 명세표 ----------
+    const tbody = document.getElementById('report-body');
+    tbody.innerHTML = monthKeysSorted.map((k) => {
+      const b = monthMap.get(k);
+      const monthlyAnnualYield = (b.carry / nav) * (365 / b.days) * 100;
+      return `
+        <tr>
+          <td>${k}</td>
+          <td>${b.days}</td>
+          <td>${bondAmt.toFixed(2)}</td>
+          <td>${cdAmt.toFixed(2)}</td>
+          <td class="pos">+${b.interest.toFixed(3)}</td>
+          <td class="neg">-${b.repoCost.toFixed(3)}</td>
+          <td class="neg">-${b.fee.toFixed(3)}</td>
+          <td class="${b.carry >= 0 ? 'pos' : 'neg'}">${b.carry >= 0 ? '+' : ''}${b.carry.toFixed(3)}</td>
+          <td>${b.durationEnd.toFixed(2)}</td>
+          <td>${(bondAmt * b.durationEnd * 0.0001).toFixed(3)}</td>
+          <td><span class="ybadge">${monthlyAnnualYield.toFixed(3)}%</span></td>
+        </tr>`;
+    }).join('');
+
+    // ---------- 안내 노트 ----------
+    const noteEl = document.getElementById('note-panel');
+    if (stable) {
+      noteEl.innerHTML = `<b>조건 동결 경로 적용됨 (Condition Freeze Exception Enabled)</b><br>
+        금통위 기준금리 변경 경로가 시작일 기준금리와 동일하게 유지되고 있어, 계산식상의 시뮬레이션 결과 수익률이 초기 예상 수익률(Baseline)인 <b>${fmtPct2(initialAnnualYield)}</b> 값과 거의 일치하고 있습니다.`;
+    } else {
+      noteEl.innerHTML = `<b>금리 변경 경로 반영됨</b><br>
+        입력하신 금통위 일정에 따라 레포금리가 구간별로 변동되어, 시뮬레이션 결과 수익률(<b>${fmtPct2(scenarioAnnualYield)}</b>)이 초기 예상 수익률(<b>${fmtPct2(initialAnnualYield)}</b>)과 차이가 발생했습니다.
+        ${mtm !== 0 ? ` 또한 펀드 환매시점 예상 시장금리가 채권 현재금리와 달라 기말 평가손익 <b>${fmtEok(mtm)}</b>이 함께 반영되었습니다.` : ''}`;
+    }
+  }
+
+  // ---------- 상단 버튼 ----------
+  document.getElementById('btn-close').addEventListener('click', () => window.close());
+  document.getElementById('btn-pdf').addEventListener('click', () => window.print());
+
+  // ---------- 이벤트 바인딩 (회차 행 입력은 renderMeetRows()에서 개별 바인딩하므로 제외) ----------
+  document.querySelectorAll('.col-input input').forEach((el) => {
+    if (el.closest('#meet-rows')) return;
+    el.addEventListener('input', recalc);
+    el.addEventListener('change', recalc);
+  });
+
+  ensureCharts();
+  recalc();
+</script>
 </body>
 </html>

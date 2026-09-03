@@ -120,18 +120,17 @@
     try {
       let file_url = null, file_name = null, file_type = null, file_path = null;
 
-      // 수정
       if (file) {
         const normalizedName = file.name.normalize('NFC'); // 화면 표시용 이름은 정규화만 해서 그대로 사용
         const extMatch = normalizedName.match(/\.[^.]+$/);
         const ext = extMatch ? extMatch[0].toLowerCase() : '';
-        // Storage 경로는 한글/특수문자 전부 제거하고 영문/숫자/밑줄만 사용 (S3 키 규칙상 한글 자체가 불가)
+        // Storage 경로는 한글/특수문자 없이 영문/숫자만 사용 (S3 키 규칙상 비-ASCII 문자 자체가 불가)
         file_path = `${Date.now()}${ext}`;
         const { error: upErr } = await client.storage.from(BUCKET).upload(file_path, file);
         if (upErr) throw upErr;
         const { data: pub } = client.storage.from(BUCKET).getPublicUrl(file_path);
         file_url = pub.publicUrl;
-        file_name = normalizedName; // 화면에 보이는 이름/다운로드 이름은 원본 한글 그대로
+        file_name = normalizedName; // 화면에 보이는 이름/다운로드 이름은 원본 그대로
         file_type = normalizedName.includes('.') ? normalizedName.split('.').pop().toLowerCase() : null;
       }
 

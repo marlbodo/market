@@ -131,7 +131,7 @@ img { max-width: 100%; display: block; }
 .news-item:first-child { padding-top: 0; }
 .news-item:hover { background: var(--bg-hover); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: var(--radius-s); }
 
-.news-row { display: flex; align-items: flex-start; gap: 8px; }
+.news-row { display: flex; align-items: flex-start; gap: 6px; }
 
 .news-date { flex: none; width: 62px; padding-top: 2px; font-size: 11px; color: var(--text-faint); line-height: 1.3; }
 

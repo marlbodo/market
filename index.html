@@ -66,7 +66,6 @@
           <h2><span class="dot"></span>공모주(IPO) 일정</h2>
           <a href="pages/ipo-schedule-all.html" class="panel-more" id="ipo-schedule-more-link">자세히 보기</a>
         </div>
-        <!-- 수정 -->
         <div class="tag-legend" id="ipo-filter-row">
           <button class="ipo-filter-btn is-active" data-ipo-filter="all">전체</button>
           <button class="ipo-filter-btn" data-ipo-filter="forecast">수요예측</button>
@@ -74,8 +73,6 @@
           <button class="ipo-filter-btn" data-ipo-filter="listing">상장</button>
           <span class="ipo-count" id="ipo-count">일정: -</span>
         </div>
-        <!-- 수정 -->
-        <p class="ipo-legend-note">수요예측 및 청약은 시작일 기준입니다</p>        
         <table class="ipo-table">
           <thead>
             <tr>
@@ -118,7 +115,7 @@
 
       <div class="panel">
         <div class="panel-head">
-          <h2><span class="dot"></span>유용한 앱</h2>
+          <h2><span class="dot"></span>유용한 앱(준비중)</h2>
         </div>
         <a class="app-card" href="apps/repo-fund-simulator.html" id="repo-fund-link">
           <div>
@@ -159,7 +156,7 @@
   });
   document.getElementById('repo-fund-link').addEventListener('click', function (e) {
     e.preventDefault();
-    window.open(this.href, 'repoFundSimulator', 'width=480,height=720,scrollbars=yes,resizable=yes');
+    window.open(this.href, 'repoFundSimulator', 'width=1360,height=880,scrollbars=yes,resizable=yes');
   });
   document.getElementById('research-more-link').addEventListener('click', function (e) {
     e.preventDefault();

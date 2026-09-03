@@ -231,11 +231,11 @@ img { max-width: 100%; display: block; }
 .tag-subscription { background: var(--teal-soft); color: var(--teal); }
 .tag-listing { background: var(--accent-soft); color: var(--accent); }
 
-//추가
+/* 수정 */
 .ipo-legend-note {
   margin: -4px 0 10px;
-  font-size: 9px;
-  color: var(--text-muted);
+  font-size: 9.5px;
+  color: var(--text-faint);
 }
 
 .event-date-head {

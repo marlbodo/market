@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>리서치센터 전체보기 — 데일리 마켓 브리핑</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  body { background: var(--bg-subtle); }
+  .popup-wrap { max-width: 640px; margin: 0 auto; padding: 20px 20px 40px; }
+  .popup-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 14px; margin-bottom: 8px; border-bottom: 2px solid var(--text);
+  }
+  .popup-head h1 { font-size: 16px; margin: 0; }
+  .popup-close { font-size: 12.5px; color: var(--text-muted); border: 1px solid var(--border-strong); border-radius: var(--radius-s); padding: 4px 10px; }
+  .research-list-all { background: var(--bg); padding: 0 16px; border: 1px solid var(--border); }
+  .research-list-all .research-card:first-child { padding-top: 14px; }
+</style>
+</head>
+<body>
+  <div class="popup-wrap">
+    <div class="popup-head">
+      <h1>리서치센터 전체보기</h1>
+      <button class="popup-close" onclick="window.close()">닫기</button>
+    </div>
+    <div class="research-list-all" id="research-list-all">
+      <div class="list-loading">자료를 불러오는 중…</div>
+    </div>
+  </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-client.js"></script>
+<script src="../js/helpers.js"></script>
+<script>
+  (async function () {
+    const el = document.getElementById('research-list-all');
+    const { data, error } = await db
+      .from('research_reports')
+      .select('id, title, summary, file_url, file_name, created_at')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error(error);
+      el.innerHTML = '<div class="list-empty">자료를 불러오지 못했습니다.</div>';
+      return;
+    }
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div class="list-empty">등록된 리서치 자료가 없습니다.</div>';
+      return;
+    }
+    el.innerHTML = data.map((r, i) => {
+      const titleInner = escapeHtml(r.title);
+      const titleHtml = r.file_url
+        ? `<a class="research-title" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener">${titleInner}</a>`
+        : `<div class="research-title">${titleInner}</div>`;
+      return `
+        <div class="research-card">
+          <div class="research-kicker">No.${i + 1} · ${formatDateFull(r.created_at)}</div>
+          ${titleHtml}
+          <div class="research-desc">${escapeHtml(r.summary)}</div>
+        </div>`;
+    }).join('');
+  })();
+</script>
+</body>
+</html>

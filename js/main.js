@@ -267,6 +267,40 @@ async function loadIpoSchedule() {
   }
 }
 
+// ---------- 리서치센터 ----------
+async function loadResearchReports() {
+  const el = document.getElementById('research-list');
+  if (!el) return;
+  try {
+    const { data, error } = await db
+      .from('research_reports')
+      .select('id, title, summary, file_url, file_name')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div class="list-empty">등록된 리서치 자료가 없습니다.</div>';
+      return;
+    }
+
+    el.innerHTML = data.map((r, i) => {
+      const titleInner = escapeHtml(r.title);
+      const titleHtml = r.file_url
+        ? `<a class="research-title" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener">${titleInner}</a>`
+        : `<div class="research-title">${titleInner}</div>`;
+      return `
+        <div class="research-card">
+          <div class="research-kicker">No.${i + 1}</div>
+          ${titleHtml}
+          <div class="research-desc">${escapeHtml(r.summary)}</div>
+        </div>`;
+    }).join('');
+  } catch (err) {
+    showError(el, '리서치센터', err);
+  }
+}
+
 // ---------- init ----------
 document.addEventListener('DOMContentLoaded', () => {
   setupIpoFilter();
@@ -274,4 +308,5 @@ document.addEventListener('DOMContentLoaded', () => {
   loadIndicators();
   loadIpoNews();
   loadIpoSchedule();
+  loadResearchReports();
 });

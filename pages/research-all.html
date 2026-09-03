@@ -49,14 +49,22 @@
     }
     el.innerHTML = data.map((r, i) => {
       const titleInner = escapeHtml(r.title);
-      const titleHtml = r.file_url
-        ? `<a class="research-title" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener">${titleInner}</a>`
+      const hasFile = !!r.file_url;
+      const titleHtml = hasFile
+        ? `<a class="research-title" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener" download>${titleInner}</a>`
         : `<div class="research-title">${titleInner}</div>`;
+      const downloadBtn = hasFile
+        ? `<a class="research-download-btn" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener" download>파일 열기</a>`
+        : '';
+      const summaryText = escapeHtml(truncateText(r.summary, 100));
       return `
         <div class="research-card">
-          <div class="research-kicker">No.${i + 1} · ${formatDateFull(r.created_at)}</div>
+          <div class="research-card-head">
+            <div class="research-kicker">No.${i + 1} · ${formatDateTimeFull(r.created_at)}</div>
+            ${downloadBtn}
+          </div>
           ${titleHtml}
-          <div class="research-desc">${escapeHtml(r.summary)}</div>
+          <div class="research-desc">${summaryText}</div>
         </div>`;
     }).join('');
   })();

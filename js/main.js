@@ -176,7 +176,7 @@ function buildIpoEvents(rows) {
 
     // 수요예측 시작만 표시
     if (r.demand_forecast_start_date && r.demand_forecast_start_date >= TODAY) {
-      events.push({ ...base, date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측 시작', note: '' });
+      events.push({ ...base, date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측', note: '' });
     }
 
     // 청약 마감만 표시 (기관경쟁률 · 확약률)
@@ -186,7 +186,7 @@ function buildIpoEvents(rows) {
       const lockup = formatPercent(r.lockup_commitment_ratio);
       if (inst) subNoteParts.push(`기관경쟁률 ${inst}`);
       if (lockup) subNoteParts.push(`확약률 ${lockup}`);
-      events.push({ ...base, date: r.subscription_end_date, type: 'subscription', label: '청약 마감', note: subNoteParts.join(' · ') });
+      events.push({ ...base, date: r.subscription_end_date, type: 'subscription', label: '청약', note: subNoteParts.join(' · ') });
     }
 
     // 상장: 기관경쟁률 · 확약률 · 청약(개인)경쟁률

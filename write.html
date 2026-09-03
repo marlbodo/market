@@ -122,19 +122,20 @@
 
       // 수정
       if (file) {
-        const extMatch = file.name.match(/\.[^.]+$/);
+        const normalizedName = file.name.normalize('NFC'); // macOS 등에서 오는 자모 분리형 한글을 완성형으로 통일
+        const extMatch = normalizedName.match(/\.[^.]+$/);
         const ext = extMatch ? extMatch[0] : '';
-        const safeBase = file.name
-          .replace(/\.[^.]+$/, '')       // 확장자 떼고
-          .replace(/[^a-zA-Z0-9가-힣_-]/g, '_')  // 대괄호 등 특수문자만 _ 로 치환 (한글은 유지)
+        const safeBase = normalizedName
+          .replace(/\.[^.]+$/, '')
+          .replace(/[^a-zA-Z0-9가-힣_-]/g, '_')
           .replace(/_+/g, '_');
         file_path = `${Date.now()}_${safeBase}${ext}`;
         const { error: upErr } = await client.storage.from(BUCKET).upload(file_path, file);
         if (upErr) throw upErr;
         const { data: pub } = client.storage.from(BUCKET).getPublicUrl(file_path);
         file_url = pub.publicUrl;
-        file_name = file.name; // 원본 이름은 그대로 저장 (화면 표시용)
-        file_type = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : null;
+        file_name = normalizedName; // 화면 표시용 이름도 정규화된 걸로 (깨짐 방지)
+        file_type = normalizedName.includes('.') ? normalizedName.split('.').pop().toLowerCase() : null;
       }
 
       const { error: insErr } = await client.from('research_reports').insert({

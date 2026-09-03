@@ -271,17 +271,22 @@ async function loadIpoSchedule() {
 function renderResearchCards(el, data) {
   el.innerHTML = data.map((r, i) => {
     const titleInner = escapeHtml(r.title);
-    const downloadBtn = r.file_url
+    const hasFile = !!r.file_url;
+    const titleHtml = hasFile
+      ? `<a class="research-title" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener" download>${titleInner}</a>`
+      : `<div class="research-title">${titleInner}</div>`;
+    const downloadBtn = hasFile
       ? `<a class="research-download-btn" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener" download>파일 열기</a>`
       : '';
+    const summaryText = escapeHtml(truncateText(r.summary, 100));
     return `
       <div class="research-card">
         <div class="research-card-head">
-          <div class="research-kicker">No.${i + 1}</div>
+          <div class="research-kicker">No.${i + 1} · ${formatDateTimeFull(r.created_at)}</div>
           ${downloadBtn}
         </div>
-        <div class="research-title">${titleInner}</div>
-        <div class="research-desc">${escapeHtml(r.summary)}</div>
+        ${titleHtml}
+        <div class="research-desc">${summaryText}</div>
       </div>`;
   }).join('');
 }
@@ -292,7 +297,7 @@ async function loadResearchReports() {
   try {
     const { data, error } = await db
       .from('research_reports')
-      .select('id, title, summary, file_url, file_name')
+      .select('id, title, summary, file_url, file_name, created_at')
       .order('created_at', { ascending: false })
       .limit(5);
     if (error) throw error;

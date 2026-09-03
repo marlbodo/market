@@ -231,13 +231,6 @@ img { max-width: 100%; display: block; }
 .tag-subscription { background: var(--teal-soft); color: var(--teal); }
 .tag-listing { background: var(--accent-soft); color: var(--accent); }
 
-/* 수정 */
-.ipo-legend-note {
-  margin: -4px 0 10px;
-  font-size: 11px;
-  color: var(--text-faint);
-}
-
 .event-date-head {
   font-size: 12px;
   font-weight: 700;
@@ -315,14 +308,14 @@ a.research-title:hover { color: var(--accent); }
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 13px 14px;
+  padding: 15px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius-s);
   margin-bottom: 10px;
 }
 .app-card:hover { border-color: var(--teal); }
-.app-name { font-size: 13px; font-weight: 600; }
-.app-desc { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+.app-name { font-size: 15.5px; font-weight: 700; }
+.app-desc { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
 .app-go {
   flex: none;
   font-size: 11.5px;

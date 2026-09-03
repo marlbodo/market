@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-03 (금리표 기준일 헤더 이동)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-03-r (리서치센터 다운로드 버튼)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 
@@ -268,6 +268,24 @@ async function loadIpoSchedule() {
 }
 
 // ---------- 리서치센터 ----------
+function renderResearchCards(el, data) {
+  el.innerHTML = data.map((r, i) => {
+    const titleInner = escapeHtml(r.title);
+    const downloadBtn = r.file_url
+      ? `<a class="research-download-btn" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener" download>파일 열기</a>`
+      : '';
+    return `
+      <div class="research-card">
+        <div class="research-card-head">
+          <div class="research-kicker">No.${i + 1}</div>
+          ${downloadBtn}
+        </div>
+        <div class="research-title">${titleInner}</div>
+        <div class="research-desc">${escapeHtml(r.summary)}</div>
+      </div>`;
+  }).join('');
+}
+
 async function loadResearchReports() {
   const el = document.getElementById('research-list');
   if (!el) return;
@@ -284,18 +302,7 @@ async function loadResearchReports() {
       return;
     }
 
-    el.innerHTML = data.map((r, i) => {
-      const titleInner = escapeHtml(r.title);
-      const titleHtml = r.file_url
-        ? `<a class="research-title" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener">${titleInner}</a>`
-        : `<div class="research-title">${titleInner}</div>`;
-      return `
-        <div class="research-card">
-          <div class="research-kicker">No.${i + 1}</div>
-          ${titleHtml}
-          <div class="research-desc">${escapeHtml(r.summary)}</div>
-        </div>`;
-    }).join('');
+    renderResearchCards(el, data);
   } catch (err) {
     showError(el, '리서치센터', err);
   }

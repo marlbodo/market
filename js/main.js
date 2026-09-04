@@ -366,6 +366,53 @@ async function loadResearchReports() {
 }
 
 // ---------- init ----------
+// ---------- 헤더 여의도 날씨 (Open-Meteo, API 키 불필요) ----------
+const WEATHER_CODE_INFO = {
+  0: ['☀️', '맑음'], 1: ['🌤️', '대체로 맑음'], 2: ['⛅', '구름 조금'], 3: ['☁️', '흐림'],
+  45: ['🌫️', '안개'], 48: ['🌫️', '안개'],
+  51: ['🌦️', '이슬비'], 53: ['🌦️', '이슬비'], 55: ['🌦️', '이슬비'],
+  61: ['🌧️', '비'], 63: ['🌧️', '비'], 65: ['🌧️', '강한 비'],
+  71: ['🌨️', '눈'], 73: ['🌨️', '눈'], 75: ['❄️', '많은 눈'],
+  80: ['🌦️', '소나기'], 81: ['🌦️', '소나기'], 82: ['⛈️', '강한 소나기'],
+  95: ['⛈️', '뇌우'], 96: ['⛈️', '뇌우'], 99: ['⛈️', '뇌우'],
+};
+function weatherCodeInfo(code) {
+  return WEATHER_CODE_INFO[code] || ['🌡️', ''];
+}
+function weatherComment(temp, code) {
+  if ([95, 96, 99].includes(code)) return '천둥 조심하세요';
+  if ([61, 63, 65, 80, 81, 82].includes(code)) return '우산 챙기세요';
+  if ([71, 73, 75].includes(code)) return '눈길 조심하세요';
+  if (temp >= 30) return '푹푹 찌네요';
+  if (temp >= 25) return '완연한 더위';
+  if (temp >= 18) return '나들이 좋은 날씨';
+  if (temp >= 10) return '선선하네요';
+  if (temp >= 0) return '쌀쌀해요';
+  return '패딩 필수';
+}
+async function loadWeather() {
+  const el = document.getElementById('weather-widget');
+  if (!el) return;
+  try {
+    const res = await fetch(
+      'https://api.open-meteo.com/v1/forecast?latitude=37.5219&longitude=126.9245' +
+      '&current=temperature_2m,weather_code&timezone=Asia%2FSeoul'
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const temp = Math.round(data.current.temperature_2m);
+    const code = data.current.weather_code;
+    const [emoji, label] = weatherCodeInfo(code);
+    const comment = weatherComment(temp, code);
+    el.innerHTML =
+      `<span class="w-emoji">${emoji}</span>여의도 <span class="w-temp">${temp}°C</span> ${label}` +
+      `<span class="w-comment">· ${comment}</span>`;
+  } catch (err) {
+    console.error('날씨 정보를 불러오지 못했습니다', err);
+    el.textContent = ''; // 실패해도 조용히 숨김 (핵심 기능이 아니므로 에러 노출 안 함)
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   setupIpoFilter();
   loadFinancialNews();
@@ -373,4 +420,5 @@ document.addEventListener('DOMContentLoaded', () => {
   loadIpoNews();
   loadIpoSchedule();
   loadResearchReports();
+  loadWeather();
 });

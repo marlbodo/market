@@ -293,9 +293,13 @@ function setupIpoFilter() {
 async function loadIpoSchedule() {
   const el = document.getElementById('ipo-schedule-list');
   try {
+    // ipo_history는 2006년부터 쌓이는 이력 테이블이라 전체를 다 가져오면 무거우므로,
+    // "아직 지나지 않은 일정을 하나라도 가진 행"만 서버에서 걸러서 가져온다.
+    // (실제 표시 여부는 이전과 동일하게 buildIpoEvents에서 date >= TODAY로 다시 필터링)
     const { data, error } = await db
-      .from('ipo_schedule')
-      .select('*');
+      .from('ipo_history')
+      .select('*')
+      .or(`listing_date.is.null,listing_date.gte.${TODAY},subscription_end_date.gte.${TODAY},demand_forecast_end_date.gte.${TODAY}`);
     if (error) throw error;
 
     ALL_IPO_EVENTS = buildIpoEvents(data || []);

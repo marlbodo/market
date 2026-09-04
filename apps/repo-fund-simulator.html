@@ -203,9 +203,9 @@
       <input type="date" id="in-maturity" value="2027-07-31">
     </div>
     <div class="field">
-      <div class="field-label">펀드 환매시점 예상 시장금리(그 시점 펀드 편입채권 잔존만기 고려) <span class="unit">%</span></div>
+      <div class="field-label">펀드 환매시점(평가종료일) 예상 시장금리(그 시점 펀드 편입채권 잔존만기 고려) <span class="unit">%</span></div>
       <input type="number" id="in-endyield" value="3.70" step="0.01">
-      <div class="field-hint">채권 현재금리와 다르면 만기평가손익(MTM)이 발생합니다</div>
+      <div class="field-hint">편입채권 현재금리와 미래 평가금리가 다르면 평가손익(MTM)이 발생합니다</div>
     </div>
   </div>
 
@@ -247,9 +247,9 @@
         <div class="kpi-note">레포비용 반영 (평가손익 제외)</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">기말 평가손익</div>
+        <div class="kpi-label">평가손익</div>
         <div class="kpi-value" id="kpi-mtm">-</div>
-        <div class="kpi-note">환매시점 MTM</div>
+        <div class="kpi-note">환매시점(평가종료일) MTM</div>
         <div class="kpi-note" id="kpi-mtm-yield">-</div>
       </div>
     </div>

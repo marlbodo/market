@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-03-r (리서치센터 다운로드 버튼)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-04-r (마지막 업데이트 표시)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 
@@ -31,6 +31,39 @@ function showError(el, label, err) {
   el.innerHTML = `<div class="list-empty">⚠ ${label} 실패: ${escapeHtml(msg)}</div>`;
 }
 
+// ---------- 마지막 업데이트 표시 ----------
+// rows: DB에서 가져온 배열, fields: 우선순위대로 확인할 타임스탬프 컬럼명들
+// 배열/컬럼에서 값을 못 찾으면 현재 시각(페이지 로드 시각)으로 대체 표시
+function getMaxTimestamp(rows, fields = ['updated_at', 'created_at']) {
+  if (!rows || rows.length === 0) return null;
+  let max = null;
+  rows.forEach((row) => {
+    fields.forEach((f) => {
+      const v = row[f];
+      if (v && (!max || v > max)) max = v;
+    });
+  });
+  return max;
+}
+
+function setLastUpdated(elementId, timestamp) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+
+  const d = timestamp ? new Date(timestamp) : new Date();
+  const formatted = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(d);
+
+  el.textContent = `마지막 업데이트: ${formatted}`;
+}
+
 // ---------- 최신 채권·금리 뉴스 ----------
 async function loadFinancialNews() {
   const el = document.getElementById('news-list');
@@ -42,6 +75,7 @@ async function loadFinancialNews() {
       .limit(10);
     if (error) throw error;
     renderNewsList(el, data);
+    setLastUpdated('news-updated', getMaxTimestamp(data, ['created_at']));
   } catch (err) {
     showError(el, '채권·금리 뉴스', err);
   }
@@ -73,9 +107,10 @@ async function loadIndicators() {
   const dateThEl = document.getElementById('rate-date-th');
   try {
     // 1) 지표별 "현재값" 가져오기 (모든 지표가 최신일자를 공유한다고 가정, 여유 있게 60행)
+    // created_at이 있다면 함께 가져와 "마지막 업데이트" 시각으로 활용
     const { data: latestRows, error: latestErr } = await db
       .from('interest_rates')
-      .select('indicator, date, value')
+      .select('indicator, date, value, created_at')
       .order('date', { ascending: false })
       .limit(60);
     if (latestErr) throw latestErr;
@@ -83,6 +118,7 @@ async function loadIndicators() {
     if (!latestRows || latestRows.length === 0) {
       el.innerHTML = '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
       if (dateThEl) dateThEl.textContent = '금리';
+      setLastUpdated('rate-updated', null);
       return;
     }
 
@@ -129,6 +165,9 @@ async function loadIndicators() {
     if (dateThEl) dateThEl.textContent = formatDateShort(latestDate);
 
     el.innerHTML = rows_html || '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
+
+    // created_at 컬럼이 있으면 그 값을, 없으면 페이지 로드 시각을 표시
+    setLastUpdated('rate-updated', getMaxTimestamp(latestRows, ['created_at']));
   } catch (err) {
     console.error('주요금리', err);
     if (dateThEl) dateThEl.textContent = '오류';
@@ -148,6 +187,7 @@ async function loadIpoNews() {
       .limit(10);
     if (error) throw error;
     renderNewsList(el, data);
+    setLastUpdated('ipo-news-updated', getMaxTimestamp(data, ['created_at']));
   } catch (err) {
     showError(el, '공모주 뉴스', err);
   }
@@ -260,6 +300,9 @@ async function loadIpoSchedule() {
 
     ALL_IPO_EVENTS = buildIpoEvents(data || []);
     applyIpoFilter();
+
+    // updated_at/created_at 컬럼이 존재하면 그 값을, 없으면 페이지 로드 시각을 표시
+    setLastUpdated('ipo-schedule-updated', getMaxTimestamp(data, ['updated_at', 'created_at']));
   } catch (err) {
     console.error('공모주 일정', err);
     const msg = (err && err.message) ? err.message : String(err);

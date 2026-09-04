@@ -432,7 +432,7 @@
       data: { labels: [], datasets: [{ label: '누적 캐리수익(억원)', data: [], borderColor: '#16305c', backgroundColor: 'rgba(22,48,92,0.08)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#16305c' }] },
       options: {
         responsive: true, maintainAspectRatio: false,
-        layout: { padding: { top: 20 } },
+        layout: { padding: { top: 30, right: 10 } },
         plugins: {
           legend: { display: false },
           datalabels: {
@@ -441,7 +441,13 @@
             formatter: (v) => `${numComma(v, 3)}억`,
           },
         },
-        scales: { y: { ticks: { callback: (v) => `${numComma(v, 2)}억`, font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } },
+        scales: {
+          y: {
+            afterDataLimits: (axis) => { axis.max += (axis.max - axis.min || 1) * 0.15; },
+            ticks: { callback: (v) => `${numComma(v, 2)}억`, font: { size: 10 } },
+          },
+          x: { ticks: { font: { size: 10 } } },
+        },
       },
     });
   }

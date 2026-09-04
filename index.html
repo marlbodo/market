@@ -145,25 +145,42 @@
 <script src="js/helpers.js"></script>
 <script src="js/main.js"></script>
 <script>
+  // 팝업을 현재 화면(모니터) 정중앙에 띄우기 위한 좌표 계산.
+  // window.screenLeft/Top + outerWidth/outerHeight 기준으로 계산하면
+  // 멀티모니터 환경에서도 "지금 브라우저가 있는 화면"을 기준으로 중앙에 뜬다.
+  function openCentered(url, name, width, height) {
+    const screenLeft = window.screenLeft ?? window.screenX;
+    const screenTop = window.screenTop ?? window.screenY;
+    const outerWidth = window.outerWidth ?? document.documentElement.clientWidth;
+    const outerHeight = window.outerHeight ?? document.documentElement.clientHeight;
+
+    const left = screenLeft + Math.max(0, (outerWidth - width) / 2);
+    const top = screenTop + Math.max(0, (outerHeight - height) / 2);
+
+    const features = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`;
+    const popup = window.open(url, name, features);
+    if (popup) popup.focus();
+  }
+
   document.getElementById('news-more-link').addEventListener('click', function (e) {
     e.preventDefault();
-    window.open(this.href, 'newsAll', 'width=720,height=880,scrollbars=yes,resizable=yes');
+    openCentered(this.href, 'newsAll', 720, 880);
   });
   document.getElementById('ipo-schedule-more-link').addEventListener('click', function (e) {
     e.preventDefault();
-    window.open(this.href, 'ipoScheduleAll', 'width=760,height=880,scrollbars=yes,resizable=yes');
+    openCentered(this.href, 'ipoScheduleAll', 760, 880);
   });
   document.getElementById('ipo-news-more-link').addEventListener('click', function (e) {
     e.preventDefault();
-    window.open(this.href, 'ipoNewsAll', 'width=720,height=880,scrollbars=yes,resizable=yes');
+    openCentered(this.href, 'ipoNewsAll', 720, 880);
   });
   document.getElementById('repo-fund-link').addEventListener('click', function (e) {
     e.preventDefault();
-    window.open(this.href, 'repoFundSimulator', 'width=1360,height=880,scrollbars=yes,resizable=yes');
+    openCentered(this.href, 'repoFundSimulator', 1360, 880);
   });
   document.getElementById('research-more-link').addEventListener('click', function (e) {
     e.preventDefault();
-    window.open(this.href, 'researchAll', 'width=720,height=880,scrollbars=yes,resizable=yes');
+    openCentered(this.href, 'researchAll', 720, 880);
   });
 </script>
 </body>

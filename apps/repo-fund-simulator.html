@@ -79,7 +79,7 @@
   /* ---------- 명세표 ---------- */
   table.rpt { width: 100%; border-collapse: collapse; border: 1px solid var(--border-strong); font-size: 11px; margin-bottom: 18px; }
   table.rpt th, table.rpt td { padding: 7px 5px; text-align: right; border: 1px solid var(--border); white-space: nowrap; }
-  table.rpt thead th { background: var(--bg-subtle); color: var(--text-muted); font-weight: 700; font-size: 10.5px; text-align: center; }
+  table.rpt thead th { background: var(--bg-subtle); color: var(--text-muted); font-weight: 700; font-size: 10.5px; text-align: center; line-height: 1.4; }
   table.rpt th:first-child, table.rpt td:first-child { text-align: center; color: var(--text-muted); }
   table.rpt td.pos { color: var(--up); }
   table.rpt td.neg { color: var(--down); }
@@ -151,14 +151,13 @@
         <input type="number" id="in-fee" value="8" step="0.5">
       </div>
     </div>
-    <div class="field-hint" style="margin: -6px 0 12px;">연간 운용사·신탁 보수 합계 (8bp = 0.08%)</div>
     <div class="field field-row">
       <div>
-        <div class="field-label">펀드 가입일</div>
+        <div class="field-label">펀드가입일(평가시작일)</div>
         <input type="date" id="in-start" value="2026-09-03">
       </div>
       <div>
-        <div class="field-label">환매 예정일</div>
+        <div class="field-label">환매예정일(평가종료일)</div>
         <input type="date" id="in-end" value="2026-12-31">
       </div>
     </div>
@@ -199,10 +198,9 @@
     <div class="field">
       <div class="field-label">채권 만기일</div>
       <input type="date" id="in-maturity" value="2027-07-31">
-      <div class="field-hint">듀레이션 = (만기일 − 기준일) ÷ 365 로 자동 계산됩니다</div>
     </div>
     <div class="field">
-      <div class="field-label">펀드 환매시점 예상 시장금리 <span class="unit">%</span></div>
+      <div class="field-label">펀드 환매시점 예상 시장금리(그 시점 펀드 편입채권 잔존만기 고려) <span class="unit">%</span></div>
       <input type="number" id="in-endyield" value="3.70" step="0.01">
       <div class="field-hint">채권 현재금리와 다르면 만기평가손익(MTM)이 발생합니다</div>
     </div>
@@ -263,8 +261,8 @@
       <table class="rpt">
         <thead>
           <tr>
-            <th>조회월</th><th>일수</th><th>채권</th><th>CD</th><th>이자수익</th>
-            <th>레포비용</th><th>총보수</th><th>월순수익</th><th>잔존듀레이션</th><th>월말PVBP</th><th>수익률</th>
+            <th>월</th><th>일수</th><th>채권</th><th>CD</th><th>이자<br>수익</th>
+            <th>레포<br>비용</th><th>총보수</th><th>월<br>순수익</th><th>잔존채권<br>듀레이션</th><th>월말<br>PVBP</th><th>수익률</th>
           </tr>
         </thead>
         <tbody id="report-body"></tbody>
@@ -288,11 +286,11 @@
       </li>
       <li>
         <h4>3. 기말 채권 시가평가손익 (Mark-to-Market)</h4>
-        <p>운용기간 중에는 캐리수익만 매일 누적되고, 금리 변동에 따른 채권 평가손익은 종료일에 (초기금리−종료시점 시장금리)×잔존듀레이션×채권편입액으로 1회만 가산됩니다.</p>
+        <p>운용기간 중에는 캐리수익만 매일 누적되고, 금리 변동에 따른 채권 평가손익은 종료일에 (초기금리−종료시점 시장금리)×잔존듀레이션×채권편입액으로 한번만 계산됩니다.</p>
       </li>
       <li>
         <h4>4. 금통위 연쇄 동기화</h4>
-        <p>회차별로 입력한 기준금리가 해당 날짜부터 적용되며, 레포금리는 그 시점 기준금리+스프레드로 즉시 갱신됩니다. 기준금리가 안 바뀌면 시뮬레이션 결과는 초기 예상 수익률과 거의 일치합니다.</p>
+        <p>회차별로 입력한 기준금리가 해당 날짜부터 적용되며, 레포금리는 그 시점 기준금리+스프레드로 즉시 갱신됩니다. 기준금리가 안 바뀌면 시뮬레이션 결과는 초기 예상 수익률과 일치합니다.</p>
       </li>
     </ul>
   </div>
@@ -304,11 +302,13 @@
 <script>
   Chart.register(ChartDataLabels);
   // ---------- 유틸 ----------
-  function fmtEok(n) { return `${n.toFixed(3)}억원`; }
+  function numComma(n, decimals) { return n.toLocaleString('ko-KR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }); }
+  function fmtEok(n) { return `${numComma(n, 3)}억원`; }
   function fmtPct2(n) { return `${n.toFixed(3)}%`; }
   function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
   function addDaysISO(dateObj) { return dateObj.toISOString().slice(0, 10); }
   function monthKey(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+  function monthLabelShort(key) { const [y, m] = key.split('-'); return `${y.slice(2)}.${m}`; } // '2026-09' -> '26.09'
 
   // ---------- 금통위 회차 행 관리 ----------
   const DEFAULT_MEETINGS = [
@@ -438,10 +438,10 @@
           datalabels: {
             align: 'top', anchor: 'end', offset: 4,
             color: '#16305c', font: { weight: '800', size: 10 },
-            formatter: (v) => `${v.toFixed(3)}억`,
+            formatter: (v) => `${numComma(v, 3)}억`,
           },
         },
-        scales: { y: { ticks: { callback: (v) => `${v.toFixed(2)}억`, font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } },
+        scales: { y: { ticks: { callback: (v) => `${numComma(v, 2)}억`, font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } },
       },
     });
   }
@@ -476,8 +476,8 @@
     const bondAmt = nav * bondRatioPct / 100;
 
     document.getElementById('derived-leverage').textContent = `${leverageRatioPct.toFixed(0)}%`;
-    document.getElementById('derived-bond-amt').textContent = `${bondAmt.toFixed(0)}억`;
-    document.getElementById('derived-cd-amt').textContent = `${cdAmt.toFixed(0)}억`;
+    document.getElementById('derived-bond-amt').textContent = `${Math.round(bondAmt).toLocaleString('ko-KR')}억`;
+    document.getElementById('derived-cd-amt').textContent = `${Math.round(cdAmt).toLocaleString('ko-KR')}억`;
 
     const totalDays = daysBetween(start, end);
     document.getElementById('period-display').innerHTML =
@@ -552,7 +552,7 @@
       const isLast = i === monthKeysSorted.length - 1;
       return Number((running + (isLast ? mtm : 0)).toFixed(3));
     });
-    lineChart.data.labels = monthKeysSorted;
+    lineChart.data.labels = monthKeysSorted.map(monthLabelShort);
     lineChart.data.datasets[0].data = lineData;
     lineChart.update();
 
@@ -563,16 +563,16 @@
       const monthlyAnnualYield = (b.carry / nav) * (365 / b.days) * 100;
       return `
         <tr>
-          <td>${k}</td>
+          <td>${monthLabelShort(k)}</td>
           <td>${b.days}</td>
-          <td>${bondAmt.toFixed(2)}</td>
-          <td>${cdAmt.toFixed(2)}</td>
-          <td class="pos">+${b.interest.toFixed(3)}</td>
-          <td class="neg">-${b.repoCost.toFixed(3)}</td>
-          <td class="neg">-${b.fee.toFixed(3)}</td>
-          <td class="${b.carry >= 0 ? 'pos' : 'neg'}">${b.carry >= 0 ? '+' : ''}${b.carry.toFixed(3)}</td>
+          <td>${numComma(bondAmt, 0)}</td>
+          <td>${numComma(cdAmt, 0)}</td>
+          <td class="pos">+${numComma(b.interest, 3)}</td>
+          <td class="neg">-${numComma(b.repoCost, 3)}</td>
+          <td class="neg">-${numComma(b.fee, 3)}</td>
+          <td class="${b.carry >= 0 ? 'pos' : 'neg'}">${b.carry >= 0 ? '+' : ''}${numComma(b.carry, 3)}</td>
           <td>${b.durationEnd.toFixed(2)}</td>
-          <td>${(bondAmt * b.durationEnd * 0.0001).toFixed(3)}</td>
+          <td>${numComma(bondAmt * b.durationEnd * 0.0001, 3)}</td>
           <td><span class="ybadge">${monthlyAnnualYield.toFixed(3)}%</span></td>
         </tr>`;
     }).join('');
@@ -581,7 +581,7 @@
     const noteEl = document.getElementById('note-panel');
     if (stable) {
       noteEl.innerHTML = `<b>조건 동결 경로 적용됨</b><br>
-        금통위 기준금리 변경 경로가 시작일 기준금리와 동일하게 유지되고 있어, 시뮬레이션 결과 수익률이 초기 예상 수익률(<b>${fmtPct2(initialAnnualYield)}</b>)과 거의 일치하고 있습니다.`;
+        금통위 기준금리 변경 경로가 시작일 기준금리와 동일하게 유지되고 있어, 시뮬레이션 결과 수익률이 초기 예상 수익률(<b>${fmtPct2(initialAnnualYield)}</b>)과 일치하고 있습니다.`;
     } else {
       noteEl.innerHTML = `<b>금리 변경 경로 반영됨</b><br>
         입력하신 금통위 일정에 따라 레포금리가 구간별로 변동되어, 시뮬레이션 결과 수익률(<b>${fmtPct2(scenarioAnnualYield)}</b>)이 초기 예상 수익률(<b>${fmtPct2(initialAnnualYield)}</b>)과 차이가 발생했습니다.

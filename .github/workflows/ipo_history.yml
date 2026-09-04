@@ -1,0 +1,44 @@
+name: Daily IPO History Fetcher
+on:
+  workflow_dispatch:
+    inputs:
+      demand_schedule_max_pages:
+        description: '수요예측일정 최대 페이지 (비워두면 기본값 1)'
+        required: false
+        default: ''
+      demand_results_max_pages:
+        description: '수요예측결과 최대 페이지 (비워두면 기본값 1)'
+        required: false
+        default: ''
+      subscription_max_pages:
+        description: '청약일정 최대 페이지 (비워두면 기본값 1)'
+        required: false
+        default: ''
+      listing_max_pages:
+        description: '신규상장 최대 페이지 (비워두면 기본값 1)'
+        required: false
+        default: ''
+  schedule:
+    - cron: '18 * * * *' # 매시간 18분에 실행
+jobs:
+  run-fetch-ipo-history:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install dependencies and run script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          DEMAND_SCHEDULE_MAX_PAGES: ${{ github.event.inputs.demand_schedule_max_pages }}
+          DEMAND_RESULTS_MAX_PAGES: ${{ github.event.inputs.demand_results_max_pages }}
+          SUBSCRIPTION_MAX_PAGES: ${{ github.event.inputs.subscription_max_pages }}
+          LISTING_MAX_PAGES: ${{ github.event.inputs.listing_max_pages }}
+        run: |
+          pip install --upgrade pip
+          pip install supabase beautifulsoup4
+          python fetch_ipo_history.py

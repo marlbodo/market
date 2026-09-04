@@ -80,7 +80,16 @@ img { max-width: 100%; display: block; }
 
 .col { min-width: 0; }
 
-.panel { margin-bottom: 40px; }
+.panel {
+  margin-bottom: 24px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 20px 18px;
+  box-shadow: 0 1px 2px rgba(20, 23, 31, 0.04);
+  transition: box-shadow 0.15s ease;
+}
+.panel:hover { box-shadow: 0 4px 16px rgba(20, 23, 31, 0.07); }
 .panel:last-child { margin-bottom: 0; }
 
 .panel-head {
@@ -101,16 +110,19 @@ img { max-width: 100%; display: block; }
   align-items: center;
 }
 
-.dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  height: 19px;
   margin-right: 8px;
-  background: var(--accent);
+  color: var(--accent);
+  flex: none;
 }
-.col-ipo .dot { background: var(--amber); }
-.col-research .dot { background: var(--teal); }
+.section-icon svg { width: 100%; height: 100%; display: block; }
+.col-ipo .section-icon { color: var(--amber); }
+.col-research .section-icon { color: var(--teal); }
 
 .panel-more {
   font-size: 12px;
@@ -203,7 +215,12 @@ img { max-width: 100%; display: block; }
   text-align: right;
   border-top: 1px solid var(--border);
   letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
 }
+.last-updated svg { width: 11px; height: 11px; flex: none; opacity: 0.85; }
 
 /* ---------- 공모주 일정 (중앙) ---------- */
 .tag-legend { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -323,8 +340,9 @@ a.research-title:hover { color: var(--accent); }
   border: 1px solid var(--border);
   border-radius: var(--radius-s);
   margin-bottom: 10px;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
-.app-card:hover { border-color: var(--teal); }
+.app-card:hover { border-color: var(--teal); box-shadow: 0 3px 10px rgba(15, 122, 107, 0.12); }
 .app-name { font-size: 15.5px; font-weight: 700; }
 .app-desc { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
 .app-go {

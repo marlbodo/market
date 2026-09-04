@@ -61,7 +61,8 @@ function setLastUpdated(elementId, timestamp) {
     hour12: false,
   }).format(d);
 
-  el.textContent = `마지막 업데이트: ${formatted}`;
+  const CLOCK_ICON = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6.5"/><path d="M9 5.5V9l3 1.7"/></svg>';
+  el.innerHTML = `${CLOCK_ICON}마지막 업데이트: ${formatted}`;
 }
 
 // ---------- 최신 채권·금리 뉴스 ----------

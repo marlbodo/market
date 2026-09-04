@@ -85,8 +85,11 @@ async function loadFinancialNews() {
 const RATE_ORDER = [
   '기준금리', 'CD', '산금6M', '산금1Y', '은행AA+1Y',
   '국고3Y', '국고5Y', '국고10Y', '공사3Y', '공사5Y',
-  '미국정책금리', '미국10Y',
+  'Fed금리',
 ];
+
+// DB에는 계속 쌓이지만(수집은 유지) 메인 화면 표에는 표시하지 않을 지표
+const HIDDEN_INDICATORS = new Set(['미국 10Y']);
 function rateSortKey(name) {
   const norm = name.replace(/\s+/g, '');
   const idx = RATE_ORDER.findIndex((k) => norm.includes(k) || k.includes(norm));
@@ -126,7 +129,8 @@ async function loadIndicators() {
     latestRows.forEach((row) => {
       if (!currentByIndicator[row.indicator]) currentByIndicator[row.indicator] = row; // 먼저 나온(=가장 최신) 것만 유지
     });
-    const indicatorList = Object.entries(currentByIndicator); // [ [name, currentRow], ... ]
+    const indicatorList = Object.entries(currentByIndicator)
+      .filter(([name]) => !HIDDEN_INDICATORS.has(name)); // 화면에 숨길 지표 제외 (DB엔 그대로 남음)
 
     // 2) 지표 하나당, 특정 날짜보다 "작은" 날짜 중 가장 큰 값을 정확히 targeted 조회
     const fetchBefore = async (name, thresholdDate) => {

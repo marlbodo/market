@@ -98,7 +98,6 @@
   .guide-list p { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0; }
 
   @media (max-width: 480px) {
-    .field-row { grid-template-columns: 1fr; gap: 6px; }
     .derived-box { grid-template-columns: 1fr 1fr; }
     .derived-item:last-child { grid-column: span 2; }
     .kpi-row { grid-template-columns: 1fr; }
@@ -142,15 +141,17 @@
   <!-- ===== 1. 펀드 기본 및 비용 ===== -->
   <div class="sec">
     <div class="sec-title"><span class="num">1</span>펀드 기본 및 비용</div>
-    <div class="field">
-      <div class="field-label">펀드 설정액 (NAV) <span class="unit">억원</span></div>
-      <input type="number" id="in-nav" value="100" step="1">
+    <div class="field field-row">
+      <div>
+        <div class="field-label">펀드 설정액 (NAV) <span class="unit">억원</span></div>
+        <input type="number" id="in-nav" value="100" step="1">
+      </div>
+      <div>
+        <div class="field-label">펀드 총보수 <span class="unit">bp</span></div>
+        <input type="number" id="in-fee" value="8" step="0.5">
+      </div>
     </div>
-    <div class="field">
-      <div class="field-label">펀드 총보수 <span class="unit">bp</span></div>
-      <input type="number" id="in-fee" value="8" step="0.5">
-      <div class="field-hint">연간 운용사·신탁 보수 합계 (8bp = 0.08%)</div>
-    </div>
+    <div class="field-hint" style="margin: -6px 0 12px;">연간 운용사·신탁 보수 합계 (8bp = 0.08%)</div>
     <div class="field field-row">
       <div>
         <div class="field-label">펀드 가입일</div>
@@ -166,16 +167,17 @@
   <!-- ===== 2. 자산 포트폴리오 ===== -->
   <div class="sec">
     <div class="sec-title"><span class="num">2</span>자산 포트폴리오 편성</div>
-    <div class="field">
-      <div class="field-label">채권 편입비율 <span class="unit">%</span></div>
-      <input type="number" id="in-bondratio" value="300" step="10">
-      <div class="field-hint">NAV 대비 채권 총 보유 비중</div>
+    <div class="field field-row">
+      <div>
+        <div class="field-label">채권 편입비율 <span class="unit">%</span></div>
+        <input type="number" id="in-bondratio" value="300" step="10">
+      </div>
+      <div>
+        <div class="field-label">CD 편입비율 <span class="unit">%</span></div>
+        <input type="number" id="in-cdratio" value="50" step="5">
+      </div>
     </div>
-    <div class="field">
-      <div class="field-label">CD 편입비율 <span class="unit">%</span></div>
-      <input type="number" id="in-cdratio" value="50" step="5">
-      <div class="field-hint">NAV 대비 CD 보유 비중</div>
-    </div>
+    <div class="field-hint" style="margin: -6px 0 12px;">NAV 대비 각각의 보유 비중 (채권 / CD)</div>
 
     <div class="derived-box">
       <div class="derived-item"><div class="dl">레버리지</div><div class="dv" id="derived-leverage">-</div></div>
@@ -474,8 +476,8 @@
     const bondAmt = nav * bondRatioPct / 100;
 
     document.getElementById('derived-leverage').textContent = `${leverageRatioPct.toFixed(0)}%`;
-    document.getElementById('derived-bond-amt').textContent = `${bondAmt.toFixed(1)}억`;
-    document.getElementById('derived-cd-amt').textContent = `${cdAmt.toFixed(1)}억`;
+    document.getElementById('derived-bond-amt').textContent = `${bondAmt.toFixed(0)}억`;
+    document.getElementById('derived-cd-amt').textContent = `${cdAmt.toFixed(0)}억`;
 
     const totalDays = daysBetween(start, end);
     document.getElementById('period-display').innerHTML =
@@ -593,6 +595,16 @@
     el.addEventListener('input', recalc);
     el.addEventListener('change', recalc);
   });
+
+  // ---------- 펀드 가입일 기본값 = 오늘(KST) ----------
+  // (하드코딩된 날짜는 시간이 지나면 계속 과거에 머물러 있으므로, 페이지를 열 때마다 오늘 기준으로 갱신)
+  (function setDefaultDates() {
+    const todayKST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+    document.getElementById('in-start').value = todayKST;
+    const endDate = new Date(`${todayKST}T00:00:00`);
+    endDate.setDate(endDate.getDate() + 119); // 기존 기본 시뮬레이션 기간(119일)을 오늘 기준으로 유지
+    document.getElementById('in-end').value = endDate.toISOString().slice(0, 10);
+  })();
 
   ensureCharts();
   recalc();

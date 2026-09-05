@@ -81,7 +81,6 @@ img { max-width: 100%; display: block; }
 .weather-widget .w-temp { font-weight: 800; color: var(--text); font-size: 13.5px; }
 .weather-widget .w-comment { color: var(--text-faint); }
 @media (max-width: 980px) { .weather-widget .w-comment { display: none; } }
-@media (max-width: 640px) { .weather-widget { display: none; } }
 
 /* ---------- 3-column layout ---------- */
 .layout {

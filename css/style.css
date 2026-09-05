@@ -66,7 +66,7 @@ img { max-width: 100%; display: block; }
 
 .brand { display: flex; align-items: center; }
 .brand-link { display: flex; align-items: center; gap: 12px; }
-.brand-visual { width: 130px; height: 63px; display: block; flex: none; }
+.brand-visual { width: 100px; height: 49px; display: block; flex: none; }
 .brand-text { display: flex; flex-direction: column; gap: 2px; }
 .brand-mark { font-size: 21px; font-weight: 800; letter-spacing: -0.02em; color: var(--accent); line-height: 1.2; white-space: nowrap; }
 .brand-tagline { font-size: 13px; color: var(--text-faint); white-space: nowrap; }
@@ -382,7 +382,7 @@ a.research-title:hover { color: var(--accent); }
   .wrap { padding: 0 16px; }
   .rate-deltas { gap: 4px; }
   .brand-link { gap: 8px; }
-  .brand-visual { width: 84px; height: 41px; }
+  .brand-visual { width: 70px; height: 34px; }
   .brand-mark { font-size: 17px; }
   .brand-tagline { font-size: 11px; }
 }

@@ -38,7 +38,7 @@
       .from('ipo_news')
       .select('id, title, summary, link, article_published_at, created_at')
       .order('article_published_at', { ascending: false })
-      .limit(30);
+      .limit(50);
 
     if (error) {
       console.error(error);

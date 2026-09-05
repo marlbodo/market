@@ -12,9 +12,10 @@
   .ai-perks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
   .ai-perk { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #16305c; background: #eaf0fb; padding: 6px 11px; border-radius: 8px; font-weight: 500; }
   .ai-notice { font-size: 12px; color: #9ca3af; margin-bottom: 18px; }
-  .ai-header .wrap { padding-top: 20px; padding-bottom: 20px; }
-  .ai-back { display: inline-block; font-size: 13px; color: var(--text-faint, #6b7280); margin-bottom: 14px; }
-  .ai-back:hover { color: var(--accent, #16305c); }
+  .ai-header .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px; box-sizing: border-box; }
+  .ai-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .ai-close { flex: none; font-size: 12.5px; color: var(--text-muted, #6b7280); border: 1px solid var(--border-strong, #d6dae1); border-radius: var(--radius-s, 3px); padding: 5px 12px; background: #fff; cursor: pointer; margin-top: 4px; }
+  .ai-close:hover { border-color: #16305c; color: #16305c; }
   .ai-title-row { display: flex; align-items: center; gap: 16px; }
   .ai-hero-visual { width: 110px; height: 54px; flex: none; display: block; }
   .ai-title { font-size: 28px; font-weight: 800; color: #16305c; margin: 0 0 4px; letter-spacing: -0.02em; }
@@ -45,9 +46,10 @@
   .ai-actions { display: flex; gap: 8px; margin-top: 8px; }
   .ai-actions button { font-size: 12.5px; padding: 5px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: #374151; cursor: pointer; }
   .ai-actions button:active { background: #f3f4f6; }
-  .ai-inputbar { position: sticky; bottom: 0; display: flex; gap: 8px; padding: 10px 0; background: linear-gradient(to top, #fff 70%, transparent); }
-  .ai-inputbar textarea { flex: 1; resize: none; font-size: 16px; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 12px; font-family: inherit; min-height: 48px; max-height: 120px; }
-  .ai-inputbar button { padding: 0 20px; border: none; border-radius: 12px; background: #16305c; color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; }
+  .ai-input-label { font-size: 12.5px; color: #9ca3af; margin-bottom: 6px; padding-left: 2px; }
+  .ai-inputbar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 8px; padding: 10px 0; background: linear-gradient(to top, #fff 70%, transparent); }
+  .ai-inputbar textarea { flex: 1; resize: none; font-size: 16px; padding: 11px 14px; border: 1px solid #d1d5db; border-radius: 14px; font-family: inherit; height: 44px; max-height: 140px; line-height: 1.4; overflow-y: auto; box-sizing: border-box; }
+  .ai-inputbar button { flex: none; width: 44px; height: 44px; padding: 0; border: none; border-radius: 12px; background: #16305c; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
   .ai-inputbar button:disabled { background: #9ca3af; }
   .ai-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
   .ai-suggest button { font-size: 14px; padding: 7px 12px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #374151; cursor: pointer; }
@@ -58,8 +60,7 @@
 <div class="brand-bar"><span class="c1"></span><span class="c2"></span><span class="c3"></span></div>
 
 <header class="site-header ai-header">
-  <div class="wrap">
-    <a href="index.html" class="ai-back">← 데일리 마켓 브리핑</a>
+  <div class="wrap ai-header-row">
     <div class="ai-title-row">
       <svg class="ai-hero-visual" viewBox="0 0 380 185" role="img" aria-hidden="true">
         <defs>
@@ -103,6 +104,7 @@
         </div>
       </div>
     </div>
+    <button class="ai-close" onclick="window.close()">닫기</button>
   </div>
 </header>
 
@@ -125,20 +127,21 @@
     <button type="button" data-q="금리 관련 뉴스 요약 부탁">금리 관련 뉴스 요약 부탁</button>
     <button type="button" data-q="국고 3년물과 10년물 스프레드 어떻게 돼?">국고 3년물과 10년물 스프레드는?</button>
     <button type="button" data-q="이번 주 청약 예정인 공모주 있어?">이번 주 청약 예정 공모주</button>
-    <button type="button" data-q="최근 기준금리 동결 배경 설명해줘">기준금리 동결 배경 설명</button>
-    <button type="button" data-q="최근 공모주 중 경쟁률 높았던 종목 알려줘">경쟁률 높았던 공모주는?</button>
-    <button type="button" data-q="오늘 채권 시장 한줄로 요약해줘">오늘 채권 시장 한줄 요약</button>
-    <button type="button" data-q="최근 발행된 회사채 소식 있어?">최근 회사채 발행 소식</button>
-    <button type="button" data-q="미국 금리 인상 가능성 어때?">미국 금리 인상 가능성은?</button>
+    <button type="button" data-q="최근 공모주 시장 분위기 어때?">최근 공모주 시장 분위기는?</button>
+    <button type="button" data-q="10년 전 기준금리와 국고 3년물 금리는?">10년 전 기준금리와 국고 3년물은?</button>
+    <button type="button" data-q="지금 시장에서 네가 보기에 주목해야 할 주요 뉴스를 정리해줘">지금 주목해야 할 주요 뉴스는?</button>
   </div>
 
   <div class="ai-chat" id="ai-chat"></div>
 </div>
 
 <div class="ai-wrap" style="position: sticky; bottom: 0; padding-top: 0;">
+  <div class="ai-input-label">아래에 원하시는 질문을 입력해 주세요</div>
   <div class="ai-inputbar">
     <textarea id="ai-input" placeholder="금리, 채권, 공모주에 대해 물어보세요" rows="1"></textarea>
-    <button id="ai-send">전송</button>
+    <button id="ai-send" aria-label="AI에게 묻기" title="AI에게 묻기">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </button>
   </div>
 </div>
 
@@ -153,7 +156,7 @@
 
   inputEl.addEventListener('input', () => {
     inputEl.style.height = 'auto';
-    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
   });
   inputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }

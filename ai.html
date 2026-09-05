@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 애널리스트 — 데일리 마켓 브리핑</title>
+<meta name="description" content="금리·채권·공모주 데이터를 참고해 답변하는 AI 애널리스트">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .ai-wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 40px; }
+  .ai-intro { font-size: 13px; color: var(--text-muted, #6b7280); margin: 10px 0 18px; line-height: 1.6; }
+  .ai-chat { display: flex; flex-direction: column; gap: 14px; margin-bottom: 90px; }
+  .ai-msg { max-width: 88%; padding: 12px 14px; border-radius: 14px; font-size: 16px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+  .ai-msg.user { align-self: flex-end; background: #16305c; color: #fff; border-bottom-right-radius: 4px; }
+  .ai-msg.bot { align-self: flex-start; background: #f3f4f6; color: #111827; border-bottom-left-radius: 4px; }
+  .ai-msg.bot.pending { color: #9ca3af; font-style: italic; }
+  .ai-sources { margin-top: 8px; font-size: 12.5px; color: #6b7280; }
+  .ai-sources a { color: #16305c; text-decoration: underline; }
+  .ai-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .ai-actions button { font-size: 12.5px; padding: 5px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: #374151; cursor: pointer; }
+  .ai-actions button:active { background: #f3f4f6; }
+  .ai-inputbar { position: sticky; bottom: 0; display: flex; gap: 8px; padding: 10px 0; background: linear-gradient(to top, #fff 70%, transparent); }
+  .ai-inputbar textarea { flex: 1; resize: none; font-size: 16px; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 12px; font-family: inherit; min-height: 48px; max-height: 120px; }
+  .ai-inputbar button { padding: 0 20px; border: none; border-radius: 12px; background: #16305c; color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; }
+  .ai-inputbar button:disabled { background: #9ca3af; }
+  .ai-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .ai-suggest button { font-size: 12.5px; padding: 6px 10px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #374151; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="brand-bar"><span class="c1"></span><span class="c2"></span><span class="c3"></span></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <div class="brand">
+      <a href="index.html" class="brand-mark">데일리 마켓 브리핑</a>
+      <span class="brand-tagline">AI 애널리스트</span>
+    </div>
+  </div>
+</header>
+
+<div class="ai-wrap">
+  <div class="ai-intro">
+    금리·채권·공모주(IPO) 데이터베이스와 최신 뉴스를 참고해서 답변합니다. 투자 참고용이며 투자 권유가 아닙니다.
+  </div>
+
+  <div class="ai-suggest" id="ai-suggest">
+    <button type="button" data-q="최근 국고채 금리 추이 어때?">최근 국고채 금리 추이 어때?</button>
+    <button type="button" data-q="이번 주 청약 예정인 공모주 알려줘">이번 주 청약 예정인 공모주</button>
+    <button type="button" data-q="최근 채권 뉴스 요약해줘">최근 채권 뉴스 요약</button>
+  </div>
+
+  <div class="ai-chat" id="ai-chat"></div>
+</div>
+
+<div class="ai-wrap" style="position: sticky; bottom: 0; padding-top: 0;">
+  <div class="ai-inputbar">
+    <textarea id="ai-input" placeholder="금리, 채권, 공모주에 대해 물어보세요" rows="1"></textarea>
+    <button id="ai-send">전송</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script>
+  // ▼ 배포 후 실제 Edge Function URL로 바꿔주세요.
+  // 예: https://hnxvsopwxiamexnxczhj.supabase.co/functions/v1/gemini-chat
+  const AI_ENDPOINT = "https://hnxvsopwxiamexnxczhj.supabase.co/functions/v1/gemini-chat";
+
+  const chatEl = document.getElementById('ai-chat');
+  const inputEl = document.getElementById('ai-input');
+  const sendBtn = document.getElementById('ai-send');
+
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+  });
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+  sendBtn.addEventListener('click', send);
+
+  document.getElementById('ai-suggest').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-q]');
+    if (!btn) return;
+    inputEl.value = btn.dataset.q;
+    send();
+  });
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function addMessage(role, text) {
+    const div = document.createElement('div');
+    div.className = 'ai-msg ' + role;
+    div.textContent = text;
+    chatEl.appendChild(div);
+    window.scrollTo(0, document.body.scrollHeight);
+    return div;
+  }
+
+  function renderAnswer(div, answer, sources, questionText) {
+    div.classList.remove('pending');
+    div.textContent = answer;
+
+    if (sources && sources.length) {
+      const srcEl = document.createElement('div');
+      srcEl.className = 'ai-sources';
+      srcEl.innerHTML = '참고 출처: ' + sources.slice(0, 5).map(s =>
+        `<a href="${escapeHtml(s.uri)}" target="_blank" rel="noopener">${escapeHtml(s.title || s.uri)}</a>`
+      ).join(' · ');
+      div.appendChild(srcEl);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'ai-actions';
+
+    const htmlBtn = document.createElement('button');
+    htmlBtn.textContent = 'HTML로 저장';
+    htmlBtn.onclick = () => saveAsHtml(questionText, answer);
+    actions.appendChild(htmlBtn);
+
+    const pdfBtn = document.createElement('button');
+    pdfBtn.textContent = 'PDF로 저장';
+    pdfBtn.onclick = () => saveAsPdf(questionText, answer);
+    actions.appendChild(pdfBtn);
+
+    div.appendChild(actions);
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+
+  function saveAsHtml(question, answer) {
+    const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 애널리스트 답변</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;max-width:640px;margin:0 auto;padding:24px 20px;line-height:1.7;font-size:16px;color:#111}
+  h1{font-size:18px;border-bottom:2px solid #16305c;padding-bottom:10px}
+  .q{background:#16305c;color:#fff;padding:12px 14px;border-radius:10px;margin:16px 0}
+  .a{background:#f3f4f6;padding:14px;border-radius:10px;white-space:pre-wrap}
+  .foot{margin-top:20px;font-size:12.5px;color:#6b7280}
+</style></head><body>
+<h1>데일리 마켓 브리핑 · AI 애널리스트</h1>
+<div class="q">${escapeHtml(question)}</div>
+<div class="a">${escapeHtml(answer)}</div>
+<div class="foot">생성 시각: ${new Date().toLocaleString('ko-KR')} · 투자 참고용이며 투자 권유가 아닙니다.</div>
+</body></html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ai-answer-${Date.now()}.html`;
+    a.click();
+  }
+
+  function saveAsPdf(question, answer) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'padding:24px;font-family:-apple-system,sans-serif;font-size:16px;line-height:1.8;max-width:600px';
+    wrap.innerHTML = `
+      <h1 style="font-size:18px;border-bottom:2px solid #16305c;padding-bottom:10px">데일리 마켓 브리핑 · AI 애널리스트</h1>
+      <div style="background:#16305c;color:#fff;padding:12px 14px;border-radius:10px;margin:16px 0">${escapeHtml(question)}</div>
+      <div style="background:#f3f4f6;padding:14px;border-radius:10px;white-space:pre-wrap">${escapeHtml(answer)}</div>
+      <div style="margin-top:20px;font-size:12.5px;color:#6b7280">생성 시각: ${new Date().toLocaleString('ko-KR')} · 투자 참고용이며 투자 권유가 아닙니다.</div>
+    `;
+    html2pdf().set({
+      margin: 10,
+      filename: `ai-answer-${Date.now()}.pdf`,
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(wrap).save();
+  }
+
+  async function send() {
+    const question = inputEl.value.trim();
+    if (!question) return;
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    addMessage('user', question);
+    const pendingDiv = addMessage('bot pending', '답변을 생성하는 중…');
+
+    try {
+      const res = await fetch(AI_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || '요청 실패');
+      renderAnswer(pendingDiv, json.answer, json.sources, question);
+    } catch (err) {
+      pendingDiv.classList.remove('pending');
+      pendingDiv.textContent = '오류가 발생했습니다: ' + err.message;
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>

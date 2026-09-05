@@ -13,7 +13,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 BASE = "http://www.38.co.kr"
 
-# 평소(매일/매시간 실행)에는 최근 1~2페이지만 훑어도 충분하지만,
+# 평소(매일/매시간 실행)에는 최근 1페이지만 훑어도 충분하지만,
 # 최초 구축 시에는 전체 이력을 다 긁어와야 하므로 페이지 수를 환경변수로 조절할 수 있게 함.
 # 예) 최초 1회 전체 백필:
 #   DEMAND_SCHEDULE_MAX_PAGES=93 DEMAND_RESULTS_MAX_PAGES=92 \

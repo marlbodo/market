@@ -8,12 +8,31 @@
 <link rel="stylesheet" href="css/style.css">
 <style>
   .ai-wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 40px; }
-  .ai-intro { font-size: 13px; color: var(--text-muted, #6b7280); margin: 10px 0 18px; line-height: 1.6; }
+  .ai-intro { font-size: 15px; color: var(--text-muted, #4b5563); margin: 20px 0 14px; line-height: 1.7; }
+  .ai-perks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .ai-perk { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #16305c; background: #eaf0fb; padding: 6px 11px; border-radius: 8px; font-weight: 500; }
+  .ai-notice { font-size: 12px; color: #9ca3af; margin-bottom: 18px; }
+  .ai-header .wrap { padding-top: 20px; padding-bottom: 20px; }
+  .ai-back { display: inline-block; font-size: 13px; color: var(--text-faint, #6b7280); margin-bottom: 14px; }
+  .ai-back:hover { color: var(--accent, #16305c); }
+  .ai-title-row { display: flex; align-items: center; gap: 16px; }
+  .ai-hero-visual { width: 110px; height: 54px; flex: none; display: block; }
+  .ai-title { font-size: 28px; font-weight: 800; color: #16305c; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .ai-subtitle { font-size: 14.5px; color: #6b7280; margin: 0; line-height: 1.5; }
+  .ai-model-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #0f7a6b; background: #e1f3ef; padding: 3px 10px; border-radius: 999px; margin-top: 8px; font-weight: 600; }
+  .ai-model-dot { width: 6px; height: 6px; border-radius: 50%; background: #0f7a6b; flex: none; }
+  @media (max-width: 480px) {
+    .ai-hero-visual { width: 76px; height: 37px; }
+    .ai-title { font-size: 22px; }
+    .ai-subtitle { font-size: 13px; }
+  }
   .ai-chat { display: flex; flex-direction: column; gap: 14px; margin-bottom: 90px; }
   .ai-msg { max-width: 88%; padding: 12px 14px; border-radius: 14px; font-size: 16px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
   .ai-msg.user { align-self: flex-end; background: #16305c; color: #fff; border-bottom-right-radius: 4px; }
   .ai-msg.bot { align-self: flex-start; background: #f3f4f6; color: #111827; border-bottom-left-radius: 4px; }
-  .ai-msg.bot.pending { color: #9ca3af; font-style: italic; }
+  .ai-msg.bot.pending { color: #6b7280; font-style: normal; display: flex; align-items: center; gap: 9px; }
+  .ai-spinner { width: 15px; height: 15px; border: 2px solid #d1d5db; border-top-color: #16305c; border-radius: 50%; flex: none; animation: ai-spin 0.7s linear infinite; }
+  @keyframes ai-spin { to { transform: rotate(360deg); } }
   .ai-sources { margin-top: 8px; font-size: 12.5px; color: #6b7280; }
   .ai-sources a { color: #16305c; text-decoration: underline; }
   .ai-msg table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 14.5px; }
@@ -31,31 +50,86 @@
   .ai-inputbar button { padding: 0 20px; border: none; border-radius: 12px; background: #16305c; color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; }
   .ai-inputbar button:disabled { background: #9ca3af; }
   .ai-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
-  .ai-suggest button { font-size: 12.5px; padding: 6px 10px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #374151; cursor: pointer; }
+  .ai-suggest button { font-size: 14px; padding: 7px 12px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #374151; cursor: pointer; }
 </style>
 </head>
 <body>
 
 <div class="brand-bar"><span class="c1"></span><span class="c2"></span><span class="c3"></span></div>
 
-<header class="site-header">
+<header class="site-header ai-header">
   <div class="wrap">
-    <div class="brand">
-      <a href="index.html" class="brand-mark">데일리 마켓 브리핑</a>
-      <span class="brand-tagline">AI 애널리스트</span>
+    <a href="index.html" class="ai-back">← 데일리 마켓 브리핑</a>
+    <div class="ai-title-row">
+      <svg class="ai-hero-visual" viewBox="0 0 380 185" role="img" aria-hidden="true">
+        <defs>
+          <linearGradient id="financeGrad2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5DCAA5" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#5DCAA5" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M30,115 L95,95 L160,105 L225,68 L290,78 L345,50 L345,125 L30,125 Z" fill="url(#financeGrad2)"/>
+        <path d="M30,115 L95,95 L160,105 L225,68 L290,78 L345,50" fill="none" stroke="#0F6E56" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="30" cy="115" r="4" fill="#0F6E56" stroke="#FFFFFF" stroke-width="1.2"/>
+        <circle cx="95" cy="95" r="4" fill="#0F6E56" stroke="#FFFFFF" stroke-width="1.2"/>
+        <circle cx="160" cy="105" r="4" fill="#0F6E56" stroke="#FFFFFF" stroke-width="1.2"/>
+        <circle cx="225" cy="68" r="4" fill="#0F6E56" stroke="#FFFFFF" stroke-width="1.2"/>
+        <circle cx="290" cy="78" r="4" fill="#0F6E56" stroke="#FFFFFF" stroke-width="1.2"/>
+        <circle cx="345" cy="50" r="4" fill="#0F6E56" stroke="#FFFFFF" stroke-width="1.2"/>
+        <path d="M65,28 L67.5,35.5 L75,38 L67.5,40.5 L65,48 L62.5,40.5 L55,38 L62.5,35.5 Z" fill="#7F77DD"/>
+        <path d="M205,21 L207.5,27 L214,30 L207.5,33 L205,39 L202.5,33 L196,30 L202.5,27 Z" fill="#EF9F27"/>
+        <path d="M335,35 L337.2,39.8 L342,42 L337.2,44.2 L335,49 L332.8,44.2 L328,42 L332.8,39.8 Z" fill="#D4537E"/>
+        <line x1="35" y1="160" x2="90" y2="145" stroke="#888780" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="90" y1="145" x2="145" y2="160" stroke="#888780" stroke-width="1" stroke-dasharray="3,3"/>
+        <circle cx="35" cy="160" r="4" fill="#0F6E56" stroke="#FFFFFF" stroke-width="1"/>
+        <circle cx="145" cy="160" r="4" fill="#0F6E56" stroke="#FFFFFF" stroke-width="1"/>
+        <g transform="translate(90,145)">
+          <g transform="rotate(0)"><rect x="-1.5" y="-13" width="3" height="5" fill="#888780"/></g>
+          <g transform="rotate(60)"><rect x="-1.5" y="-13" width="3" height="5" fill="#888780"/></g>
+          <g transform="rotate(120)"><rect x="-1.5" y="-13" width="3" height="5" fill="#888780"/></g>
+          <g transform="rotate(180)"><rect x="-1.5" y="-13" width="3" height="5" fill="#888780"/></g>
+          <g transform="rotate(240)"><rect x="-1.5" y="-13" width="3" height="5" fill="#888780"/></g>
+          <g transform="rotate(300)"><rect x="-1.5" y="-13" width="3" height="5" fill="#888780"/></g>
+          <circle r="7" fill="#888780" stroke="#5F5E5A" stroke-width="0.5"/>
+          <circle r="2.5" fill="#FFFFFF"/>
+        </g>
+      </svg>
+      <div>
+        <h1 class="ai-title">AI 애널리스트</h1>
+        <p class="ai-subtitle">채권・금리・공모주 전문 AI가 답변합니다</p>
+        <div class="ai-model-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l1.8 5.5L19 9l-5.2 1.5L12 16l-1.8-5.5L5 9l5.2-1.5L12 2z"/></svg>
+          Powered by Claude Sonnet 5 · 실시간 웹검색 연동
+        </div>
+      </div>
     </div>
   </div>
 </header>
 
 <div class="ai-wrap">
   <div class="ai-intro">
-    금리·채권·공모주(IPO) 데이터베이스와 최신 뉴스를 참고해서 답변합니다. 투자 참고용이며 투자 권유가 아닙니다.
+    이 사이트에 있는 정보와 실시간 뉴스 검색을 함께 참고해서 답변합니다. 투자 참고용이며 투자 권유가 아닙니다.
   </div>
 
+  <div class="ai-perks">
+    <div class="ai-perk"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>채권·금리·공모주 전문가로 세팅된 AI</div>
+    <div class="ai-perk"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>금리·공모주 데이터 자동 연동</div>
+    <div class="ai-perk"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>매 질문마다 최신 뉴스 실시간 검색</div>
+  </div>
+
+  <div class="ai-notice">※ 이전 대화 내용을 기억하지 않고, 매 질문마다 새로 독립적으로 답변합니다.</div>
+
   <div class="ai-suggest" id="ai-suggest">
-    <button type="button" data-q="최근 국고채 금리 추이 어때?">최근 국고채 금리 추이 어때?</button>
-    <button type="button" data-q="이번 주 청약 예정인 공모주 알려줘">이번 주 청약 예정인 공모주</button>
-    <button type="button" data-q="최근 채권 뉴스 요약해줘">최근 채권 뉴스 요약</button>
+    <button type="button" data-q="최근 시장금리 추이 어때?">최근 시장금리 추이 어때?</button>
+    <button type="button" data-q="향후 공모주 일정은?">향후 공모주 일정은?</button>
+    <button type="button" data-q="금리 관련 뉴스 요약 부탁">금리 관련 뉴스 요약 부탁</button>
+    <button type="button" data-q="국고 3년물과 10년물 스프레드 어떻게 돼?">국고 3년물과 10년물 스프레드는?</button>
+    <button type="button" data-q="이번 주 청약 예정인 공모주 있어?">이번 주 청약 예정 공모주</button>
+    <button type="button" data-q="최근 기준금리 동결 배경 설명해줘">기준금리 동결 배경 설명</button>
+    <button type="button" data-q="최근 공모주 중 경쟁률 높았던 종목 알려줘">경쟁률 높았던 공모주는?</button>
+    <button type="button" data-q="오늘 채권 시장 한줄로 요약해줘">오늘 채권 시장 한줄 요약</button>
+    <button type="button" data-q="최근 발행된 회사채 소식 있어?">최근 회사채 발행 소식</button>
+    <button type="button" data-q="미국 금리 인상 가능성 어때?">미국 금리 인상 가능성은?</button>
   </div>
 
   <div class="ai-chat" id="ai-chat"></div>
@@ -68,7 +142,6 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <script>
   const AI_ENDPOINT = "https://hnxvsopwxiamexnxczhj.supabase.co/functions/v1/claude-chat";
   // 이 키는 공개용 anon key라 브라우저에 있어도 안전합니다 (Gemini 키와는 다릅니다).
@@ -91,7 +164,8 @@
     const btn = e.target.closest('button[data-q]');
     if (!btn) return;
     inputEl.value = btn.dataset.q;
-    send();
+    inputEl.focus();
+    inputEl.dispatchEvent(new Event('input'));
   });
 
   function escapeHtml(s) {
@@ -186,11 +260,6 @@
     htmlBtn.onclick = () => saveAsHtml(questionText, answer);
     actions.appendChild(htmlBtn);
 
-    const pdfBtn = document.createElement('button');
-    pdfBtn.textContent = 'PDF로 저장';
-    pdfBtn.onclick = () => saveAsPdf(questionText, answer);
-    actions.appendChild(pdfBtn);
-
     div.appendChild(actions);
     window.scrollTo(0, document.body.scrollHeight);
   }
@@ -223,31 +292,15 @@
     a.click();
   }
 
-  function saveAsPdf(question, answer) {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:600px;padding:24px;background:#fff;font-family:-apple-system,sans-serif;font-size:16px;line-height:1.8;box-sizing:border-box';
-    wrap.innerHTML = `
-      <h1 style="font-size:18px;border-bottom:2px solid #16305c;padding-bottom:10px">데일리 마켓 브리핑 · AI 애널리스트</h1>
-      <div style="background:#16305c;color:#fff;padding:12px 14px;border-radius:10px;margin:16px 0">${escapeHtml(question)}</div>
-      <div style="background:#f3f4f6;padding:14px;border-radius:10px" id="pdf-answer-body">${mdToHtml(answer)}</div>
-      <div style="margin-top:20px;font-size:12.5px;color:#6b7280">생성 시각: ${new Date().toLocaleString('ko-KR')} · 투자 참고용이며 투자 권유가 아닙니다.</div>
-    `;
-    const styleTag = document.createElement('style');
-    styleTag.textContent = '#pdf-answer-body table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px}#pdf-answer-body th,#pdf-answer-body td{border:1px solid #d1d5db;padding:6px 9px;text-align:center}#pdf-answer-body thead th{background:#16305c;color:#fff}#pdf-answer-body tbody tr:nth-child(even){background:#e9eaee}#pdf-answer-body .ans-h{font-weight:700;margin:10px 0 4px;color:#16305c}';
-    wrap.appendChild(styleTag);
+  const LOADING_PHASES = [
+    '질문을 분석하는 중…',
+    '사이트 금리·공모주 데이터 조회 중…',
+    '최신 뉴스 웹검색 중…',
+    '답변을 정리하는 중…',
+  ];
 
-    // html2canvas가 실제 레이아웃을 읽어야 하므로, 화면 밖에라도 DOM에 붙였다가 캡처 후 제거한다.
-    document.body.appendChild(wrap);
-    html2pdf().set({
-      margin: 10,
-      filename: `ai-answer-${Date.now()}.pdf`,
-      html2canvas: { scale: 2, windowWidth: 600 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(wrap).save().then(() => {
-      document.body.removeChild(wrap);
-    }).catch(() => {
-      document.body.removeChild(wrap);
-    });
+  function setPendingPhase(div, idx) {
+    div.innerHTML = `<span class="ai-spinner"></span><span>${LOADING_PHASES[idx % LOADING_PHASES.length]}</span>`;
   }
 
   async function send() {
@@ -258,7 +311,13 @@
     sendBtn.disabled = true;
 
     addMessage('user', question);
-    const pendingDiv = addMessage('bot pending', '답변을 생성하는 중…');
+    const pendingDiv = addMessage('bot pending', '');
+    let phaseIdx = 0;
+    setPendingPhase(pendingDiv, phaseIdx);
+    const phaseTimer = setInterval(() => {
+      phaseIdx++;
+      setPendingPhase(pendingDiv, phaseIdx);
+    }, 2200);
 
     try {
       const res = await fetch(AI_ENDPOINT, {
@@ -272,8 +331,10 @@
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || '요청 실패');
+      clearInterval(phaseTimer);
       renderAnswer(pendingDiv, json.answer, json.sources, question);
     } catch (err) {
+      clearInterval(phaseTimer);
       pendingDiv.classList.remove('pending');
       pendingDiv.textContent = '오류가 발생했습니다: ' + err.message;
     } finally {

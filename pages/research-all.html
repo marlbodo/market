@@ -37,7 +37,8 @@
     const { data, error } = await db
       .from('research_reports')
       .select('id, title, summary, file_url, file_name, created_at')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(50);
     if (error) {
       console.error(error);
       el.innerHTML = '<div class="list-empty">자료를 불러오지 못했습니다.</div>';

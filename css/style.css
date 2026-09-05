@@ -55,16 +55,17 @@ img { max-width: 100%; display: block; }
 .site-header { border-bottom: 1px solid var(--border); }
 
 .site-header .wrap {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  display: flex;
   align-items: center;
-  column-gap: 12px;
+  justify-content: space-between;
   padding-top: 18px;
   padding-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.brand { grid-column: 2; justify-self: center; display: flex; align-items: center; }
-.weather-widget { grid-column: 3; justify-self: end; }
+.brand { display: flex; align-items: center; }
+.weather-widget { flex: none; }
 .brand-link { display: flex; align-items: center; gap: 12px; }
 .brand-visual { width: 100px; height: 49px; display: block; flex: none; align-self: center; }
 .brand-text { display: flex; flex-direction: column; justify-content: center; gap: 2px; }

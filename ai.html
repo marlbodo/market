@@ -63,9 +63,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <script>
-  // ▼ 배포 후 실제 Edge Function URL로 바꿔주세요.
-  // 예: https://hnxvsopwxiamexnxczhj.supabase.co/functions/v1/gemini-chat
   const AI_ENDPOINT = "https://hnxvsopwxiamexnxczhj.supabase.co/functions/v1/gemini-chat";
+  // 이 키는 공개용 anon key라 브라우저에 있어도 안전합니다 (Gemini 키와는 다릅니다).
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
 
   const chatEl = document.getElementById('ai-chat');
   const inputEl = document.getElementById('ai-input');
@@ -183,7 +183,11 @@
     try {
       const res = await fetch(AI_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'apikey': SUPABASE_ANON_KEY
+        },
         body: JSON.stringify({ question })
       });
       const json = await res.json();

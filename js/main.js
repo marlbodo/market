@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-04-r (마지막 업데이트 표시)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-05-r (날씨 2줄 표시)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 
@@ -404,9 +404,11 @@ async function loadWeather() {
     const code = data.current.weather_code;
     const [emoji, label] = weatherCodeInfo(code);
     const comment = weatherComment(temp, code);
+    // 1줄: 지역명 / 2줄: 아이콘+온도+날씨+코멘트
     el.innerHTML =
-      `<span class="w-emoji">${emoji}</span>여의도 <span class="w-temp">${temp}°C</span> ${label}` +
-      `<span class="w-comment">· ${comment}</span>`;
+      `<div class="w-line1">여의도</div>` +
+      `<div class="w-line2"><span class="w-emoji">${emoji}</span><span class="w-temp">${temp}°C</span> ${label}` +
+      `<span class="w-comment"> · ${comment}</span></div>`;
   } catch (err) {
     console.error('날씨 정보를 불러오지 못했습니다', err);
     el.textContent = ''; // 실패해도 조용히 숨김 (핵심 기능이 아니므로 에러 노출 안 함)

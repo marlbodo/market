@@ -75,12 +75,15 @@ img { max-width: 100%; display: block; }
 .weather-widget {
   font-size: 12.5px;
   color: var(--text-faint);
-  white-space: nowrap;
   display: flex;
-  align-items: center;
-  gap: 5px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
 }
-.weather-widget .w-emoji { font-size: 15px; line-height: 1; }
+.weather-widget .w-line1 { font-size: 11.5px; color: var(--text-faint); white-space: nowrap; }
+.weather-widget .w-line2 { white-space: nowrap; }
+.weather-widget .w-emoji { font-size: 15px; line-height: 1; margin-right: 3px; }
 .weather-widget .w-temp { font-weight: 800; color: var(--text); font-size: 13.5px; }
 .weather-widget .w-comment { color: var(--text-faint); }
 @media (max-width: 980px) { .weather-widget .w-comment { display: none; } }

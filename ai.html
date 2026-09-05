@@ -16,6 +16,13 @@
   .ai-msg.bot.pending { color: #9ca3af; font-style: italic; }
   .ai-sources { margin-top: 8px; font-size: 12.5px; color: #6b7280; }
   .ai-sources a { color: #16305c; text-decoration: underline; }
+  .ai-msg table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 14.5px; }
+  .ai-msg th, .ai-msg td { border: 1px solid #d1d5db; padding: 6px 9px; text-align: center; }
+  .ai-msg thead th { background: #16305c; color: #fff; font-weight: 600; }
+  .ai-msg tbody tr:nth-child(even) { background: #f3f4f6; }
+  .ai-msg .ans-h { font-weight: 700; margin: 10px 0 4px; color: #16305c; }
+  .ai-msg ul { margin: 4px 0; padding-left: 20px; }
+  .ai-msg p { margin: 6px 0; }
   .ai-actions { display: flex; gap: 8px; margin-top: 8px; }
   .ai-actions button { font-size: 12.5px; padding: 5px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: #374151; cursor: pointer; }
   .ai-actions button:active { background: #f3f4f6; }
@@ -91,6 +98,64 @@
     return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  function inlineMd(s) {
+    return escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
+
+  // 아주 단순한 마크다운(표 / **굵게** / - 목록 / 문단) → HTML 변환기
+  function mdToHtml(text) {
+    const lines = String(text ?? '').split('\n');
+    let html = '';
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+
+      if (/^\s*\|.*\|\s*$/.test(line)) {
+        const tableLines = [];
+        while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) {
+          tableLines.push(lines[i]);
+          i++;
+        }
+        const rows = tableLines.map((l) => l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim()));
+        const isSep = (r) => r.every((c) => /^:?-{2,}:?$/.test(c));
+        let headerRow = null, bodyRows = rows;
+        if (rows.length > 1 && isSep(rows[1])) {
+          headerRow = rows[0];
+          bodyRows = rows.slice(2);
+        }
+        html += '<table>';
+        if (headerRow) {
+          html += '<thead><tr>' + headerRow.map((c) => `<th>${inlineMd(c)}</th>`).join('') + '</tr></thead>';
+        }
+        html += '<tbody>' + bodyRows.map((r) => '<tr>' + r.map((c) => `<td>${inlineMd(c)}</td>`).join('') + '</tr>').join('') + '</tbody>';
+        html += '</table>';
+        continue;
+      }
+
+      if (/^\s*[-*]\s+/.test(line)) {
+        const items = [];
+        while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+          items.push(lines[i].replace(/^\s*[-*]\s+/, ''));
+          i++;
+        }
+        html += '<ul>' + items.map((it) => `<li>${inlineMd(it)}</li>`).join('') + '</ul>';
+        continue;
+      }
+
+      if (/^\s*\*\*(.+)\*\*\s*$/.test(line) && line.trim().length < 60) {
+        html += `<div class="ans-h">${inlineMd(line.trim().replace(/^\*\*|\*\*$/g, ''))}</div>`;
+        i++;
+        continue;
+      }
+
+      if (line.trim() === '') { i++; continue; }
+
+      html += `<p>${inlineMd(line)}</p>`;
+      i++;
+    }
+    return html;
+  }
+
   function addMessage(role, text) {
     const div = document.createElement('div');
     div.className = 'ai-msg ' + role;
@@ -102,7 +167,7 @@
 
   function renderAnswer(div, answer, sources, questionText) {
     div.classList.remove('pending');
-    div.textContent = answer;
+    div.innerHTML = mdToHtml(answer);
 
     if (sources && sources.length) {
       const srcEl = document.createElement('div');
@@ -138,12 +203,17 @@
   body{font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;max-width:640px;margin:0 auto;padding:24px 20px;line-height:1.7;font-size:16px;color:#111}
   h1{font-size:18px;border-bottom:2px solid #16305c;padding-bottom:10px}
   .q{background:#16305c;color:#fff;padding:12px 14px;border-radius:10px;margin:16px 0}
-  .a{background:#f3f4f6;padding:14px;border-radius:10px;white-space:pre-wrap}
+  .a{background:#f3f4f6;padding:14px;border-radius:10px}
+  .a table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14.5px}
+  .a th,.a td{border:1px solid #d1d5db;padding:6px 9px;text-align:center}
+  .a thead th{background:#16305c;color:#fff}
+  .a tbody tr:nth-child(even){background:#e9eaee}
+  .a .ans-h{font-weight:700;margin:10px 0 4px;color:#16305c}
   .foot{margin-top:20px;font-size:12.5px;color:#6b7280}
 </style></head><body>
 <h1>데일리 마켓 브리핑 · AI 애널리스트</h1>
 <div class="q">${escapeHtml(question)}</div>
-<div class="a">${escapeHtml(answer)}</div>
+<div class="a">${mdToHtml(answer)}</div>
 <div class="foot">생성 시각: ${new Date().toLocaleString('ko-KR')} · 투자 참고용이며 투자 권유가 아닙니다.</div>
 </body></html>`;
     const blob = new Blob([html], { type: 'text/html' });
@@ -155,19 +225,29 @@
 
   function saveAsPdf(question, answer) {
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'padding:24px;font-family:-apple-system,sans-serif;font-size:16px;line-height:1.8;max-width:600px';
+    wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:600px;padding:24px;background:#fff;font-family:-apple-system,sans-serif;font-size:16px;line-height:1.8;box-sizing:border-box';
     wrap.innerHTML = `
       <h1 style="font-size:18px;border-bottom:2px solid #16305c;padding-bottom:10px">데일리 마켓 브리핑 · AI 애널리스트</h1>
       <div style="background:#16305c;color:#fff;padding:12px 14px;border-radius:10px;margin:16px 0">${escapeHtml(question)}</div>
-      <div style="background:#f3f4f6;padding:14px;border-radius:10px;white-space:pre-wrap">${escapeHtml(answer)}</div>
+      <div style="background:#f3f4f6;padding:14px;border-radius:10px" id="pdf-answer-body">${mdToHtml(answer)}</div>
       <div style="margin-top:20px;font-size:12.5px;color:#6b7280">생성 시각: ${new Date().toLocaleString('ko-KR')} · 투자 참고용이며 투자 권유가 아닙니다.</div>
     `;
+    const styleTag = document.createElement('style');
+    styleTag.textContent = '#pdf-answer-body table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px}#pdf-answer-body th,#pdf-answer-body td{border:1px solid #d1d5db;padding:6px 9px;text-align:center}#pdf-answer-body thead th{background:#16305c;color:#fff}#pdf-answer-body tbody tr:nth-child(even){background:#e9eaee}#pdf-answer-body .ans-h{font-weight:700;margin:10px 0 4px;color:#16305c}';
+    wrap.appendChild(styleTag);
+
+    // html2canvas가 실제 레이아웃을 읽어야 하므로, 화면 밖에라도 DOM에 붙였다가 캡처 후 제거한다.
+    document.body.appendChild(wrap);
     html2pdf().set({
       margin: 10,
       filename: `ai-answer-${Date.now()}.pdf`,
-      html2canvas: { scale: 2 },
+      html2canvas: { scale: 2, windowWidth: 600 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(wrap).save();
+    }).from(wrap).save().then(() => {
+      document.body.removeChild(wrap);
+    }).catch(() => {
+      document.body.removeChild(wrap);
+    });
   }
 
   async function send() {

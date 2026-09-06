@@ -66,8 +66,13 @@
     <div class="panel-head">
       <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5l1.2 3.3 3.3 1.2-3.3 1.2L9 11.5l-1.2-3.3-3.3-1.2 3.3-1.2L9 2.5Z"/><path d="M14.5 11l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6.6-1.7Z"/></svg></span>AI 인사이트</h2>
     </div>
-    <div id="ai-insight-list" class="ai-insight-list">
-      <div class="list-loading">오늘의 AI 브리핑을 불러오는 중…</div>
+    <div class="ai-insight-layout">
+      <div id="ai-insight-list" class="ai-insight-list">
+        <div class="list-loading">오늘의 AI 브리핑을 불러오는 중…</div>
+      </div>
+      <a class="ai-insight-ask-box" href="ai.html" id="ai-ask-btn">
+        <span class="ai-insight-ask-label">AI에게<br>물어보기</span>
+      </a>
     </div>
   </section>
 
@@ -104,7 +109,7 @@
         <table class="rate-table">
           <thead>
             <tr>
-              <th>주요지표</th>
+              <th>지표</th>
               <th>전월/전기대비</th>
               <th>전년동기대비</th>
               <th>대상기간</th>

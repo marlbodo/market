@@ -148,34 +148,43 @@ img { max-width: 100%; display: block; }
 .ai-insight-title:hover { color: #7f77dd; text-decoration: underline; }
 .ai-insight-date { flex: none; font-size: 11.5px; color: var(--text-faint); }
 
-/* AI에게 물어보기: 뉴스 박스와 별개의 독립된 박스로, 오른쪽 끝에 고정 */
+/* AI에게 물어보기: 뉴스 박스와 별개의 독립된 버튼으로, 오른쪽 끝에 고정 (웹/모바일 공통으로 확실한 버튼 느낌) */
 .ai-insight-ask-box {
   flex: none;
-  width: 110px;
+  width: 152px;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  background: #fff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  gap: 6px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #8b7ff0 0%, #6a5fd8 100%);
+  box-shadow: 0 2px 8px rgba(106, 95, 216, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 .ai-insight-ask-box:hover {
-  border-color: #7f77dd;
-  box-shadow: 0 3px 10px rgba(127, 119, 221, 0.18);
-  background: #faf9ff;
+  filter: brightness(1.06);
+  box-shadow: 0 5px 14px rgba(106, 95, 216, 0.4);
+  transform: translateY(-1px);
 }
+.ai-insight-ask-box:active { transform: translateY(0); }
 .ai-insight-ask-label {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   line-height: 1.4;
-  color: #7f77dd;
+  color: #fff;
+  white-space: nowrap;
 }
+.ai-insight-ask-arrow {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  transition: transform 0.15s ease;
+}
+.ai-insight-ask-box:hover .ai-insight-ask-arrow { transform: translateX(3px); }
 
 @media (max-width: 600px) {
   .ai-insight-layout { flex-direction: column; }
-  .ai-insight-ask-box { width: 100%; padding: 12px 0; }
+  .ai-insight-ask-box { width: 100%; padding: 13px 0; }
   .ai-insight-row { flex-wrap: wrap; }
   .ai-insight-title { white-space: normal; }
 }

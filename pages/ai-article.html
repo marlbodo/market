@@ -61,10 +61,16 @@
   function escapeHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
-  function fmtDateFull(iso) {
+  function fmtDateTimeFull(iso) {
     if (!iso) return '-';
-    const [y, m, d] = iso.split('-');
-    return `${y}. ${m}. ${d}.`;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '-';
+    const fmt = new Intl.DateTimeFormat('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(d);
+    const get = (t) => fmt.find((p) => p.type === t)?.value ?? '';
+    return `${get('year')}. ${get('month')}. ${get('day')}. ${get('hour')}:${get('minute')}`;
   }
 
   async function loadArticle() {
@@ -74,7 +80,7 @@
 
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/ai_news_articles?type=eq.${type}&select=title,body_html,article_date&order=article_date.desc&limit=1`,
+        `${SUPABASE_URL}/rest/v1/ai_news_articles?type=eq.${type}&select=title,body_html,article_date,updated_at&order=article_date.desc&limit=1`,
         { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } }
       );
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -88,7 +94,7 @@
       el.innerHTML = `
         <span class="article-kicker ${type}">${TYPE_LABEL[type]}</span>
         <h1 class="article-title">${escapeHtml(row.title)}</h1>
-        <div class="article-byline">기준일: ${fmtDateFull(row.article_date)}</div>
+        <div class="article-byline">작성일: ${fmtDateTimeFull(row.updated_at)}</div>
         <div class="article-body ${type}">${row.body_html}</div>
         <div class="article-ai-badge">이 기사는 Claude AI가 자동 생성했습니다.</div>
       `;

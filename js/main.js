@@ -409,12 +409,9 @@ async function loadAiInsights() {
       .map((row) => {
         return `
         <div class="ai-insight-row">
-          <div class="ai-insight-row-main">
-            <span class="ai-insight-tag ${row.type}">${escapeHtml(AI_INSIGHT_LABELS[row.type] || row.type)}</span>
-            <a class="ai-insight-title" href="#" data-type="${row.type}">${escapeHtml(row.title)}</a>
-            <span class="ai-insight-date">${formatDateTimeShort(row.updated_at)}</span>
-          </div>
-          <a class="ai-insight-ask-btn" href="ai.html" target="_blank" rel="noopener">AI에게 물어보기</a>
+          <span class="ai-insight-tag ${row.type}">${escapeHtml(AI_INSIGHT_LABELS[row.type] || row.type)}</span>
+          <a class="ai-insight-title" href="#" data-type="${row.type}">${escapeHtml(row.title)}</a>
+          <span class="ai-insight-date">${formatDateTimeShort(row.updated_at)}</span>
         </div>`;
       })
       .join('');
@@ -426,6 +423,15 @@ async function loadAiInsights() {
         openCentered(`pages/ai-article.html?type=${type}`, 'aiInsight-' + type, 760, 900);
       });
     });
+
+    const askBtn = document.getElementById('ai-ask-btn');
+    if (askBtn && !askBtn.dataset.bound) {
+      askBtn.dataset.bound = '1';
+      askBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openCentered(askBtn.getAttribute('href'), 'aiAsk', 760, 900);
+      });
+    }
   } catch (err) {
     showError(el, 'AI 인사이트', err);
   }

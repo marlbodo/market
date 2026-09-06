@@ -175,7 +175,7 @@ img { max-width: 100%; display: block; }
 .rate-table td {
   border: 1px solid var(--border);
   padding: 7px 4px;
-  font-size: 11px;
+  font-size: 12px;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -186,7 +186,7 @@ img { max-width: 100%; display: block; }
   background: var(--bg-subtle);
   font-weight: 700;
   color: var(--text-muted);
-  font-size: 10.5px;
+  font-size: 12px;
   padding: 8px 4px;
 }
 
@@ -200,12 +200,13 @@ img { max-width: 100%; display: block; }
   font-weight: 800;
 }
 
+/* 표 안 글자 크기 통일: 이름/값 컬럼 모두 12px로 맞춤 (굵기 차이로만 강조) */
 .rate-td-name {
   text-align: left !important;
   font-weight: 700;
   font-size: 12px;
 }
-.rate-td-value { font-weight: 800; font-size: 12.5px; }
+.rate-td-value { font-weight: 700; font-size: 12px; }
 
 .rate-td-delta { color: var(--text-faint); }
 .rate-td-delta.up { color: var(--up); }
@@ -297,14 +298,14 @@ img { max-width: 100%; display: block; }
 .ipo-table th, .ipo-table td {
   border: 1px solid var(--border);
   padding: 7px 6px;
-  font-size: 11px;
+  font-size: 12px;
   vertical-align: top;
 }
 .ipo-table thead th {
   background: var(--bg-subtle);
   font-weight: 700;
   color: var(--text-muted);
-  font-size: 10.5px;
+  font-size: 12px;
   text-align: center;
 }
 .ipo-table th:nth-child(1), .ipo-table td:nth-child(1) { width: 18%; }
@@ -315,9 +316,9 @@ img { max-width: 100%; display: block; }
 .ipo-table tbody tr:hover td { background: var(--bg-hover); }
 .ipo-table tbody td[title] { cursor: help; }
 
-.ipo-td-date { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; text-align: center; }
-.ipo-td-stock { font-weight: 700; font-size: 11.5px; word-break: keep-all; }
-.ipo-td-amount { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; text-align: right; }
+.ipo-td-date { font-size: 12px; color: var(--text-muted); white-space: nowrap; text-align: center; }
+.ipo-td-stock { font-weight: 700; font-size: 12px; word-break: keep-all; }
+.ipo-td-amount { font-size: 12px; color: var(--text-muted); white-space: nowrap; text-align: right; }
 .ipo-td-type { text-align: center; }
 
 /* ---------- Sidebar (우) ---------- */

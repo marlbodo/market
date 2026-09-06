@@ -134,24 +134,27 @@ img { max-width: 100%; display: block; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
 }
+.ai-insight-title:hover { color: #7f77dd; text-decoration: underline; }
 .ai-insight-date { flex: none; font-size: 11.5px; color: var(--text-faint); }
-.ai-insight-open-btn {
+.ai-insight-ask-btn {
   flex: none;
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-muted);
-  border: 1px solid var(--border-strong);
+  color: #7f77dd;
+  border: 1px solid #7f77dd;
   border-radius: var(--radius-s);
   padding: 5px 12px;
+  white-space: nowrap;
 }
-.ai-insight-open-btn:hover { border-color: #7f77dd; color: #7f77dd; }
+.ai-insight-ask-btn:hover { background: #7f77dd; color: #fff; }
 
 @media (max-width: 600px) {
   .ai-insight-row { flex-wrap: wrap; }
   .ai-insight-row-main { flex-wrap: wrap; width: 100%; }
   .ai-insight-title { white-space: normal; }
-  .ai-insight-open-btn { margin-left: auto; }
+  .ai-insight-ask-btn { margin-left: auto; }
 }
 
 /* ---------- 3-column layout ---------- */

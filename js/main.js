@@ -368,6 +368,18 @@ async function loadResearchReports() {
 // ---------- AI 인사이트 (매일 새벽 자동 생성된 AI 기사 2편) ----------
 const AI_INSIGHT_LABELS = { bond: '채권·금리', ipo: '공모주(IPO)' };
 
+function formatDateTimeShort(iso) {
+  // "2026-09-06T14:28:12+00:00" 같은 타임스탬프를 "09.06 14:28" (KST) 형태로
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const fmt = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(d);
+  const get = (type) => fmt.find((p) => p.type === type)?.value ?? '';
+  return `${get('month')}.${get('day')} ${get('hour')}:${get('minute')}`;
+}
+
 async function loadAiInsights() {
   const el = document.getElementById('ai-insight-list');
   if (!el) return;
@@ -399,17 +411,18 @@ async function loadAiInsights() {
         <div class="ai-insight-row">
           <div class="ai-insight-row-main">
             <span class="ai-insight-tag ${row.type}">${escapeHtml(AI_INSIGHT_LABELS[row.type] || row.type)}</span>
-            <span class="ai-insight-title">${escapeHtml(row.title)}</span>
-            <span class="ai-insight-date">${formatDateShort(row.article_date)} 브리핑</span>
+            <a class="ai-insight-title" href="#" data-type="${row.type}">${escapeHtml(row.title)}</a>
+            <span class="ai-insight-date">${formatDateTimeShort(row.updated_at)}</span>
           </div>
-          <button class="ai-insight-open-btn" data-type="${row.type}">자세히 보기</button>
+          <a class="ai-insight-ask-btn" href="ai.html" target="_blank" rel="noopener">AI에게 물어보기</a>
         </div>`;
       })
       .join('');
 
-    el.querySelectorAll('.ai-insight-open-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const type = btn.getAttribute('data-type');
+    el.querySelectorAll('.ai-insight-title').forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const type = link.getAttribute('data-type');
         openCentered(`pages/ai-article.html?type=${type}`, 'aiInsight-' + type, 760, 900);
       });
     });

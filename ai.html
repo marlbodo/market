@@ -249,6 +249,12 @@
             i++;
           }
           items.push(itemText);
+          // 항목 사이에 빈 줄이 있어도, 그 다음이 여전히 목록 항목이면 같은 목록으로 이어붙인다
+          let j = i;
+          while (j < lines.length && isBlank(lines[j])) j++;
+          if (j < lines.length && (isBullet(lines[j]) || isNumbered(lines[j]))) {
+            i = j;
+          }
         }
         const tag = ordered ? 'ol' : 'ul';
         html += `<${tag}>` + items.map((it) => `<li>${inlineMd(it)}</li>`).join('') + `</${tag}>`;

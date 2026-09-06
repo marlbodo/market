@@ -44,7 +44,7 @@
   .ai-msg thead th { background: #16305c; color: #fff; font-weight: 600; }
   .ai-msg tbody tr:nth-child(even) { background: #f3f4f6; }
   .ai-msg .ans-h { font-weight: 700; margin: 10px 0 4px; color: #16305c; }
-  .ai-msg ul { margin: 4px 0; padding-left: 20px; }
+  .ai-msg ul, .ai-msg ol { margin: 4px 0; padding-left: 20px; }
   .ai-msg p { margin: 6px 0; }
   .ai-actions { display: flex; gap: 8px; margin-top: 8px; }
   .ai-actions button { font-size: 12.5px; padding: 5px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: #374151; cursor: pointer; }
@@ -104,7 +104,7 @@
         <p class="ai-subtitle">채권・금리・공모주 전문 AI가 답변합니다</p>
         <div class="ai-model-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l1.8 5.5L19 9l-5.2 1.5L12 16l-1.8-5.5L5 9l5.2-1.5L12 2z"/></svg>
-          Powered by Claude · 실시간 웹검색
+          Powered by Claude · 실시간 웹검색 연동
         </div>
       </div>
     </div>
@@ -118,12 +118,12 @@
     이 사이트에 있는 정보와 실시간 뉴스 검색을 함께 참고해서 답변합니다. 투자 참고용이며 투자 권유가 아닙니다.
   </div>
 
-  <div class="ai-notice">※ 이전 대화 내용을 기억하지 않고, 매 질문마다 새로 답변합니다.</div>
+  <div class="ai-notice">※ 이전 대화 내용을 기억하지 않고, 매 질문마다 새로 독립적으로 답변합니다.</div>
 
   <div class="ai-suggest" id="ai-suggest">
     <button type="button" data-q="최근 시장금리 추이 어때?">최근 시장금리 추이 어때?</button>
     <button type="button" data-q="향후 공모주 일정은?">향후 공모주 일정은?</button>
-    <button type="button" data-q="금리 관련 뉴스 요약 부탁">금리 관련 뉴스 요약</button>
+    <button type="button" data-q="금리 관련 뉴스 요약 부탁">금리 관련 뉴스 요약 부탁</button>
     <button type="button" data-q="국고 3년물과 10년물 스프레드 어떻게 돼?">국고 3년물과 10년물 스프레드는?</button>
     <button type="button" data-q="최근 공모주 시장 분위기 어때?">최근 공모주 시장 분위기는?</button>
     <button type="button" data-q="지금 시장에서 네가 보기에 주목해야 할 주요 뉴스를 정리해줘">지금 주목해야 할 주요 뉴스는?</button>
@@ -190,17 +190,27 @@
     return escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   }
 
-  // 아주 단순한 마크다운(표 / **굵게** / - 목록 / 문단) → HTML 변환기
+  // 마크다운(표 / 헤더 / **굵게** / - • 1. 목록 / 문단) → HTML 변환기
+  // 빈 줄로 구분된 것만 새 문단으로 취급하고, 문단 안의 줄바꿈은 한 문장으로 이어붙인다.
   function mdToHtml(text) {
     const lines = String(text ?? '').split('\n');
     let html = '';
     let i = 0;
+
+    const isBlank = (l) => l.trim() === '';
+    const isTableRow = (l) => /^\s*\|.*\|\s*$/.test(l);
+    const isHeader = (l) => /^\s*#{1,6}\s+/.test(l);
+    const isBullet = (l) => /^\s*[-*•]\s+/.test(l);
+    const isNumbered = (l) => /^\s*\d+[.)]\s+/.test(l);
+
     while (i < lines.length) {
       const line = lines[i];
 
-      if (/^\s*\|.*\|\s*$/.test(line)) {
+      if (isBlank(line)) { i++; continue; }
+
+      if (isTableRow(line)) {
         const tableLines = [];
-        while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) {
+        while (i < lines.length && isTableRow(lines[i])) {
           tableLines.push(lines[i]);
           i++;
         }
@@ -220,13 +230,28 @@
         continue;
       }
 
-      if (/^\s*[-*]\s+/.test(line)) {
+      if (isHeader(line)) {
+        const headerText = line.replace(/^\s*#{1,6}\s+/, '').trim();
+        html += `<div class="ans-h">${inlineMd(headerText)}</div>`;
+        i++;
+        continue;
+      }
+
+      if (isBullet(line) || isNumbered(line)) {
+        const ordered = isNumbered(line);
         const items = [];
-        while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
-          items.push(lines[i].replace(/^\s*[-*]\s+/, ''));
+        while (i < lines.length && (isBullet(lines[i]) || isNumbered(lines[i]))) {
+          let itemText = lines[i].replace(/^\s*[-*•]\s+/, '').replace(/^\s*\d+[.)]\s+/, '');
           i++;
+          // 다음 줄이 새 항목/빈 줄/헤더/표가 아니면 같은 항목의 이어지는 줄로 합친다
+          while (i < lines.length && !isBlank(lines[i]) && !isBullet(lines[i]) && !isNumbered(lines[i]) && !isHeader(lines[i]) && !isTableRow(lines[i])) {
+            itemText += ' ' + lines[i].trim();
+            i++;
+          }
+          items.push(itemText);
         }
-        html += '<ul>' + items.map((it) => `<li>${inlineMd(it)}</li>`).join('') + '</ul>';
+        const tag = ordered ? 'ol' : 'ul';
+        html += `<${tag}>` + items.map((it) => `<li>${inlineMd(it)}</li>`).join('') + `</${tag}>`;
         continue;
       }
 
@@ -236,10 +261,13 @@
         continue;
       }
 
-      if (line.trim() === '') { i++; continue; }
-
-      html += `<p>${inlineMd(line)}</p>`;
-      i++;
+      // 일반 텍스트: 빈 줄이 나올 때까지 이어지는 줄들을 한 문단으로 합친다
+      const paraLines = [];
+      while (i < lines.length && !isBlank(lines[i]) && !isTableRow(lines[i]) && !isHeader(lines[i]) && !isBullet(lines[i]) && !isNumbered(lines[i])) {
+        paraLines.push(lines[i].trim());
+        i++;
+      }
+      html += `<p>${inlineMd(paraLines.join(' '))}</p>`;
     }
     return html;
   }
@@ -292,6 +320,7 @@
   .a th,.a td{border:1px solid #d1d5db;padding:6px 9px;text-align:center}
   .a thead th{background:#16305c;color:#fff}
   .a tbody tr:nth-child(even){background:#e9eaee}
+  .a ul, .a ol{padding-left:20px;margin:4px 0}
   .a .ans-h{font-weight:700;margin:10px 0 4px;color:#16305c}
   .foot{margin-top:20px;font-size:12.5px;color:#6b7280}
 </style></head><body>

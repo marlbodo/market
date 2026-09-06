@@ -93,35 +93,65 @@ img { max-width: 100%; display: block; }
 .ai-insight-panel { padding-top: 28px; }
 .ai-insight-panel .section-icon { color: #7f77dd; }
 .ai-insight-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-}
-.ai-insight-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 16px 18px;
+  gap: 10px;
+}
+.ai-insight-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 18px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: linear-gradient(180deg, #faf9ff 0%, #ffffff 100%);
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
-.ai-insight-card:hover { border-color: #7f77dd; box-shadow: 0 3px 10px rgba(127, 119, 221, 0.15); }
+.ai-insight-row:hover { border-color: #7f77dd; box-shadow: 0 3px 10px rgba(127, 119, 221, 0.14); }
+.ai-insight-row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
 .ai-insight-tag {
-  align-self: flex-start;
+  flex: none;
   font-size: 11px;
   font-weight: 700;
-  color: #7f77dd;
-  background: #f1effc;
   padding: 3px 9px;
   border-radius: var(--radius-s);
 }
-.ai-insight-title { font-size: 15px; font-weight: 700; line-height: 1.45; color: var(--text); }
-.ai-insight-date { font-size: 11.5px; color: var(--text-faint); }
+.ai-insight-tag.bond { color: var(--accent); background: var(--accent-soft); }
+.ai-insight-tag.ipo { color: var(--amber); background: var(--amber-soft); }
+.ai-insight-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-insight-date { flex: none; font-size: 11.5px; color: var(--text-faint); }
+.ai-insight-open-btn {
+  flex: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-s);
+  padding: 5px 12px;
+}
+.ai-insight-open-btn:hover { border-color: #7f77dd; color: #7f77dd; }
 
-@media (max-width: 980px) {
-  .ai-insight-list { grid-template-columns: 1fr; }
+@media (max-width: 600px) {
+  .ai-insight-row { flex-wrap: wrap; }
+  .ai-insight-row-main { flex-wrap: wrap; width: 100%; }
+  .ai-insight-title { white-space: normal; }
+  .ai-insight-open-btn { margin-left: auto; }
 }
 
 /* ---------- 3-column layout ---------- */

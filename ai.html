@@ -7,10 +7,12 @@
 <meta name="description" content="금리·채권·공모주 데이터를 참고해 답변하는 AI 애널리스트">
 <link rel="stylesheet" href="css/style.css">
 <style>
-  .ai-wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 40px; }
+  .ai-wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 24px; }
   .ai-intro { font-size: 15px; color: var(--text-muted, #4b5563); margin: 20px 0 14px; line-height: 1.7; }
-  .ai-perks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-  .ai-perk { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #16305c; background: #eaf0fb; padding: 6px 11px; border-radius: 8px; font-weight: 500; }
+  .ai-greeting { font-size: 21px; font-weight: 700; color: #16305c; margin: 6px 0 16px; line-height: 1.4; letter-spacing: -0.01em; }
+  @media (max-width: 480px) {
+    .ai-greeting { font-size: 18px; }
+  }
   .ai-notice { font-size: 12px; color: #9ca3af; margin-bottom: 18px; }
   .ai-header .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px; box-sizing: border-box; }
   .ai-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
@@ -27,7 +29,8 @@
     .ai-title { font-size: 22px; }
     .ai-subtitle { font-size: 13px; }
   }
-  .ai-chat { display: flex; flex-direction: column; gap: 14px; margin-bottom: 90px; }
+  .ai-chat { display: flex; flex-direction: column; gap: 14px; margin-bottom: 44px; }
+  .ai-chat:empty { margin-bottom: 24px; }
   .ai-msg { max-width: 88%; padding: 12px 14px; border-radius: 14px; font-size: 16px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
   .ai-msg.user { align-self: flex-end; background: #16305c; color: #fff; border-bottom-right-radius: 4px; }
   .ai-msg.bot { align-self: flex-start; background: #f3f4f6; color: #111827; border-bottom-left-radius: 4px; }
@@ -46,13 +49,13 @@
   .ai-actions { display: flex; gap: 8px; margin-top: 8px; }
   .ai-actions button { font-size: 12.5px; padding: 5px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: #374151; cursor: pointer; }
   .ai-actions button:active { background: #f3f4f6; }
-  .ai-input-label { font-size: 12.5px; color: #9ca3af; margin-bottom: 6px; padding-left: 2px; }
+  .ai-input-label { font-size: 12.5px; color: #111827; margin-bottom: 6px; padding-left: 2px; }
   .ai-inputbar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 8px; padding: 10px 0; background: linear-gradient(to top, #fff 70%, transparent); }
   .ai-inputbar textarea { flex: 1; resize: none; font-size: 16px; padding: 11px 14px; border: 1px solid #d1d5db; border-radius: 14px; font-family: inherit; height: 44px; max-height: 140px; line-height: 1.4; overflow-y: auto; box-sizing: border-box; }
   .ai-inputbar button { flex: none; width: 44px; height: 44px; padding: 0; border: none; border-radius: 12px; background: #16305c; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
   .ai-inputbar button:disabled { background: #9ca3af; }
-  .ai-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
-  .ai-suggest button { font-size: 14px; padding: 7px 12px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #374151; cursor: pointer; }
+  .ai-suggest { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 16px; }
+  .ai-suggest button { font-size: 12px; padding: 4px 9px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #374151; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -109,14 +112,9 @@
 </header>
 
 <div class="ai-wrap">
+  <div class="ai-greeting" id="ai-greeting"></div>
   <div class="ai-intro">
     이 사이트에 있는 정보와 실시간 뉴스 검색을 함께 참고해서 답변합니다. 투자 참고용이며 투자 권유가 아닙니다.
-  </div>
-
-  <div class="ai-perks">
-    <div class="ai-perk"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>채권·금리·공모주 전문가로 세팅된 AI</div>
-    <div class="ai-perk"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>금리·공모주 데이터 자동 연동</div>
-    <div class="ai-perk"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>매 질문마다 최신 뉴스 실시간 검색</div>
   </div>
 
   <div class="ai-notice">※ 이전 대화 내용을 기억하지 않고, 매 질문마다 새로 독립적으로 답변합니다.</div>
@@ -152,6 +150,20 @@
   const chatEl = document.getElementById('ai-chat');
   const inputEl = document.getElementById('ai-input');
   const sendBtn = document.getElementById('ai-send');
+  const greetingEl = document.getElementById('ai-greeting');
+
+  const GREETINGS = [
+    '무엇을 도와드릴까요?',
+    '오늘은 어떤 금리가 궁금하세요?',
+    '최근 공모주 소식, 확인해볼까요?',
+    '채권 시장, 오늘 무엇이 궁금하세요?',
+    '국고채 스프레드부터 짚어볼까요?',
+    '오늘 주목할 뉴스를 찾아드릴까요?',
+    '금리 추이, 함께 살펴볼까요?',
+    '다가오는 공모주 일정이 궁금하신가요?',
+    '무엇이든 편하게 물어보세요.',
+  ];
+  greetingEl.textContent = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
 
   inputEl.addEventListener('input', () => {
     inputEl.style.height = 'auto';
@@ -233,6 +245,7 @@
   }
 
   function addMessage(role, text) {
+    if (role === 'user' && greetingEl) greetingEl.style.display = 'none';
     const div = document.createElement('div');
     div.className = 'ai-msg ' + role;
     div.textContent = text;

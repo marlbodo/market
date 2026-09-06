@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 인사이트 — 데일리 마켓 브리핑</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  body { background: var(--bg-subtle); }
+  .article-wrap { max-width: 720px; margin: 0 auto; padding: 20px 24px 60px; }
+  .article-head {
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-bottom: 10px; margin-bottom: 18px; border-bottom: 2px solid var(--text);
+  }
+  .article-close {
+    font-size: 12.5px; color: var(--text-muted);
+    border: 1px solid var(--border-strong); border-radius: var(--radius-s); padding: 4px 10px;
+  }
+
+  .article-kicker { display:inline-block; font-size:12.5px; font-weight:700; padding:4px 10px; border-radius:4px; margin-bottom:14px; }
+  .article-kicker.bond { color: var(--accent); background: var(--accent-soft); }
+  .article-kicker.ipo { color: var(--amber); background: var(--amber-soft); }
+
+  .article-title { font-size: 22px; font-weight: 800; line-height: 1.45; margin: 0 0 6px; letter-spacing: -0.01em; color: var(--text); }
+  .article-byline { font-size: 13px; color: var(--text-faint); margin: 0 0 26px; }
+
+  .article-body h2 { font-size: 16.5px; font-weight: 700; margin: 28px 0 10px; padding-left: 10px; border-left: 3px solid var(--border-strong); }
+  .article-body.bond h2 { border-left-color: var(--accent); color: var(--accent); }
+  .article-body.ipo h2 { border-left-color: var(--amber); color: var(--amber); }
+  .article-body p { font-size: 15px; line-height: 1.75; margin: 0 0 14px; color: var(--text); }
+  .article-body ul { margin: 0 0 14px; padding-left: 20px; }
+  .article-body li { font-size: 15px; margin-bottom: 6px; line-height: 1.6; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; font-size: 13.5px; }
+  .article-body th, .article-body td { border: 1px solid var(--border); padding: 7px 8px; text-align: center; }
+  .article-body th { background: var(--bg-subtle); font-weight: 700; }
+  .article-body strong { color: inherit; }
+  /* body_html 안에 이미 byline이 들어있는데, 위쪽에 별도로 렌더링하므로 중복 숨김 */
+  .article-body > .byline:first-child { display: none; }
+  .article-body .disclaimer { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-faint); }
+
+  .article-ai-badge { font-size: 11px; color: var(--text-faint); text-align: right; margin-top: 32px; }
+</style>
+</head>
+<body>
+  <div class="article-wrap">
+    <div class="article-head">
+      <button class="article-close" onclick="window.close()">닫기</button>
+    </div>
+    <div id="article-content">
+      <div class="list-loading">기사를 불러오는 중…</div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
+
+  const TYPE_LABEL = { bond: '채권·금리 AI 인사이트', ipo: '공모주(IPO) AI 인사이트' };
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function fmtDateFull(iso) {
+    if (!iso) return '-';
+    const [y, m, d] = iso.split('-');
+    return `${y}. ${m}. ${d}.`;
+  }
+
+  async function loadArticle() {
+    const params = new URLSearchParams(location.search);
+    const type = params.get('type') === 'ipo' ? 'ipo' : 'bond';
+    const el = document.getElementById('article-content');
+
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/ai_news_articles?type=eq.${type}&select=title,body_html,article_date&order=article_date.desc&limit=1`,
+        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } }
+      );
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const rows = await res.json();
+      const row = rows[0];
+      if (!row) {
+        el.innerHTML = '<div class="list-empty">아직 생성된 기사가 없습니다.</div>';
+        return;
+      }
+      document.title = row.title + ' — 데일리 마켓 브리핑';
+      el.innerHTML = `
+        <span class="article-kicker ${type}">${TYPE_LABEL[type]}</span>
+        <h1 class="article-title">${escapeHtml(row.title)}</h1>
+        <div class="article-byline">기준일: ${fmtDateFull(row.article_date)}</div>
+        <div class="article-body ${type}">${row.body_html}</div>
+        <div class="article-ai-badge">이 기사는 Claude AI가 자동 생성했습니다.</div>
+      `;
+    } catch (err) {
+      console.error(err);
+      el.innerHTML = `<div class="list-empty">⚠ 기사를 불러오지 못했습니다: ${escapeHtml(err.message || String(err))}</div>`;
+    }
+  }
+
+  loadArticle();
+</script>
+</body>
+</html>

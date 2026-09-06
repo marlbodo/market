@@ -81,6 +81,12 @@
     const days = ['일', '월', '화', '수', '목', '금', '토'];
     return days[new Date(`${dateStr}T00:00:00`).getDay()];
   }
+  function formatDateShort(dateStr) {
+    // "2026-09-07" -> "09.07"
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[1]}.${parts[2]}`;
+  }
   function formatEok(n) {
     if (n === null || n === undefined) return '-';
     return `${Math.round(Number(n)).toLocaleString('ko-KR')}억원`;
@@ -149,7 +155,7 @@
     }
     el.innerHTML = events.map((ev) => `
       <tr>
-        <td>${formatDateFull(ev.date)}(${dowKo(ev.date)})</td>
+        <td>${formatDateShort(ev.date)}</td>
         <td>${escapeHtml(ev.stock)}</td>
         <td>${formatEok(ev.amount)}</td>
         <td><span class="event-tag tag-${ev.type}">${ev.label}</span></td>

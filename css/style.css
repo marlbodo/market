@@ -379,8 +379,13 @@ a.research-title:hover { color: var(--accent); }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; gap: 8px; }
+  .layout { grid-template-columns: 1fr; gap: 0; }
   .panel { margin-bottom: 32px; }
+  .col + .col {
+    margin-top: 8px;
+    padding-top: 40px;
+    border-top: 6px solid var(--bg-subtle);
+  }
 }
 
 @media (max-width: 480px) {

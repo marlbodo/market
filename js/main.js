@@ -374,7 +374,7 @@ async function loadAiInsights() {
   try {
     const { data, error } = await db
       .from('ai_news_articles')
-      .select('type, article_date, title, storage_path, updated_at')
+      .select('type, article_date, title, updated_at')
       .order('article_date', { ascending: false })
       .order('updated_at', { ascending: false })
       .limit(10);
@@ -395,16 +395,24 @@ async function loadAiInsights() {
 
     el.innerHTML = items
       .map((row) => {
-        const { data: pub } = db.storage.from('ainews').getPublicUrl(row.storage_path);
-        const url = pub?.publicUrl || '#';
         return `
-        <a class="ai-insight-card" href="${escapeHtml(url)}" target="_blank" rel="noopener">
-          <span class="ai-insight-tag">${escapeHtml(AI_INSIGHT_LABELS[row.type] || row.type)}</span>
-          <span class="ai-insight-title">${escapeHtml(row.title)}</span>
-          <span class="ai-insight-date">${formatDateShort(row.article_date)} 브리핑</span>
-        </a>`;
+        <div class="ai-insight-row">
+          <div class="ai-insight-row-main">
+            <span class="ai-insight-tag ${row.type}">${escapeHtml(AI_INSIGHT_LABELS[row.type] || row.type)}</span>
+            <span class="ai-insight-title">${escapeHtml(row.title)}</span>
+            <span class="ai-insight-date">${formatDateShort(row.article_date)} 브리핑</span>
+          </div>
+          <button class="ai-insight-open-btn" data-type="${row.type}">자세히 보기</button>
+        </div>`;
       })
       .join('');
+
+    el.querySelectorAll('.ai-insight-open-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const type = btn.getAttribute('data-type');
+        openCentered(`pages/ai-article.html?type=${type}`, 'aiInsight-' + type, 760, 900);
+      });
+    });
   } catch (err) {
     showError(el, 'AI 인사이트', err);
   }

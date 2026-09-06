@@ -13,7 +13,7 @@
   @media (max-width: 480px) {
     .ai-greeting { font-size: 18px; }
   }
-  .ai-notice { font-size: 12px; color: #9ca3af; margin-bottom: 18px; }
+  .ai-notice { font-size: 12px; color: #6b7280; margin-bottom: 18px; }
   .ai-header .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px; box-sizing: border-box; }
   .ai-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
   .ai-close { flex: none; font-size: 12.5px; color: var(--text-muted, #6b7280); border: 1px solid var(--border-strong, #d6dae1); border-radius: var(--radius-s, 3px); padding: 5px 12px; background: #fff; cursor: pointer; margin-top: 4px; }
@@ -51,7 +51,8 @@
   .ai-actions button:active { background: #f3f4f6; }
   .ai-input-label { font-size: 12.5px; color: #111827; margin-bottom: 6px; padding-left: 2px; }
   .ai-inputbar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 8px; padding: 10px 0; background: linear-gradient(to top, #fff 70%, transparent); }
-  .ai-inputbar textarea { flex: 1; resize: none; font-size: 16px; padding: 11px 14px; border: 1px solid #d1d5db; border-radius: 14px; font-family: inherit; height: 44px; max-height: 140px; line-height: 1.4; overflow-y: auto; box-sizing: border-box; }
+  .ai-inputbar textarea { flex: 1; resize: none; font-size: 16px; padding: 11px 14px; border: 1px solid #d1d5db; border-radius: 14px; font-family: inherit; height: 44px; max-height: 140px; line-height: 1.4; overflow-y: auto; box-sizing: border-box; scrollbar-width: none; -ms-overflow-style: none; }
+  .ai-inputbar textarea::-webkit-scrollbar { display: none; }
   .ai-inputbar button { flex: none; width: 44px; height: 44px; padding: 0; border: none; border-radius: 12px; background: #16305c; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
   .ai-inputbar button:disabled { background: #9ca3af; }
   .ai-suggest { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 16px; }
@@ -123,8 +124,9 @@
     <button type="button" data-q="최근 시장금리 추이 어때?">최근 시장금리 추이 어때?</button>
     <button type="button" data-q="향후 공모주 일정은?">향후 공모주 일정은?</button>
     <button type="button" data-q="금리 관련 뉴스 요약 부탁">금리 관련 뉴스 요약 부탁</button>
-    <button type="button" data-q="국고 3년물과 10년물 스프레드 어떻게 돼?">국고 3년물과 10년물 스프레드 어떻게 돼?</button>
-    <button type="button" data-q="최근 공모주 시장 분위기 어때?">최근 공모주 시장 분위기 어때?</button>    
+    <button type="button" data-q="국고 3년물과 10년물 스프레드 어떻게 돼?">국고 3년물과 10년물 스프레드는?</button>
+    <button type="button" data-q="최근 공모주 시장 분위기 어때?">최근 공모주 시장 분위기는?</button>
+    <button type="button" data-q="10년 전 기준금리와 국고 3년물 금리는?">10년 전 기준금리와 국고 3년물은?</button>
     <button type="button" data-q="지금 시장에서 네가 보기에 주목해야 할 주요 뉴스를 정리해줘">지금 주목해야 할 주요 뉴스는?</button>
   </div>
 

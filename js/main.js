@@ -266,7 +266,7 @@ function renderIpoEvents(el, events) {
     const titleAttr = ev.note ? ` title="${escapeHtml(ev.note)}"` : '';
     return `
     <tr>
-      <td class="ipo-td-date"${titleAttr}>${formatDateShort(ev.date)}(${dowKo(ev.date)})</td>
+      <td class="ipo-td-date"${titleAttr}>${formatDateShort(ev.date)}</td>
       <td class="ipo-td-stock"${titleAttr}>${escapeHtml(ev.stock)}</td>
       <td class="ipo-td-amount"${titleAttr}>${formatEok(ev.amount)}</td>
       <td class="ipo-td-type"${titleAttr}><span class="event-tag tag-${ev.type}">${ev.label}</span></td>

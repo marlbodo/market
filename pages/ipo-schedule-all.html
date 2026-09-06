@@ -29,12 +29,22 @@
     font-size: 11px;
     text-align: center;
   }
-  /* 종목명 칸을 넓히고 구분 칸은 두 줄 바꿈이 가능하도록 조정 */
+
+  /* 기본(PC/웹): 구분 칸에 충분한 공간을 주어 한 줄로 표시 */
   .detail-table th:nth-child(1), .detail-table td:nth-child(1) { width: 11%; white-space: nowrap; text-align: center; color: var(--text-muted); }
-  .detail-table th:nth-child(2), .detail-table td:nth-child(2) { width: 32%; font-weight: 700; }
+  .detail-table th:nth-child(2), .detail-table td:nth-child(2) { width: 30%; font-weight: 700; }
   .detail-table th:nth-child(3), .detail-table td:nth-child(3) { width: 14%; white-space: nowrap; text-align: center; color: var(--text-muted); }
-  .detail-table th:nth-child(4), .detail-table td:nth-child(4) { width: 16%; text-align: center; line-height: 1.25; }
+  .detail-table th:nth-child(4), .detail-table td:nth-child(4) { width: 18%; white-space: nowrap; text-align: center; }
   .detail-table th:nth-child(5), .detail-table td:nth-child(5) { width: 27%; color: var(--text-muted); }
+
+  /* 모바일 화면(폭 768px 이하): 종목명과 구분 칸 비율 조정 및 구분 칸 자동 줄바꿈 허용 */
+  @media (max-width: 768px) {
+    .detail-table th:nth-child(1), .detail-table td:nth-child(1) { width: 13%; }
+    .detail-table th:nth-child(2), .detail-table td:nth-child(2) { width: 34%; }
+    .detail-table th:nth-child(3), .detail-table td:nth-child(3) { width: 16%; }
+    .detail-table th:nth-child(4), .detail-table td:nth-child(4) { width: 18%; white-space: normal; }
+    .detail-table th:nth-child(5), .detail-table td:nth-child(5) { width: 19%; }
+  }
 
   .detail-table tbody tr:hover td { background: var(--bg-hover); }
 </style>
@@ -107,10 +117,10 @@
       const base = { stock: r.stock_name, amount: r.offering_amount_eok };
 
       if (r.demand_forecast_start_date && r.demand_forecast_start_date >= TODAY) {
-        events.push({ ...base, date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측<br>시작', note: '' });
+        events.push({ ...base, date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측 시작', note: '' });
       }
       if (r.demand_forecast_end_date && r.demand_forecast_end_date >= TODAY) {
-        events.push({ ...base, date: r.demand_forecast_end_date, type: 'forecast', label: '수요예측<br>마감', note: '' });
+        events.push({ ...base, date: r.demand_forecast_end_date, type: 'forecast', label: '수요예측 마감', note: '' });
       }
 
       const rateNoteParts = [];
@@ -121,10 +131,10 @@
       const rateNote = rateNoteParts.join(' · ');
 
       if (r.subscription_start_date && r.subscription_start_date >= TODAY) {
-        events.push({ ...base, date: r.subscription_start_date, type: 'subscription', label: '청약<br>시작', note: rateNote });
+        events.push({ ...base, date: r.subscription_start_date, type: 'subscription', label: '청약 시작', note: rateNote });
       }
       if (r.subscription_end_date && r.subscription_end_date >= TODAY) {
-        events.push({ ...base, date: r.subscription_end_date, type: 'subscription', label: '청약<br>마감', note: rateNote });
+        events.push({ ...base, date: r.subscription_end_date, type: 'subscription', label: '청약 마감', note: rateNote });
       }
 
       if (r.listing_date && r.listing_date >= TODAY) {

@@ -88,136 +88,114 @@
         <div class="last-updated" id="rate-updated">마지막 업데이트: -</div>
       </div>
 
-<!-- ============================================================ -->
-<!-- 아래 <div class="panel"> 블록을 "주요금리" panel 바로 다음,     -->
-<!-- "채권(금리) 뉴스" panel 바로 앞에 붙여넣으세요. (col-rate 안)   -->
-<!-- ============================================================ -->
-
-<div class="panel">
-  <div class="panel-head">
-    <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="9" width="3" height="6.5" rx="0.6"/><rect x="7.5" y="5.5" width="3" height="10" rx="0.6"/><rect x="12.5" y="2.5" width="3" height="13" rx="0.6"/></svg></span>주요지표</h2>
-  </div>
-  <table class="rate-table">
-    <thead>
-      <tr>
-        <th>지표</th>
-        <th>전월/전기대비</th>
-        <th>전년동기대비</th>
-        <th>대상기간</th>
-      </tr>
-    </thead>
-    <tbody id="bok-indicators-list">
-      <tr><td colspan="4" class="list-loading">지표를 불러오는 중…</td></tr>
-    </tbody>
-  </table>
-  <div class="last-updated" id="bok-indicators-updated">마지막 업데이트: -</div>
-</div>
-
-<script>
-(function () {
-  const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
-
-  // DB indicator_name -> 화면 표시 라벨 / 전월·전기 구분 / 표시 방식
-  const INDICATOR_ORDER = ["소비자물가지수", "국내총생산(실질, 계절조정)", "경상수지"];
-  const INDICATOR_LABEL = {
-    "소비자물가지수": "소비자물가",
-    "국내총생산(실질, 계절조정)": "GDP(실질)",
-    "경상수지": "경상수지",
-  };
-  const PERIOD_LABEL = {
-    "소비자물가지수": "전월대비",
-    "국내총생산(실질, 계절조정)": "전기대비",
-    "경상수지": "전월대비",
-  };
-  // 물가/GDP는 증감률(%)로, 경상수지는 증감액(억달러 등 단위)으로 표시
-  const DISPLAY_MODE = {
-    "소비자물가지수": "percent",
-    "국내총생산(실질, 계절조정)": "percent",
-    "경상수지": "amount",
-  };
-
-  function fmtPeriod(period) {
-    if (period.includes("Q")) {
-      const [y, q] = period.split("Q");
-      return `${y}년 ${q}분기`;
-    }
-    if (period.length === 6) return `${period.slice(0, 4)}.${period.slice(4)}`;
-    return period;
-  }
-
-  // 백만달러 -> 억달러 처럼, 큰 단위 금액을 사람이 읽기 편한 단위로 변환
-  function convertAmountUnit(value, unit) {
-    if (unit === "백만달러") return { value: value / 100, unit: "억달러" };
-    if (unit === "백만원") return { value: value / 100, unit: "억원" };
-    if (unit === "십억원") return { value: value / 10, unit: "백억원" };
-    return { value, unit: unit || "" };
-  }
-
-  function fmtCell(mode, latest, other, unit) {
-    if (other === null || other === undefined) {
-      return '<span style="color:#9ca3af">데이터 없음</span>';
-    }
-    const diff = Number(latest) - Number(other);
-    if (Math.abs(diff) < 1e-9) return '<span style="color:#6b7280">보합</span>';
-    const arrow = diff > 0 ? "▲" : "▼";
-    const color = diff > 0 ? "#c0392b" : "#2b6fd9";
-
-    if (mode === "percent") {
-      const pct = (diff / Number(other)) * 100;
-      return `<span style="color:${color}">${arrow}${Math.abs(pct).toFixed(2)}%</span>`;
-    }
-
-    // amount 모드: 증감액 + 단위
-    const converted = convertAmountUnit(Math.abs(diff), unit);
-    const formattedValue = converted.value.toLocaleString(undefined, { maximumFractionDigits: 1 });
-    return `<span style="color:${color}">${arrow}${formattedValue}${converted.unit}</span>`;
-  }
-
-  async function loadBokIndicators() {
-    const tbody = document.getElementById("bok-indicators-list");
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_bok_indicator_comparisons`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": "Bearer " + SUPABASE_ANON_KEY,
-        },
-        body: "{}",
-      });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const rows = await res.json();
-      const byName = {};
-      rows.forEach((r) => { byName[r.indicator_name] = r; });
-
-      tbody.innerHTML = INDICATOR_ORDER.filter((name) => byName[name])
-        .map((name) => {
-          const row = byName[name];
-          const mode = DISPLAY_MODE[name];
-          const mom = fmtCell(mode, row.latest_value, row.prev_value, row.unit);
-          const yoy = fmtCell(mode, row.latest_value, row.yoy_value, row.unit);
-          return `
+      <div class="panel">
+        <div class="panel-head">
+          <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="9" width="3" height="6.5" rx="0.6"/><rect x="7.5" y="5.5" width="3" height="10" rx="0.6"/><rect x="12.5" y="2.5" width="3" height="13" rx="0.6"/></svg></span>주요경제지표</h2>
+        </div>
+        <table class="rate-table">
+          <thead>
             <tr>
-              <td>${INDICATOR_LABEL[name]}</td>
-              <td>${mom}<div style="font-size:11px;color:#9ca3af;margin-top:2px;">(${PERIOD_LABEL[name]})</div></td>
-              <td>${yoy}</td>
-              <td>${fmtPeriod(row.latest_period)}</td>
-            </tr>`;
-        })
-        .join("");
+              <th style="font-size: 11px;">지표</th>
+              <th style="font-size: 11px;">전월/전기대비</th>
+              <th style="font-size: 11px;">전년동기대비</th>
+              <th style="font-size: 11px;">대상기간</th>
+            </tr>
+          </thead>
+          <tbody id="bok-indicators-list">
+            <tr><td colspan="4" class="list-loading">지표를 불러오는 중…</td></tr>
+          </tbody>
+        </table>
+        <div class="last-updated" id="bok-indicators-updated">마지막 업데이트: -</div>
+      </div>
 
-      document.getElementById("bok-indicators-updated").textContent =
-        "마지막 업데이트: " + new Date().toLocaleString("ko-KR");
-    } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="4" class="list-loading">데이터를 불러오지 못했습니다.</td></tr>`;
-      console.error("BOK 지표 로딩 실패:", err);
-    }
-  }
+      <script>
+      (function () {
+        const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
 
-  loadBokIndicators();
-})();
-</script>
+        const INDICATOR_ORDER = ["소비자물가지수", "국내총생산(실질, 계절조정)"];
+        const INDICATOR_LABEL = {
+          "소비자물가지수": "소비자물가",
+          "국내총생산(실질, 계절조정)": "GDP(실질)",
+        };
+        const PERIOD_LABEL = {
+          "소비자물가지수": "전월대비",
+          "국내총생산(실질, 계절조정)": "전기대비",
+        };
+        const DISPLAY_MODE = {
+          "소비자물가지수": "percent",
+          "국내총생산(실질, 계절조정)": "percent",
+        };
+
+        function fmtPeriod(period) {
+          if (period.includes("Q")) {
+            const [y, q] = period.split("Q");
+            return `${y}년 ${q}분기`;
+          }
+          if (period.length === 6) return `${period.slice(0, 4)}.${period.slice(4)}`;
+          return period;
+        }
+
+        function fmtCell(mode, latest, other, unit) {
+          if (other === null || other === undefined) {
+            return '<span style="color:#9ca3af">데이터 없음</span>';
+          }
+          const diff = Number(latest) - Number(other);
+          if (Math.abs(diff) < 1e-9) return '<span style="color:#6b7280">보합</span>';
+          const arrow = diff > 0 ? "▲" : "▼";
+          const color = diff > 0 ? "#c0392b" : "#2b6fd9";
+
+          if (mode === "percent") {
+            const pct = (diff / Number(other)) * 100;
+            return `<span style="color:${color}">${arrow}${Math.abs(pct).toFixed(2)}%</span>`;
+          }
+          return '';
+        }
+
+        async function loadBokIndicators() {
+          const tbody = document.getElementById("bok-indicators-list");
+          try {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_bok_indicator_comparisons`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "apikey": SUPABASE_ANON_KEY,
+                "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+              },
+              body: "{}",
+            });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const rows = await res.json();
+            const byName = {};
+            rows.forEach((r) => { byName[r.indicator_name] = r; });
+
+            tbody.innerHTML = INDICATOR_ORDER.filter((name) => byName[name])
+              .map((name) => {
+                const row = byName[name];
+                const mode = DISPLAY_MODE[name];
+                const mom = fmtCell(mode, row.latest_value, row.prev_value, row.unit);
+                const yoy = fmtCell(mode, row.latest_value, row.yoy_value, row.unit);
+                return `
+                  <tr>
+                    <td class="rate-td-name" style="font-weight: 700; color: var(--text);">${INDICATOR_LABEL[name]}</td>
+                    <td>${mom}<div style="font-size:11px;color:#9ca3af;margin-top:2px;">(${PERIOD_LABEL[name]})</div></td>
+                    <td>${yoy}</td>
+                    <td>${fmtPeriod(row.latest_period)}</td>
+                  </tr>`;
+              })
+              .join("");
+
+            document.getElementById("bok-indicators-updated").textContent =
+              "마지막 업데이트: " + new Date().toLocaleString("ko-KR");
+          } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="4" class="list-loading">데이터를 불러오지 못했습니다.</td></tr>`;
+            console.error("BOK 지표 로딩 실패:", err);
+          }
+        }
+
+        loadBokIndicators();
+      })();
+      </script>
       
       <div class="panel">
         <div class="panel-head">
@@ -317,9 +295,6 @@
 <script src="js/helpers.js"></script>
 <script src="js/main.js"></script>
 <script>
-  // 팝업을 현재 화면(모니터) 정중앙에 띄우기 위한 좌표 계산.
-  // window.screenLeft/Top + outerWidth/outerHeight 기준으로 계산하면
-  // 멀티모니터 환경에서도 "지금 브라우저가 있는 화면"을 기준으로 중앙에 뜬다.
   function openCentered(url, name, width, height) {
     const screenLeft = window.screenLeft ?? window.screenX;
     const screenTop = window.screenTop ?? window.screenY;

@@ -18,7 +18,7 @@
   .detail-table { width: 100%; border-collapse: collapse; border: 1px solid var(--border-strong); background: var(--bg); }
   .detail-table th, .detail-table td {
     border: 1px solid var(--border);
-    padding: 8px 8px;
+    padding: 8px 6px;
     font-size: 12px;
     vertical-align: top;
   }
@@ -29,11 +29,12 @@
     font-size: 11px;
     text-align: center;
   }
-  .detail-table th:nth-child(1), .detail-table td:nth-child(1) { width: 13%; white-space: nowrap; text-align: center; color: var(--text-muted); }
-  .detail-table th:nth-child(2), .detail-table td:nth-child(2) { width: 27%; font-weight: 700; }
-  .detail-table th:nth-child(3), .detail-table td:nth-child(3) { width: 11%; white-space: nowrap; text-align: right; color: var(--text-muted); }
-  .detail-table th:nth-child(4), .detail-table td:nth-child(4) { width: 14%; text-align: center; }
-  .detail-table th:nth-child(5), .detail-table td:nth-child(5) { width: 35%; color: var(--text-muted); }
+  /* 컬럼 너비 및 정렬 조정 (구분 공간 확보, 공모금액 가운데 정렬) */
+  .detail-table th:nth-child(1), .detail-table td:nth-child(1) { width: 12%; white-space: nowrap; text-align: center; color: var(--text-muted); }
+  .detail-table th:nth-child(2), .detail-table td:nth-child(2) { width: 25%; font-weight: 700; }
+  .detail-table th:nth-child(3), .detail-table td:nth-child(3) { width: 14%; white-space: nowrap; text-align: center; color: var(--text-muted); }
+  .detail-table th:nth-child(4), .detail-table td:nth-child(4) { width: 22%; white-space: nowrap; text-align: center; }
+  .detail-table th:nth-child(5), .detail-table td:nth-child(5) { width: 27%; color: var(--text-muted); }
 
   .detail-table tbody tr:hover td { background: var(--bg-hover); }
 </style>
@@ -82,7 +83,6 @@
     return days[new Date(`${dateStr}T00:00:00`).getDay()];
   }
   function formatDateShort(dateStr) {
-    // "2026-09-07" -> "09.07"
     const parts = dateStr.split('-');
     if (parts.length !== 3) return dateStr;
     return `${parts[1]}.${parts[2]}`;
@@ -100,7 +100,6 @@
     return `${Number(n).toFixed(2)}%`;
   }
 
-  // 메인 화면과 달리, 모든 이벤트(수요예측 시작/마감, 청약 시작/마감, 상장)를 다 보여줌
   function buildAllIpoEvents(rows) {
     const events = [];
 
@@ -157,8 +156,8 @@
       <tr>
         <td>${formatDateShort(ev.date)}</td>
         <td>${escapeHtml(ev.stock)}</td>
-        <td>${formatEok(ev.amount)}</td>
-        <td><span class="event-tag tag-${ev.type}">${ev.label}</span></td>
+        <td style="text-align: center;">${formatEok(ev.amount)}</td>
+        <td style="text-align: center;"><span class="event-tag tag-${ev.type}">${ev.label}</span></td>
         <td>${ev.note ? escapeHtml(ev.note) : '-'}</td>
       </tr>`).join('');
   }
@@ -183,8 +182,6 @@
   (async function () {
     const el = document.getElementById('detail-body');
     try {
-      // ipo_history는 2006년부터 쌓이는 이력 테이블이므로,
-      // "아직 지나지 않은 일정을 하나라도 가진 행"만 서버에서 걸러서 가져온다.
       const { data, error } = await db
         .from('ipo_history')
         .select('*')

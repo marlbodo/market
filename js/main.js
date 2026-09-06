@@ -365,6 +365,51 @@ async function loadResearchReports() {
   }
 }
 
+// ---------- AI 인사이트 (매일 새벽 자동 생성된 AI 기사 2편) ----------
+const AI_INSIGHT_LABELS = { bond: '채권·금리', ipo: '공모주(IPO)' };
+
+async function loadAiInsights() {
+  const el = document.getElementById('ai-insight-list');
+  if (!el) return;
+  try {
+    const { data, error } = await db
+      .from('ai_news_articles')
+      .select('type, article_date, title, storage_path, updated_at')
+      .order('article_date', { ascending: false })
+      .order('updated_at', { ascending: false })
+      .limit(10);
+    if (error) throw error;
+
+    // 타입별로 가장 최신 1건만 사용 (오늘자가 아직 없으면 가장 최근 날짜로 대체 표시)
+    const latestByType = {};
+    (data || []).forEach((row) => {
+      if (!latestByType[row.type]) latestByType[row.type] = row;
+    });
+
+    const items = ['bond', 'ipo'].map((type) => latestByType[type]).filter(Boolean);
+
+    if (items.length === 0) {
+      el.innerHTML = '<div class="list-empty">오늘의 AI 브리핑이 아직 준비되지 않았습니다.</div>';
+      return;
+    }
+
+    el.innerHTML = items
+      .map((row) => {
+        const { data: pub } = db.storage.from('ainews').getPublicUrl(row.storage_path);
+        const url = pub?.publicUrl || '#';
+        return `
+        <a class="ai-insight-card" href="${escapeHtml(url)}" target="_blank" rel="noopener">
+          <span class="ai-insight-tag">${escapeHtml(AI_INSIGHT_LABELS[row.type] || row.type)}</span>
+          <span class="ai-insight-title">${escapeHtml(row.title)}</span>
+          <span class="ai-insight-date">${formatDateShort(row.article_date)} 브리핑</span>
+        </a>`;
+      })
+      .join('');
+  } catch (err) {
+    showError(el, 'AI 인사이트', err);
+  }
+}
+
 // ---------- init ----------
 // ---------- 헤더 여의도 날씨 (Open-Meteo, API 키 불필요) ----------
 const WEATHER_CODE_INFO = {
@@ -417,6 +462,7 @@ async function loadWeather() {
 
 document.addEventListener('DOMContentLoaded', () => {
   setupIpoFilter();
+  loadAiInsights();
   loadFinancialNews();
   loadIndicators();
   loadIpoNews();

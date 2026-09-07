@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>정기예금 금리 비교 — 데일리 마켓 브리핑</title>
+<style>
+  :root {
+    --ink: #12253f;
+    --ink-soft: #4c5c72;
+    --paper: #f2f5f7;
+    --line: #d7dee4;
+    --accent: #1f7a5c;
+    --accent-soft: #e4f2ec;
+    --warn: #9c5a12;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo",
+                 "Malgun Gothic", sans-serif;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .close-btn {
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink-soft);
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .close-btn:hover { border-color: var(--ink-soft); color: var(--ink); }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+  .updated-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .filters select, .filters label {
+    font-size: 13px;
+  }
+  .filters select {
+    padding: 7px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .chip-group {
+    display: flex;
+    gap: 6px;
+  }
+  .chip {
+    border: 1px solid var(--line);
+    background: #fff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .chip.active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 13.5px;
+  }
+  thead th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--ink);
+    padding: 10px 10px;
+    white-space: nowrap;
+  }
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody td {
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  tbody tr:hover { background: #fafcfd; }
+  .best { color: var(--accent); font-weight: 700; }
+  .bank-link {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--ink-soft);
+  }
+  .bank-link:hover { border-bottom-style: solid; }
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #eef1f3;
+    color: var(--ink-soft);
+    margin-left: 6px;
+  }
+  .tag.online { background: var(--accent-soft); color: var(--accent); }
+
+  .empty, .loading {
+    padding: 40px 0;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+  .disclaimer {
+    margin-top: 22px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>정기예금 금리 비교</h1>
+      <p class="sub">금융감독원 금융상품통합비교공시(finlife) 오픈API 기준 · 매시간 자동 갱신</p>
+    </div>
+    <button class="close-btn" onclick="window.close()">닫기</button>
+  </header>
+
+  <div class="meta-row">
+    <span id="updated-text"><span class="updated-dot"></span>업데이트 확인 중…</span>
+    <span id="count-text"></span>
+  </div>
+
+  <div class="filters">
+    <select id="term-select">
+      <option value="1">1개월</option>
+      <option value="3">3개월</option>
+      <option value="6">6개월</option>
+      <option value="12" selected>12개월</option>
+      <option value="24">24개월</option>
+      <option value="36">36개월</option>
+    </select>
+
+    <div class="chip-group" id="group-chip">
+      <button class="chip active" data-grp="all">전체</button>
+      <button class="chip" data-grp="020000">은행</button>
+      <button class="chip" data-grp="030200">저축은행</button>
+    </div>
+  </div>
+
+  <div id="table-area" class="loading">데이터를 불러오는 중…</div>
+
+  <p class="disclaimer">
+    본 표는 금융감독원 금융상품통합비교공시 오픈API를 기반으로 자동 수집됩니다.
+    선착순·한정기간 특판 상품, 파킹통장(수시입출금), 신협·새마을금고·농축협 상품은
+    포함되지 않을 수 있으니 최종 조건은 반드시 해당 금융회사에서 확인하세요.
+    투자 판단의 참고 자료이며, 투자 권유가 아닙니다.
+  </p>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_1_9-bKTcV3sBQkv10ru__w_iW-51pKt";
+
+  const BANK_LINKS = {
+    "KB국민은행": "https://obank.kbstar.com/quics?page=C019149",
+    "신한은행": "https://www.shinhan.com/",
+    "우리은행": "https://spot.wooribank.com/pot/Dream?withyou=PODEP0015",
+    "하나은행": "https://www.kebhana.com/",
+    "IBK기업은행": "https://www.ibk.co.kr/",
+    "NH농협은행": "https://banking.nonghyup.com/",
+    "SC제일은행": "https://www.sc.co.kr/",
+    "케이뱅크": "https://www.kbanknow.com/ib20/mnu/FPMDPT070000",
+    "카카오뱅크": "https://www.kakaobank.com/",
+    "토스뱅크": "https://www.tossbank.com/product-service/savings/time-deposit",
+  };
+
+  let currentGroup = "all";
+  let allRows = [];
+
+  function findBankLink(name) {
+    if (BANK_LINKS[name]) return BANK_LINKS[name];
+    const hit = Object.keys(BANK_LINKS).find(k => name.includes(k) || k.includes(name));
+    return hit ? BANK_LINKS[hit] : null;
+  }
+
+  function isOnline(joinWay) {
+    if (!joinWay) return false;
+    return /인터넷|스마트폰|모바일|비대면/.test(joinWay);
+  }
+
+  async function fetchByTerm(term) {
+    const url = `${SUPABASE_URL}/rest/v1/finlife_deposit_rates`
+      + `?save_trm=eq.${term}`
+      + `&select=kor_co_nm,fin_prdt_nm,join_way,spcl_cnd,intr_rate,intr_rate2,top_fin_grp_no,collected_at`
+      + `&order=intr_rate2.desc.nullslast`;
+
+    const resp = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+    });
+    if (!resp.ok) throw new Error(`조회 실패 (${resp.status})`);
+    return resp.json();
+  }
+
+  function render() {
+    const area = document.getElementById("table-area");
+    const rows = currentGroup === "all"
+      ? allRows
+      : allRows.filter(r => r.top_fin_grp_no === currentGroup);
+
+    if (rows.length === 0) {
+      area.innerHTML = '<div class="empty">해당 조건의 데이터가 아직 없습니다. 잠시 후 다시 확인해주세요.</div>';
+      return;
+    }
+
+    const maxRate = Math.max(...rows.map(r => r.intr_rate2 ?? 0));
+
+    const bodyHtml = rows.slice(0, 100).map(r => {
+      const link = findBankLink(r.kor_co_nm);
+      const bankCell = link
+        ? `<a class="bank-link" href="${link}" target="_blank" rel="noopener">${r.kor_co_nm}</a>`
+        : r.kor_co_nm;
+      const online = isOnline(r.join_way)
+        ? '<span class="tag online">비대면</span>'
+        : '<span class="tag">방문/기타</span>';
+      const isBest = r.intr_rate2 !== null && r.intr_rate2 === maxRate;
+      const rateCell = `${(r.intr_rate2 ?? 0).toFixed(2)}%`;
+
+      return `<tr>
+        <td>${bankCell}${online}</td>
+        <td>${r.fin_prdt_nm ?? ""}</td>
+        <td class="num">${(r.intr_rate ?? 0).toFixed(2)}%</td>
+        <td class="num ${isBest ? "best" : ""}">${rateCell}</td>
+      </tr>`;
+    }).join("");
+
+    area.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>금융회사</th>
+            <th>상품명</th>
+            <th class="num">기본금리</th>
+            <th class="num">최고금리</th>
+          </tr>
+        </thead>
+        <tbody>${bodyHtml}</tbody>
+      </table>
+    `;
+  }
+
+  async function load(term) {
+    const area = document.getElementById("table-area");
+    area.className = "loading";
+    area.textContent = "데이터를 불러오는 중…";
+    try {
+      allRows = await fetchByTerm(term);
+      document.getElementById("count-text").textContent = `총 ${allRows.length}개 상품`;
+
+      if (allRows.length > 0) {
+        const latest = allRows.reduce((a, b) =>
+          new Date(a.collected_at) > new Date(b.collected_at) ? a : b
+        );
+        const d = new Date(latest.collected_at);
+        document.getElementById("updated-text").innerHTML =
+          `<span class="updated-dot"></span>마지막 업데이트: ${d.toLocaleString("ko-KR")}`;
+      }
+      render();
+    } catch (e) {
+      area.innerHTML = `<div class="empty">데이터를 불러오지 못했습니다: ${e.message}</div>`;
+    }
+  }
+
+  document.getElementById("term-select").addEventListener("change", (e) => {
+    load(e.target.value);
+  });
+
+  document.getElementById("group-chip").addEventListener("click", (e) => {
+    if (!e.target.dataset.grp) return;
+    currentGroup = e.target.dataset.grp;
+    document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+    e.target.classList.add("active");
+    render();
+  });
+
+  load(document.getElementById("term-select").value);
+</script>
+</body>
+</html>

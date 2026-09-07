@@ -319,6 +319,12 @@
             <div class="app-desc">투자 기간·금리 조건을 입력하면 예상 수익(률)을 계산해드려요</div>
           </div>
         </a>
+        <a class="app-card" href="apps/deposit.html" id="deposit-link">
+          <div>
+            <div class="app-name">정기예금 금리 비교</div>
+            <div class="app-desc">금융감독원 공시 데이터를 매시간 자동 갱신해서 은행별로 비교해드려요</div>
+          </div>
+        </a>
       </div>
 
     </aside>
@@ -366,6 +372,10 @@
   document.getElementById('repo-fund-link').addEventListener('click', function (e) {
     e.preventDefault();
     openCentered(this.href, 'repoFundSimulator', 760, 900);
+  });
+  document.getElementById('deposit-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    openCentered(this.href, 'depositRates', 900, 700);
   });
   document.getElementById('research-more-link').addEventListener('click', function (e) {
     e.preventDefault();

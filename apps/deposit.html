@@ -29,12 +29,16 @@
     padding: 28px 20px 60px;
   }
   header {
+    position: relative;
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: center;
     border-bottom: 2px solid var(--ink);
     padding-bottom: 16px;
     margin-bottom: 20px;
+  }
+  .header-text {
+    text-align: center;
   }
   h1 {
     font-size: 22px;
@@ -48,6 +52,9 @@
     margin: 0;
   }
   .close-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
     border: 1px solid var(--line);
     background: #fff;
     color: var(--ink-soft);
@@ -117,7 +124,7 @@
     font-size: 13.5px;
   }
   thead th {
-    text-align: left;
+    text-align: center;
     font-weight: 600;
     color: var(--ink-soft);
     border-bottom: 1px solid var(--ink);
@@ -125,6 +132,7 @@
     white-space: nowrap;
   }
   th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  thead th.num { text-align: center; }
   tbody td {
     padding: 10px 10px;
     border-bottom: 1px solid var(--line);
@@ -132,22 +140,6 @@
   }
   tbody tr:hover { background: #fafcfd; }
   .best { color: var(--accent); font-weight: 700; }
-  .bank-link {
-    color: var(--ink);
-    text-decoration: none;
-    border-bottom: 1px dashed var(--ink-soft);
-  }
-  .bank-link:hover { border-bottom-style: solid; }
-  .tag {
-    display: inline-block;
-    font-size: 11px;
-    padding: 1px 6px;
-    border-radius: 4px;
-    background: #eef1f3;
-    color: var(--ink-soft);
-    margin-left: 6px;
-  }
-  .tag.online { background: var(--accent-soft); color: var(--accent); }
 
   .empty, .loading {
     padding: 40px 0;
@@ -167,7 +159,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div>
+    <div class="header-text">
       <h1>정기예금 금리 비교</h1>
       <p class="sub">금융감독원 금융상품통합비교공시(finlife) 오픈API 기준 · 매시간 자동 갱신</p>
     </div>
@@ -210,31 +202,12 @@
   const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
   const SUPABASE_KEY = "sb_publishable_1_9-bKTcV3sBQkv10ru__w_iW-51pKt";
 
-  const BANK_LINKS = {
-    "KB국민은행": "https://obank.kbstar.com/quics?page=C019149",
-    "신한은행": "https://www.shinhan.com/",
-    "우리은행": "https://spot.wooribank.com/pot/Dream?withyou=PODEP0015",
-    "하나은행": "https://www.kebhana.com/",
-    "IBK기업은행": "https://www.ibk.co.kr/",
-    "NH농협은행": "https://banking.nonghyup.com/",
-    "SC제일은행": "https://www.sc.co.kr/",
-    "케이뱅크": "https://www.kbanknow.com/ib20/mnu/FPMDPT070000",
-    "카카오뱅크": "https://www.kakaobank.com/",
-    "토스뱅크": "https://www.tossbank.com/product-service/savings/time-deposit",
-  };
-
   let currentGroup = "all";
   let allRows = [];
 
-  function findBankLink(name) {
-    if (BANK_LINKS[name]) return BANK_LINKS[name];
-    const hit = Object.keys(BANK_LINKS).find(k => name.includes(k) || k.includes(name));
-    return hit ? BANK_LINKS[hit] : null;
-  }
-
-  function isOnline(joinWay) {
-    if (!joinWay) return false;
-    return /인터넷|스마트폰|모바일|비대면/.test(joinWay);
+  function fmtJoinWay(joinWay) {
+    if (!joinWay) return "-";
+    return joinWay; // DB에 저장된 원문 그대로 표시 (예: "영업점,인터넷,스마트폰")
   }
 
   async function fetchByTerm(term) {
@@ -267,19 +240,13 @@
     const maxRate = Math.max(...rows.map(r => r.intr_rate2 ?? 0));
 
     const bodyHtml = rows.slice(0, 100).map(r => {
-      const link = findBankLink(r.kor_co_nm);
-      const bankCell = link
-        ? `<a class="bank-link" href="${link}" target="_blank" rel="noopener">${r.kor_co_nm}</a>`
-        : r.kor_co_nm;
-      const online = isOnline(r.join_way)
-        ? '<span class="tag online">비대면</span>'
-        : '<span class="tag">방문/기타</span>';
       const isBest = r.intr_rate2 !== null && r.intr_rate2 === maxRate;
       const rateCell = `${(r.intr_rate2 ?? 0).toFixed(2)}%`;
 
       return `<tr>
-        <td>${bankCell}${online}</td>
+        <td>${r.kor_co_nm}</td>
         <td>${r.fin_prdt_nm ?? ""}</td>
+        <td>${fmtJoinWay(r.join_way)}</td>
         <td class="num">${(r.intr_rate ?? 0).toFixed(2)}%</td>
         <td class="num ${isBest ? "best" : ""}">${rateCell}</td>
       </tr>`;
@@ -291,6 +258,7 @@
           <tr>
             <th>금융회사</th>
             <th>상품명</th>
+            <th>가입방법</th>
             <th class="num">기본금리</th>
             <th class="num">최고금리</th>
           </tr>

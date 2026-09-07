@@ -138,6 +138,12 @@
     border-bottom: 1px solid var(--line);
     vertical-align: top;
   }
+  td.cond {
+    max-width: 260px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.4;
+  }
   tbody tr:hover { background: #fafcfd; }
   .best { color: var(--accent); font-weight: 700; }
 
@@ -182,8 +188,8 @@
     </select>
 
     <div class="chip-group" id="group-chip">
-      <button class="chip active" data-grp="all">전체</button>
-      <button class="chip" data-grp="020000">은행</button>
+      <button class="chip" data-grp="all">전체</button>
+      <button class="chip active" data-grp="020000">은행</button>
       <button class="chip" data-grp="030300">저축은행</button>
     </div>
   </div>
@@ -202,7 +208,7 @@
   const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
   const SUPABASE_KEY = "sb_publishable_1_9-bKTcV3sBQkv10ru__w_iW-51pKt";
 
-  let currentGroup = "all";
+  let currentGroup = "020000";
   let allRows = [];
 
   function fmtJoinWay(joinWay) {
@@ -247,6 +253,7 @@
         <td>${r.kor_co_nm}</td>
         <td>${r.fin_prdt_nm ?? ""}</td>
         <td>${fmtJoinWay(r.join_way)}</td>
+        <td class="cond">${r.spcl_cnd ?? "-"}</td>
         <td class="num">${(r.intr_rate ?? 0).toFixed(2)}%</td>
         <td class="num ${isBest ? "best" : ""}">${rateCell}</td>
       </tr>`;
@@ -259,6 +266,7 @@
             <th>금융회사</th>
             <th>상품명</th>
             <th>가입방법</th>
+            <th>우대조건</th>
             <th class="num">기본금리</th>
             <th class="num">최고금리</th>
           </tr>

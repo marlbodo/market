@@ -157,13 +157,13 @@ img { max-width: 100%; display: block; }
   justify-content: center;
   gap: 6px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #8b7ff0 0%, #6a5fd8 100%);
-  box-shadow: 0 2px 8px rgba(106, 95, 216, 0.3);
+  background: linear-gradient(135deg, #16a085 0%, #0f7a6b 100%);
+  box-shadow: 0 2px 8px rgba(15, 122, 107, 0.3);
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 .ai-insight-ask-box:hover {
   filter: brightness(1.06);
-  box-shadow: 0 5px 14px rgba(106, 95, 216, 0.4);
+  box-shadow: 0 5px 14px rgba(15, 122, 107, 0.4);
   transform: translateY(-1px);
 }
 .ai-insight-ask-box:active { transform: translateY(0); }

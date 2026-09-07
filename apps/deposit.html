@@ -24,7 +24,7 @@
     line-height: 1.5;
   }
   .wrap {
-    max-width: 1140px;
+    max-width: 1500px;
     margin: 0 auto;
     padding: 28px 20px 60px;
   }
@@ -139,7 +139,7 @@
     vertical-align: top;
   }
   td.cond {
-    max-width: 260px;
+    max-width: 420px;
     font-size: 12.5px;
     color: var(--ink-soft);
     line-height: 1.4;
@@ -253,9 +253,9 @@
         <td>${r.kor_co_nm}</td>
         <td>${r.fin_prdt_nm ?? ""}</td>
         <td>${fmtJoinWay(r.join_way)}</td>
-        <td class="cond">${r.spcl_cnd ?? "-"}</td>
         <td class="num">${(r.intr_rate ?? 0).toFixed(2)}%</td>
         <td class="num ${isBest ? "best" : ""}">${rateCell}</td>
+        <td class="cond">${r.spcl_cnd ?? "-"}</td>
       </tr>`;
     }).join("");
 
@@ -266,9 +266,9 @@
             <th>금융회사</th>
             <th>상품명</th>
             <th>가입방법</th>
-            <th>우대조건</th>
             <th class="num">기본금리</th>
             <th class="num">최고금리</th>
+            <th>우대조건</th>
           </tr>
         </thead>
         <tbody>${bodyHtml}</tbody>

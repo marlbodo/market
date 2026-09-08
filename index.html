@@ -128,19 +128,20 @@
         const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
 
-        const INDICATOR_ORDER = ["소비자물가지수", "국내총생산(실질, 계절조정)"];
-        const INDICATOR_LABEL = {
-          "소비자물가지수": "소비자물가",
-          "국내총생산(실질, 계절조정)": "GDP(실질)",
-        };
-        const PERIOD_LABEL = {
-          "소비자물가지수": "전월대비",
-          "국내총생산(실질, 계절조정)": "전기대비",
-        };
-        const DISPLAY_MODE = {
-          "소비자물가지수": "percent",
-          "국내총생산(실질, 계절조정)": "percent",
-        };
+        // source: 'kr' -> bok_indicators / get_bok_indicator_comparisons
+        //         'us' -> economic_indicators / get_us_indicator_comparisons
+        const INDICATORS = [
+          { source: 'kr', key: '소비자물가지수', label: '소비자물가', mode: 'percent' },
+          { source: 'kr', key: '국내총생산(실질, 계절조정)', label: 'GDP(실질)', mode: 'percent' },
+          { source: 'us', key: 'CPI', label: '소비자물가', mode: 'percent' },
+          { source: 'us', key: 'Core CPI', label: '근원소비자물가', mode: 'percent' },
+          { source: 'us', key: 'PCE', label: '개인소비지출(PCE)', mode: 'percent' },
+          { source: 'us', key: 'Core PCE', label: '근원개인소비지출(PCE)', mode: 'percent' },
+          { source: 'us', key: 'GDP(실질)', label: 'GDP(실질)', mode: 'percent' },
+          { source: 'us', key: '비농업고용자수', label: '비농업고용자수', mode: 'level_thousand_man' },
+          { source: 'us', key: '실업률', label: '실업률', mode: 'pp' },
+        ];
+        const SOURCE_BADGE = { kr: '[한국]', us: '[미국]' };
 
         // 주요금리 패널과 동일한 스타일의 시계 아이콘
         const CLOCK_ICON = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6.8"/><path d="M9 5.2V9l3 1.8"/></svg>';
@@ -166,64 +167,97 @@
           return `${y}. ${m}. ${day}. ${hh}:${mm}`;
         }
 
-        function fmtCell(mode, latest, other, unit) {
+        // 전월/전기대비, 전년동기대비 등 증감을 한 줄짜리 화살표+수치로 표시
+        // (예전엔 "(전월대비)"/"(전기대비)" 부가 설명을 아래 줄에 더 넣었으나,
+        //  2줄로 줄바꿈되는 문제가 있어 제거함 - 헤더의 "전월/전기대비" 문구로 충분히 구분 가능)
+        //
+        // mode별 표시 방식:
+        //   percent            : 지수/레벨값의 상대적 변화율 (CPI, PCE, GDP 등 - 흔히 "인플레이션 X%"처럼 쓰는 방식)
+        //   pp (percentage point): 실업률처럼 이미 %인 값 - 절대 증감(%p)과 함께 현재 절대값(예: 4.10%)도 같이 보여줌
+        //                          (%p 증감만으로는 지금 실업률 수준이 몇 %인지 알 수 없어서 둘 다 표시)
+        //   level_thousand_man : 천 명 단위 레벨값(비농업고용자수)의 절대 증감을 "만 명" 단위로 환산해 표시
+        function fmtCell(mode, latest, other) {
           if (other === null || other === undefined) {
+            if (mode === "pp") {
+              return `${Number(latest).toFixed(2)}% <span style="color:#9ca3af">(데이터 없음)</span>`;
+            }
             return '<span style="color:#9ca3af">데이터 없음</span>';
           }
           const diff = Number(latest) - Number(other);
-          if (Math.abs(diff) < 1e-9) return '<span style="color:#6b7280">보합</span>';
+          const isFlat = Math.abs(diff) < 1e-9;
           const arrow = diff > 0 ? "▲" : "▼";
           const color = diff > 0 ? "#c0392b" : "#2b6fd9";
 
           if (mode === "percent") {
+            if (isFlat) return '<span style="color:#6b7280">보합</span>';
             const pct = (diff / Number(other)) * 100;
             return `<span style="color:${color}">${arrow}${Math.abs(pct).toFixed(2)}%</span>`;
+          }
+          if (mode === "pp") {
+            const level = Number(latest).toFixed(2) + "%";
+            const changeText = isFlat
+              ? '<span style="color:#6b7280">(보합)</span>'
+              : `<span style="color:${color}">(${arrow}${Math.abs(diff).toFixed(2)}%p)</span>`;
+            return `${level} ${changeText}`;
+          }
+          if (mode === "level_thousand_man") {
+            if (isFlat) return '<span style="color:#6b7280">보합</span>';
+            const manDiff = Math.abs(diff) / 10; // 원값 단위: 천 명 -> 10으로 나누면 만 명
+            return `<span style="color:${color}">${arrow}${manDiff.toFixed(1)}만명</span>`;
           }
           return '';
         }
 
-        async function loadBokIndicators() {
+        async function fetchRpc(fnName) {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": SUPABASE_ANON_KEY,
+              "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+            },
+            body: "{}",
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status} (${fnName})`);
+          return res.json();
+        }
+
+        async function loadEconomicIndicators() {
           const tbody = document.getElementById("bok-indicators-list");
           const updatedEl = document.getElementById("bok-indicators-updated");
           try {
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_bok_indicator_comparisons`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "apikey": SUPABASE_ANON_KEY,
-                "Authorization": "Bearer " + SUPABASE_ANON_KEY,
-              },
-              body: "{}",
-            });
-            if (!res.ok) throw new Error("HTTP " + res.status);
-            const rows = await res.json();
-            const byName = {};
-            rows.forEach((r) => { byName[r.indicator_name] = r; });
+            const [krRows, usRows] = await Promise.all([
+              fetchRpc("get_bok_indicator_comparisons"),
+              fetchRpc("get_us_indicator_comparisons"),
+            ]);
 
-            tbody.innerHTML = INDICATOR_ORDER.filter((name) => byName[name])
-              .map((name) => {
-                const row = byName[name];
-                const mode = DISPLAY_MODE[name];
-                const mom = fmtCell(mode, row.latest_value, row.prev_value, row.unit);
-                const yoy = fmtCell(mode, row.latest_value, row.yoy_value, row.unit);
+            const byKey = { kr: {}, us: {} };
+            krRows.forEach((r) => { byKey.kr[r.indicator_name] = r; });
+            usRows.forEach((r) => { byKey.us[r.indicator_name] = r; });
+
+            const allTimestamps = [];
+
+            tbody.innerHTML = INDICATORS
+              .filter((ind) => byKey[ind.source][ind.key])
+              .map((ind) => {
+                const row = byKey[ind.source][ind.key];
+                if (row.updated_at) allTimestamps.push(row.updated_at);
+                const mom = fmtCell(ind.mode, row.latest_value, row.prev_value);
+                const yoy = fmtCell(ind.mode, row.latest_value, row.yoy_value);
                 return `
                   <tr>
-                    <td class="rate-td-name">${INDICATOR_LABEL[name]}</td>
-                    <td>${mom}<div style="font-size:12px;color:#9ca3af;margin-top:2px;">(${PERIOD_LABEL[name]})</div></td>
+                    <td class="rate-td-name"><span class="indicator-flag">${SOURCE_BADGE[ind.source]}</span> ${escapeHtml(ind.label)}</td>
+                    <td>${mom}</td>
                     <td>${yoy}</td>
                     <td>${fmtPeriod(row.latest_period)}</td>
                   </tr>`;
               })
               .join("");
 
-            // 응답에 포함된 실제 DB 업데이트 시각(updated_at) 중 가장 최신 값을 사용
-            const timestamps = rows
-              .map((r) => r.updated_at)
-              .filter(Boolean)
-              .map((t) => new Date(t))
-              .filter((d) => !isNaN(d.getTime()));
-
-            if (timestamps.length) {
+            if (allTimestamps.length) {
+              const timestamps = allTimestamps
+                .map((t) => new Date(t))
+                .filter((d) => !isNaN(d.getTime()));
               const latest = new Date(Math.max(...timestamps.map((d) => d.getTime())));
               updatedEl.innerHTML = `${CLOCK_ICON}마지막 업데이트: ${fmtDateTime(latest)}`;
             } else {
@@ -231,14 +265,14 @@
             }
           } catch (err) {
             tbody.innerHTML = `<tr><td colspan="4" class="list-loading">데이터를 불러오지 못했습니다.</td></tr>`;
-            console.error("BOK 지표 로딩 실패:", err);
+            console.error("경제지표 로딩 실패:", err);
           }
         }
 
-        loadBokIndicators();
+        loadEconomicIndicators();
       })();
       </script>
-      
+
       <div class="panel">
         <div class="panel-head">
           <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="14" height="12" rx="1.2"/><path d="M5 6.5h6M5 9h8M5 11.5h8"/></svg></span>채권(금리) 뉴스</h2>

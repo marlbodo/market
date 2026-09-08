@@ -135,10 +135,10 @@
         const INDICATORS = [
           { source: 'kr', key: '소비자물가지수', label: '소비자물가', mode: 'percent' },
           { source: 'kr', key: '국내총생산(실질, 계절조정)', label: 'GDP(실질)', mode: 'percent' },
-          { source: 'us', key: 'CPI', label: '소비자물가', mode: 'percent' },
-          { source: 'us', key: 'Core CPI', label: '근원CPI', mode: 'percent' },
+          { source: 'us', key: 'CPI', label: 'CPI', mode: 'percent' },
+          { source: 'us', key: 'Core CPI', label: '근원 CPI', mode: 'percent' },
           { source: 'us', key: 'PCE', label: 'PCE', mode: 'percent' },
-          { source: 'us', key: 'Core PCE', label: '근원PCE', mode: 'percent' },
+          { source: 'us', key: 'Core PCE', label: '근원 PCE', mode: 'percent' },
           { source: 'us', key: 'GDP(실질)', label: 'GDP(실질)', mode: 'percent' },
           { source: 'us', key: '비농업고용자수', label: '비농업고용', mode: 'level_thousand_man' },
           { source: 'us', key: '실업률', label: '실업률', mode: 'pp' },
@@ -198,12 +198,17 @@
             return `<span style="color:${color}">${arrow}${Math.abs(pct).toFixed(2)}%</span>`;
           }
           if (mode === "pp") {
-            const changeText = isFlat
-              ? '<span style="color:#6b7280">보합</span>'
-              : `<span style="color:${color}">(${arrow}${Math.abs(diff).toFixed(2)}%p)</span>`;
-            if (!includeLevel) return changeText;
+            if (!includeLevel) {
+              // 전년동기대비 칸: 괄호 없이 증감만 표시
+              return isFlat
+                ? '<span style="color:#6b7280">보합</span>'
+                : `<span style="color:${color}">${arrow}${Math.abs(diff).toFixed(2)}%p</span>`;
+            }
+            // 전월/전기대비 칸: 절대값 뒤에 괄호로 증감(보합 포함) 표시 - 예: 4.10%(보합), 4.10%(▲0.10%p)
             const level = Number(latest).toFixed(2) + "%";
-            return `${level} ${changeText}`;
+            const changeText = isFlat ? '보합' : `${arrow}${Math.abs(diff).toFixed(2)}%p`;
+            const changeColor = isFlat ? '#6b7280' : color;
+            return `${level}<span style="color:${changeColor}">(${changeText})</span>`;
           }
           if (mode === "level_thousand_man") {
             if (isFlat) return '<span style="color:#6b7280">보합</span>';

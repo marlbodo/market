@@ -85,6 +85,7 @@
       <div class="panel">
         <div class="panel-head">
           <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15V9M6.5 15V4M11 15V11M15.5 15V6.5"/></svg></span>주요금리</h2>
+          <a href="pages/chart.html?preset=rates" class="panel-more" id="rate-chart-link">차트로 보기</a>
         </div>
         <table class="rate-table">
           <thead>
@@ -106,6 +107,7 @@
       <div class="panel">
         <div class="panel-head">
           <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="9" width="3" height="6.5" rx="0.6"/><rect x="7.5" y="5.5" width="3" height="10" rx="0.6"/><rect x="12.5" y="2.5" width="3" height="13" rx="0.6"/></svg></span>주요경제지표</h2>
+          <a href="pages/chart.html?preset=econ" class="panel-more" id="econ-chart-link">차트로 보기</a>
         </div>
         <table class="rate-table">
           <thead>
@@ -419,6 +421,14 @@
   document.getElementById('research-more-link').addEventListener('click', function (e) {
     e.preventDefault();
     openCentered(this.href, 'researchAll', 760, 900);
+  });
+  document.getElementById('rate-chart-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    openCentered(this.href, 'rateChart', 1080, 780);
+  });
+  document.getElementById('econ-chart-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    openCentered(this.href, 'econChart', 1080, 780);
   });
 </script>
 </body>

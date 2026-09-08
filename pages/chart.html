@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>차트로 보기 | 데일리 마켓 브리핑</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: #f4f5f7;
+    color: #1f2430;
+  }
+  .chart-wrap { max-width: 1180px; margin: 0 auto; padding: 16px 18px 40px; }
+  h1 { font-size: 18px; margin: 4px 0 16px; }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 12px;
+  }
+  .range-group { display: flex; gap: 4px; }
+  .range-btn, .action-btn {
+    border: 1px solid #d7dae0; background: #fff; color: #374151;
+    padding: 6px 12px; border-radius: 7px; font-size: 13px; cursor: pointer;
+  }
+  .range-btn.is-active { background: #16305c; color: #fff; border-color: #16305c; }
+  .action-btn.is-active { background: #b7791f; color: #fff; border-color: #b7791f; }
+  .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .spacer { flex: 1; }
+
+  .layout { display: grid; grid-template-columns: 260px 1fr; gap: 14px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .picker-panel, .chart-panel {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px;
+  }
+  .picker-panel h2, .chart-panel h2 { font-size: 14px; margin: 0 0 10px; color: #374151; }
+  .picker-search {
+    width: 100%; padding: 7px 10px; border: 1px solid #d7dae0; border-radius: 7px;
+    font-size: 13px; margin-bottom: 8px;
+  }
+  .picker-group-label {
+    font-size: 11px; color: #9ca3af; margin: 10px 0 4px; text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .picker-list { max-height: 480px; overflow-y: auto; }
+  .picker-item {
+    display: flex; align-items: center; gap: 6px; padding: 5px 4px; border-radius: 6px; font-size: 13px; cursor: pointer;
+  }
+  .picker-item:hover { background: #f3f4f6; }
+  .picker-item input { pointer-events: none; }
+
+  .selected-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .chip {
+    display: flex; align-items: center; gap: 6px;
+    border-radius: 999px; padding: 4px 6px 4px 10px; font-size: 12px; color: #fff;
+  }
+  .chip .axis-btn {
+    background: rgba(255,255,255,0.25); border: none; color: #fff; border-radius: 999px;
+    font-size: 11px; padding: 2px 6px; cursor: pointer;
+  }
+  .chip .remove-btn {
+    background: rgba(0,0,0,0.15); border: none; color: #fff; border-radius: 999px;
+    width: 18px; height: 18px; line-height: 1; cursor: pointer; font-size: 12px;
+  }
+
+  .chart-canvas-box { position: relative; height: 480px; }
+  .chart-empty { color: #9ca3af; font-size: 13px; text-align: center; padding: 60px 0; }
+  .chart-loading { color: #9ca3af; font-size: 13px; text-align: center; padding: 60px 0; }
+
+  .back-link { display: inline-block; margin-bottom: 10px; font-size: 13px; color: #16305c; text-decoration: none; }
+  .back-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="chart-wrap">
+  <a href="../index.html" class="back-link">← 데일리 마켓 브리핑으로</a>
+  <h1>📈 지표 비교 차트</h1>
+
+  <div class="toolbar">
+    <div class="range-group" id="range-group">
+      <button class="range-btn" data-months="1">1개월</button>
+      <button class="range-btn" data-months="6">6개월</button>
+      <button class="range-btn is-active" data-months="12">1년</button>
+      <button class="range-btn" data-months="36">3년</button>
+      <button class="range-btn" data-months="60">5년</button>
+      <button class="range-btn" data-months="120">10년</button>
+      <button class="range-btn" data-months="0">전체</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="action-btn" id="spread-btn" disabled>스프레드 계산 (A-B)</button>
+    <button class="action-btn" id="clear-btn">전체 지우기</button>
+  </div>
+
+  <div class="layout">
+    <div class="picker-panel">
+      <h2>지표 선택</h2>
+      <input class="picker-search" id="picker-search" placeholder="지표 검색 (예: 국고, CPI, GDP)">
+      <div class="picker-list" id="picker-list">
+        <div class="chart-loading">지표 목록을 불러오는 중…</div>
+      </div>
+    </div>
+
+    <div class="chart-panel">
+      <h2>선택한 지표</h2>
+      <div class="selected-chips" id="selected-chips"></div>
+      <div class="chart-canvas-box">
+        <canvas id="main-chart"></canvas>
+        <div class="chart-empty" id="chart-empty">왼쪽에서 지표를 선택하면 여기에 차트가 표시됩니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+(function () {
+  const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
+
+  const SOURCE_LABEL = { rate: '금리(국내)', us_econ: '경제지표(미국)', kr_econ: '경제지표(한국)' };
+  const PALETTE = ['#16305c', '#c0392b', '#0f7a6b', '#b7791f', '#7f77dd', '#2b6fd9', '#d4537e', '#556b2f', '#8e44ad', '#e67e22'];
+
+  let ALL_INDICATORS = []; // [{source, indicator_name}]
+  let SELECTED = [];        // [{source, indicator_name, color, axis}]
+  let SPREAD_ON = false;
+  let RANGE_MONTHS = 12;
+  let chartInstance = null;
+
+  function chipKey(item) { return `${item.source}::${item.indicator_name}`; }
+
+  async function fetchRpc(fnName, body) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify(body || {}),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} (${fnName})`);
+    return res.json();
+  }
+
+  function startDateFor(months) {
+    if (!months) return '1970-01-01'; // 전체
+    const d = new Date();
+    d.setMonth(d.getMonth() - months);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // ---------- 지표 선택 목록 ----------
+  async function loadIndicatorList() {
+    const listEl = document.getElementById('picker-list');
+    try {
+      const rows = await fetchRpc('get_all_indicator_names');
+      ALL_INDICATORS = rows;
+      renderPickerList(rows);
+      applyPresetFromUrl();
+    } catch (err) {
+      listEl.innerHTML = `<div class="chart-empty">지표 목록을 불러오지 못했습니다.</div>`;
+      console.error(err);
+    }
+  }
+
+  function renderPickerList(rows) {
+    const listEl = document.getElementById('picker-list');
+    const groups = { rate: [], us_econ: [], kr_econ: [] };
+    rows.forEach((r) => { if (groups[r.source]) groups[r.source].push(r); });
+
+    let html = '';
+    Object.keys(groups).forEach((source) => {
+      if (groups[source].length === 0) return;
+      html += `<div class="picker-group-label">${SOURCE_LABEL[source]}</div>`;
+      groups[source].forEach((item) => {
+        const key = chipKey(item);
+        const checked = SELECTED.some((s) => chipKey(s) === key);
+        html += `
+          <label class="picker-item" data-key="${escapeHtml(key)}">
+            <input type="checkbox" ${checked ? 'checked' : ''} data-source="${escapeHtml(item.source)}" data-name="${escapeHtml(item.indicator_name)}">
+            <span>${escapeHtml(item.indicator_name)}</span>
+          </label>`;
+      });
+    });
+    listEl.innerHTML = html || '<div class="chart-empty">지표가 없습니다.</div>';
+
+    listEl.querySelectorAll('.picker-item input').forEach((cb) => {
+      cb.addEventListener('change', () => {
+        const source = cb.getAttribute('data-source');
+        const name = cb.getAttribute('data-name');
+        if (cb.checked) addIndicator(source, name);
+        else removeIndicator(source, name);
+      });
+    });
+  }
+
+  function filterPickerList(query) {
+    const q = query.trim().toLowerCase();
+    if (!q) { renderPickerList(ALL_INDICATORS); return; }
+    renderPickerList(ALL_INDICATORS.filter((r) => r.indicator_name.toLowerCase().includes(q)));
+  }
+
+  // ---------- 선택 상태 관리 ----------
+  function addIndicator(source, indicator_name) {
+    const key = `${source}::${indicator_name}`;
+    if (SELECTED.some((s) => chipKey(s) === key)) return;
+    const color = PALETTE[SELECTED.length % PALETTE.length];
+    SELECTED.push({ source, indicator_name, color, axis: 'left' });
+    renderChips();
+    updateSpreadButtonState();
+    refreshChart();
+  }
+
+  function removeIndicator(source, indicator_name) {
+    SELECTED = SELECTED.filter((s) => !(s.source === source && s.indicator_name === indicator_name));
+    SPREAD_ON = false;
+    renderChips();
+    updateSpreadButtonState();
+    refreshChart();
+    // 체크박스 해제 동기화
+    document.querySelectorAll(`.picker-item input[data-source="${CSS.escape(source)}"][data-name="${CSS.escape(indicator_name)}"]`)
+      .forEach((cb) => { cb.checked = false; });
+  }
+
+  function toggleAxis(source, indicator_name) {
+    const item = SELECTED.find((s) => s.source === source && s.indicator_name === indicator_name);
+    if (!item) return;
+    item.axis = item.axis === 'left' ? 'right' : 'left';
+    renderChips();
+    refreshChart();
+  }
+
+  function renderChips() {
+    const box = document.getElementById('selected-chips');
+    if (SELECTED.length === 0) {
+      box.innerHTML = '<span style="color:#9ca3af;font-size:13px;">아직 선택한 지표가 없습니다.</span>';
+      return;
+    }
+    box.innerHTML = SELECTED.map((s) => `
+      <span class="chip" style="background:${s.color}">
+        ${escapeHtml(s.indicator_name)}
+        <button class="axis-btn" data-action="axis" data-source="${escapeHtml(s.source)}" data-name="${escapeHtml(s.indicator_name)}">${s.axis === 'left' ? '좌축' : '우축'}</button>
+        <button class="remove-btn" data-action="remove" data-source="${escapeHtml(s.source)}" data-name="${escapeHtml(s.indicator_name)}">×</button>
+      </span>`).join('');
+
+    box.querySelectorAll('[data-action="remove"]').forEach((btn) => {
+      btn.addEventListener('click', () => removeIndicator(btn.getAttribute('data-source'), btn.getAttribute('data-name')));
+    });
+    box.querySelectorAll('[data-action="axis"]').forEach((btn) => {
+      btn.addEventListener('click', () => toggleAxis(btn.getAttribute('data-source'), btn.getAttribute('data-name')));
+    });
+  }
+
+  function updateSpreadButtonState() {
+    const btn = document.getElementById('spread-btn');
+    btn.disabled = SELECTED.length !== 2;
+    if (SELECTED.length !== 2) SPREAD_ON = false;
+    btn.classList.toggle('is-active', SPREAD_ON);
+  }
+
+  // ---------- 데이터 조회 + 차트 렌더 ----------
+  async function fetchSeries(item, startDate) {
+    const rows = await fetchRpc('get_indicator_series', {
+      p_source: item.source,
+      p_indicator: item.indicator_name,
+      p_start: startDate,
+    });
+    return rows.map((r) => ({ x: r.series_date, y: Number(r.value) }));
+  }
+
+  function computeSpread(seriesA, seriesB) {
+    const mapB = new Map(seriesB.map((p) => [p.x, p.y]));
+    const out = [];
+    seriesA.forEach((p) => {
+      if (mapB.has(p.x)) out.push({ x: p.x, y: p.y - mapB.get(p.x) });
+    });
+    return out;
+  }
+
+  async function refreshChart() {
+    const emptyEl = document.getElementById('chart-empty');
+    const canvas = document.getElementById('main-chart');
+
+    if (SELECTED.length === 0) {
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+      emptyEl.textContent = '왼쪽에서 지표를 선택하면 여기에 차트가 표시됩니다.';
+      emptyEl.style.display = 'block';
+      return;
+    }
+
+    emptyEl.textContent = '데이터를 불러오는 중…';
+    emptyEl.style.display = 'block';
+
+    try {
+      const startDate = startDateFor(RANGE_MONTHS);
+      const seriesList = await Promise.all(SELECTED.map((item) => fetchSeries(item, startDate)));
+
+      const datasets = SELECTED.map((item, i) => ({
+        label: item.indicator_name,
+        data: seriesList[i],
+        borderColor: item.color,
+        backgroundColor: item.color,
+        yAxisID: item.axis === 'left' ? 'y' : 'y1',
+        borderWidth: 1.6,
+        pointRadius: 0,
+        tension: 0.05,
+      }));
+
+      if (SPREAD_ON && SELECTED.length === 2) {
+        const spread = computeSpread(seriesList[0], seriesList[1]);
+        datasets.push({
+          label: `스프레드 (${SELECTED[0].indicator_name} − ${SELECTED[1].indicator_name})`,
+          data: spread,
+          borderColor: '#111827',
+          backgroundColor: '#111827',
+          yAxisID: 'y2',
+          borderWidth: 1.6,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          tension: 0.05,
+        });
+      }
+
+      const usesRight = SELECTED.some((s) => s.axis === 'right');
+      const usesSpread = SPREAD_ON && SELECTED.length === 2;
+
+      if (chartInstance) chartInstance.destroy();
+      emptyEl.style.display = 'none';
+
+      chartInstance = new Chart(canvas, {
+        type: 'line',
+        data: { datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'nearest', axis: 'x', intersect: false },
+          plugins: {
+            legend: { display: true, position: 'top' },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(3)}`,
+              },
+            },
+          },
+          scales: {
+            x: { type: 'time', time: { tooltipFormat: 'yyyy-MM-dd' } },
+            y: { type: 'linear', position: 'left', title: { display: usesRight, text: '좌축' } },
+            y1: {
+              type: 'linear', position: 'right', title: { display: usesRight, text: '우축' },
+              grid: { drawOnChartArea: false }, display: usesRight,
+            },
+            y2: {
+              type: 'linear', position: 'right', display: usesSpread,
+              grid: { drawOnChartArea: false },
+              title: { display: usesSpread, text: '스프레드' },
+              offset: true,
+            },
+          },
+        },
+      });
+    } catch (err) {
+      emptyEl.textContent = '데이터를 불러오지 못했습니다.';
+      console.error(err);
+    }
+  }
+
+  // ---------- 프리셋 (index.html에서 "차트로 보기"로 들어올 때 기본 선택) ----------
+  function applyPresetFromUrl() {
+    const params = new URLSearchParams(location.search);
+    const preset = params.get('preset');
+    if (preset === 'rates') {
+      ['국고 3Y', '국고 10Y'].forEach((name) => {
+        if (ALL_INDICATORS.some((r) => r.source === 'rate' && r.indicator_name === name)) addIndicator('rate', name);
+      });
+      SPREAD_ON = true;
+    } else if (preset === 'econ') {
+      if (ALL_INDICATORS.some((r) => r.source === 'us_econ' && r.indicator_name === 'CPI')) addIndicator('us_econ', 'CPI');
+    }
+    renderPickerList(ALL_INDICATORS);
+    updateSpreadButtonState();
+    refreshChart();
+  }
+
+  // ---------- 이벤트 바인딩 ----------
+  document.getElementById('picker-search').addEventListener('input', (e) => filterPickerList(e.target.value));
+
+  document.querySelectorAll('.range-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.range-btn').forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      RANGE_MONTHS = Number(btn.getAttribute('data-months'));
+      refreshChart();
+    });
+  });
+
+  document.getElementById('spread-btn').addEventListener('click', function () {
+    if (this.disabled) return;
+    SPREAD_ON = !SPREAD_ON;
+    this.classList.toggle('is-active', SPREAD_ON);
+    refreshChart();
+  });
+
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    SELECTED = [];
+    SPREAD_ON = false;
+    renderChips();
+    updateSpreadButtonState();
+    renderPickerList(ALL_INDICATORS.length ? ALL_INDICATORS : []);
+    refreshChart();
+  });
+
+  renderChips();
+  loadIndicatorList();
+})();
+</script>
+</body>
+</html>

@@ -139,7 +139,7 @@
           { source: 'us', key: 'Core CPI', label: '근원 CPI', mode: 'percent' },
           { source: 'us', key: 'PCE', label: 'PCE', mode: 'percent' },
           { source: 'us', key: 'Core PCE', label: '근원 PCE', mode: 'percent' },
-          { source: 'us', key: 'GDP(실질)', label: 'GDP(실질)', mode: 'percent' },
+          { source: 'us', key: 'GDP(실질)', label: 'GDP(실질)', mode: 'percent_annualized' },
           { source: 'us', key: '비농업고용자수', label: '비농업고용', mode: 'level_thousand_man' },
           { source: 'us', key: '실업률', label: '실업률', mode: 'pp' },
         ];
@@ -175,7 +175,14 @@
         //  2줄로 줄바꿈되는 문제가 있어 제거함 - 헤더의 "전월/전기대비" 문구로 충분히 구분 가능)
         //
         // mode별 표시 방식:
-        //   percent            : 지수/레벨값의 상대적 변화율 (CPI, PCE, GDP 등 - 흔히 "인플레이션 X%"처럼 쓰는 방식)
+        //   percent            : 지수/레벨값의 상대적 변화율 (CPI, PCE 등 - 흔히 "인플레이션 X%"처럼 쓰는 방식)
+        //   percent_annualized : GDP(미국)처럼 "분기 대비" 값을 미국식 연율(SAAR)로 환산해서 보여주는 모드.
+        //                        미국 BEA는 분기 성장률을 단순 ×4가 아니라 복리로 연율화해서 발표함:
+        //                          연율(%) = [(1 + 분기성장률)^4 - 1] × 100
+        //                        단, 전년동기대비(yoy, includeLevel=false) 칸은 이미 1년 간격 비교라
+        //                        추가로 연율화하면 안 되므로 이때는 percent와 동일하게 단순 계산.
+        //                        전월/전기대비(mom, includeLevel=true) 칸에서만 연율화를 적용하고
+        //                        "(연율)" 표기를 붙여 원자료(분기 대비)와 구분되게 함.
         //   pp (percentage point): 실업률처럼 이미 %인 값. includeLevel=true인 칸(전월/전기대비)에서만
         //                          현재 절대값(예: 4.10%)을 같이 보여주고, 나머지 칸(전년동기대비)은
         //                          같은 값이 반복 표시되는 걸 막기 위해 증감만 표시
@@ -192,10 +199,18 @@
           const arrow = diff > 0 ? "▲" : "▼";
           const color = diff > 0 ? "#c0392b" : "#2b6fd9";
 
-          if (mode === "percent") {
+          if (mode === "percent" || mode === "percent_annualized") {
             if (isFlat) return '<span style="color:#6b7280">보합</span>';
-            const pct = (diff / Number(other)) * 100;
-            return `<span style="color:${color}">${arrow}${Math.abs(pct).toFixed(2)}%</span>`;
+            const rawPct = (diff / Number(other)) * 100; // 분기(또는 전월) 대비 원 변화율
+
+            // percent_annualized + 전월/전기대비 칸에서만 복리 연율화 적용
+            const shouldAnnualize = mode === "percent_annualized" && includeLevel;
+            const displayPct = shouldAnnualize
+              ? (Math.pow(1 + rawPct / 100, 4) - 1) * 100
+              : rawPct;
+            const suffix = shouldAnnualize ? '(연율)' : '';
+
+            return `<span style="color:${color}">${arrow}${Math.abs(displayPct).toFixed(2)}%${suffix}</span>`;
           }
           if (mode === "pp") {
             if (!includeLevel) {

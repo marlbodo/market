@@ -142,12 +142,16 @@
   const SPREAD_FILL_COLOR = 'rgba(93, 202, 165, 0.35)';
 
   // 전년동기대비 %로 변환하지 않고 "원값"을 그대로 보여줄 지표
-  // (비농업고용자수: 레벨 자체가 의미 있는 고용 총량 / 경상수지: 레벨 자체가 의미 있는 수지 금액)
-  // 실업률은 원래부터 %(비율) 값이라 별도의 YoY 변환이 필요 없어 그대로 둠(=원값=%)
+  // (경상수지: 레벨 자체가 의미 있는 수지 금액 / 실업률: 원래부터 %(비율) 값이라 별도 YoY 변환 불필요)
   const LEVEL_ONLY_KEYS = new Set([
-    'us_econ::비농업고용자수',
     'us_econ::실업률',
     'kr_econ::경상수지',
+  ]);
+
+  // 레벨값이 아니라 "전월대비 증감"으로 보여줄 지표 (단위: 천명)
+  // 비농업고용자수는 레벨(예: 159,075천명) 자체보다 "지난달보다 몇 명 늘었나"가 실제로 의미 있는 숫자
+  const MOM_DIFF_KEYS = new Set([
+    'us_econ::비농업고용자수',
   ]);
 
   let ALL_INDICATORS = []; // [{source, indicator_name}]
@@ -209,6 +213,17 @@
       if (best && best.y !== 0) {
         out.push({ x: cur.x, y: ((cur.y - best.y) / Math.abs(best.y)) * 100 });
       }
+    }
+    return out;
+  }
+
+  // ---------- 전월(전기)대비 증감 변환 ----------
+  // 비농업고용자수처럼 "레벨보다 증감분 자체가 의미 있는" 지표에 사용.
+  // 바로 직전 시점 값과의 단순 차분(diff)만 계산 (YoY처럼 날짜 매칭 탐색이 필요 없음)
+  function computeMoMDiff(rawSeries) {
+    const out = [];
+    for (let i = 1; i < rawSeries.length; i++) {
+      out.push({ x: rawSeries[i].x, y: rawSeries[i].y - rawSeries[i - 1].y });
     }
     return out;
   }
@@ -329,14 +344,20 @@
   // ---------- 데이터 조회 + 차트 렌더 ----------
   async function fetchSeries(item, startDate) {
     const isEcon = item.source === 'us_econ' || item.source === 'kr_econ';
-    const needsYoY = isEcon && !LEVEL_ONLY_KEYS.has(chipKey(item));
+    const isMoMDiff = MOM_DIFF_KEYS.has(chipKey(item));
+    const needsYoY = isEcon && !isMoMDiff && !LEVEL_ONLY_KEYS.has(chipKey(item));
 
     // YoY 변환이 필요한 지표는 화면에 보여줄 시작일보다 13개월 앞선 시점부터 데이터를 미리
     // 받아와야, 화면에 보여지는 첫 시점부터 바로 전년동기대비 %를 계산할 수 있음
+    // MoM 증감 지표는 직전 1개 시점 값만 있으면 되므로 2개월만 여유있게 앞당김
     let fetchStart = startDate;
     if (needsYoY && startDate !== '1970-01-01') {
       const d = new Date(startDate + 'T00:00:00');
       d.setMonth(d.getMonth() - 13);
+      fetchStart = d.toISOString().slice(0, 10);
+    } else if (isMoMDiff && startDate !== '1970-01-01') {
+      const d = new Date(startDate + 'T00:00:00');
+      d.setMonth(d.getMonth() - 2);
       fetchStart = d.toISOString().slice(0, 10);
     }
 
@@ -349,6 +370,8 @@
 
     if (needsYoY) {
       series = computeYoY(series).filter((p) => p.x >= startDate);
+    } else if (isMoMDiff) {
+      series = computeMoMDiff(series).filter((p) => p.x >= startDate);
     }
     return series;
   }
@@ -375,6 +398,14 @@
     return { min: axisMin, max: axisMax };
   }
 
+  function formatDatasetValue(ds, rawValue) {
+    const decimals = ds._decimals ?? 2;
+    const unit = ds._unit || '';
+    const num = Number(rawValue);
+    const sign = ds._signed && num > 0 ? '+' : '';
+    return `${sign}${num.toFixed(decimals)}${unit}`;
+  }
+
   // ---------- 그래프 끝점에 마지막 값 라벨 표시 ----------
   const endLabelPlugin = {
     id: 'endLabel',
@@ -389,9 +420,7 @@
         const raw = ds.data[lastIdx];
         if (!point || raw == null || raw.y == null || isNaN(raw.y)) return;
 
-        const decimals = ds._decimals ?? 2;
-        const unit = ds._unit || '';
-        const text = `${Number(raw.y).toFixed(decimals)}${unit}`;
+        const text = formatDatasetValue(ds, raw.y);
 
         ctx.save();
         ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif';
@@ -431,11 +460,14 @@
       const seriesList = await Promise.all(SELECTED.map((item) => fetchSeries(item, startDate)));
 
       const datasets = SELECTED.map((item, i) => {
-        const usesYoY = (item.source === 'us_econ' || item.source === 'kr_econ') && !LEVEL_ONLY_KEYS.has(chipKey(item));
+        const isMoMDiff = MOM_DIFF_KEYS.has(chipKey(item));
+        const usesYoY = (item.source === 'us_econ' || item.source === 'kr_econ') && !isMoMDiff && !LEVEL_ONLY_KEYS.has(chipKey(item));
         const isRawPercent = item.source === 'us_econ' && item.indicator_name === '실업률';
         let unit = '';
         let decimals = item.source === 'rate' ? 3 : 1;
         if (usesYoY || isRawPercent) { unit = '%'; decimals = 2; }
+        else if (isMoMDiff) { unit = '천명'; decimals = 0; }
+        const signed = isMoMDiff;
 
         return {
           label: item.indicator_name,
@@ -449,6 +481,7 @@
           pointStyle: 'line', // 범례에서 네모 대신 선으로 표시
           _unit: unit,
           _decimals: decimals,
+          _signed: signed,
         };
       });
 
@@ -500,8 +533,7 @@
               callbacks: {
                 label: (ctx) => {
                   const ds = ctx.dataset;
-                  const val = Number(ctx.parsed.y);
-                  return `${ds.label}: ${val.toFixed(ds._decimals ?? 3)}${ds._unit || ''}`;
+                  return `${ds.label}: ${formatDatasetValue(ds, ctx.parsed.y)}`;
                 },
               },
             },

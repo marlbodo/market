@@ -13,8 +13,18 @@
     background: #f4f5f7;
     color: #1f2430;
   }
-  .chart-wrap { max-width: 1180px; margin: 0 auto; padding: 16px 18px 40px; }
-  h1 { font-size: 18px; margin: 4px 0 16px; }
+  .chart-wrap { max-width: 1560px; margin: 0 auto; padding: 16px 18px 40px; }
+
+  .page-header-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 4px 0 16px;
+  }
+  .page-header-row h1 { font-size: 18px; margin: 0; }
+  .close-btn {
+    border: 1px solid #d7dae0; background: #fff; color: #374151;
+    padding: 6px 14px; border-radius: 7px; font-size: 13px; cursor: pointer;
+  }
+  .close-btn:hover { background: #f3f4f6; }
 
   .toolbar {
     display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
@@ -31,7 +41,7 @@
   .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .spacer { flex: 1; }
 
-  .layout { display: grid; grid-template-columns: 260px 1fr; gap: 14px; align-items: start; }
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 14px; align-items: start; }
   @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
 
   .picker-panel, .chart-panel {
@@ -43,9 +53,10 @@
     font-size: 13px; margin-bottom: 8px;
   }
   .picker-group-label {
-    font-size: 11px; color: #9ca3af; margin: 10px 0 4px; text-transform: uppercase; letter-spacing: 0.03em;
+    font-size: 11px; color: #1f2430; font-weight: 700; margin: 10px 0 4px;
+    text-transform: uppercase; letter-spacing: 0.03em;
   }
-  .picker-list { max-height: 480px; overflow-y: auto; }
+  .picker-list { max-height: 600px; overflow-y: auto; }
   .picker-item {
     display: flex; align-items: center; gap: 6px; padding: 5px 4px; border-radius: 6px; font-size: 13px; cursor: pointer;
   }
@@ -66,19 +77,18 @@
     width: 18px; height: 18px; line-height: 1; cursor: pointer; font-size: 12px;
   }
 
-  .chart-canvas-box { position: relative; height: 480px; }
+  .chart-canvas-box { position: relative; height: 640px; }
   .chart-empty { color: #9ca3af; font-size: 13px; text-align: center; padding: 60px 0; }
   .chart-loading { color: #9ca3af; font-size: 13px; text-align: center; padding: 60px 0; }
-
-  .back-link { display: inline-block; margin-bottom: 10px; font-size: 13px; color: #16305c; text-decoration: none; }
-  .back-link:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
 
 <div class="chart-wrap">
-  <a href="../index.html" class="back-link">← 데일리 마켓 브리핑으로</a>
-  <h1>📈 지표 비교 차트</h1>
+  <div class="page-header-row">
+    <h1>📈 지표 비교 차트</h1>
+    <button class="close-btn" id="close-btn">✕ 닫기</button>
+  </div>
 
   <div class="toolbar">
     <div class="range-group" id="range-group">
@@ -92,6 +102,7 @@
     </div>
     <div class="spacer"></div>
     <button class="action-btn" id="spread-btn" disabled>스프레드 계산 (A-B)</button>
+    <button class="action-btn" id="excel-btn" disabled>엑셀로 저장</button>
     <button class="action-btn" id="clear-btn">전체 지우기</button>
   </div>
 
@@ -117,13 +128,27 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 (function () {
   const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
 
-  const SOURCE_LABEL = { rate: '금리(국내)', us_econ: '경제지표(미국)', kr_econ: '경제지표(한국)' };
+  const SOURCE_LABEL = { rate: '금리(국내)', kr_econ: '경제지표(한국)', us_econ: '경제지표(미국)' };
   const PALETTE = ['#16305c', '#c0392b', '#0f7a6b', '#b7791f', '#7f77dd', '#2b6fd9', '#d4537e', '#556b2f', '#8e44ad', '#e67e22'];
+
+  // 스프레드 전용 색상 (연한 녹색 계열 - 사이트 브랜드 그린과 통일)
+  const SPREAD_LINE_COLOR = '#3fae86';
+  const SPREAD_FILL_COLOR = 'rgba(93, 202, 165, 0.35)';
+
+  // 전년동기대비 %로 변환하지 않고 "원값"을 그대로 보여줄 지표
+  // (비농업고용자수: 레벨 자체가 의미 있는 고용 총량 / 경상수지: 레벨 자체가 의미 있는 수지 금액)
+  // 실업률은 원래부터 %(비율) 값이라 별도의 YoY 변환이 필요 없어 그대로 둠(=원값=%)
+  const LEVEL_ONLY_KEYS = new Set([
+    'us_econ::비농업고용자수',
+    'us_econ::실업률',
+    'kr_econ::경상수지',
+  ]);
 
   let ALL_INDICATORS = []; // [{source, indicator_name}]
   let SELECTED = [];        // [{source, indicator_name, color, axis}]
@@ -158,6 +183,36 @@
     return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  // ---------- 전년동기대비(YoY) % 변환 ----------
+  // CPI/PCE/GDP 등 지수·레벨 값은 원값 자체가 의미 없으므로, 정확히 1년 전(11~13개월 전 범위 중
+  // 가장 가까운 시점) 값과 비교해 %로 환산해서 보여준다. (LEVEL_ONLY_KEYS에 있는 지표는 변환 제외)
+  function monthsBetween(a, b) {
+    return (a.getFullYear() - b.getFullYear()) * 12 + (a.getMonth() - b.getMonth());
+  }
+
+  function computeYoY(rawSeries) {
+    const points = rawSeries.map((p) => ({ date: new Date(p.x + 'T00:00:00'), x: p.x, y: p.y }));
+    const out = [];
+    for (let i = 0; i < points.length; i++) {
+      const cur = points[i];
+      const target = new Date(cur.date);
+      target.setFullYear(target.getFullYear() - 1);
+
+      let best = null;
+      let bestDiff = Infinity;
+      for (let j = 0; j < i; j++) {
+        const pj = points[j];
+        if (Math.abs(monthsBetween(pj.date, target)) > 1) continue; // 11~13개월 범위 밖이면 후보 제외
+        const diff = Math.abs(pj.date.getTime() - target.getTime());
+        if (diff < bestDiff) { bestDiff = diff; best = pj; }
+      }
+      if (best && best.y !== 0) {
+        out.push({ x: cur.x, y: ((cur.y - best.y) / Math.abs(best.y)) * 100 });
+      }
+    }
+    return out;
+  }
+
   // ---------- 지표 선택 목록 ----------
   async function loadIndicatorList() {
     const listEl = document.getElementById('picker-list');
@@ -174,7 +229,8 @@
 
   function renderPickerList(rows) {
     const listEl = document.getElementById('picker-list');
-    const groups = { rate: [], us_econ: [], kr_econ: [] };
+    // 표시 순서: 금리(국내) -> 경제지표(한국) -> 경제지표(미국)
+    const groups = { rate: [], kr_econ: [], us_econ: [] };
     rows.forEach((r) => { if (groups[r.source]) groups[r.source].push(r); });
 
     let html = '';
@@ -216,7 +272,7 @@
     const color = PALETTE[SELECTED.length % PALETTE.length];
     SELECTED.push({ source, indicator_name, color, axis: 'left' });
     renderChips();
-    updateSpreadButtonState();
+    updateActionButtonsState();
     refreshChart();
   }
 
@@ -224,7 +280,7 @@
     SELECTED = SELECTED.filter((s) => !(s.source === source && s.indicator_name === indicator_name));
     SPREAD_ON = false;
     renderChips();
-    updateSpreadButtonState();
+    updateActionButtonsState();
     refreshChart();
     // 체크박스 해제 동기화
     document.querySelectorAll(`.picker-item input[data-source="${CSS.escape(source)}"][data-name="${CSS.escape(indicator_name)}"]`)
@@ -260,21 +316,41 @@
     });
   }
 
-  function updateSpreadButtonState() {
-    const btn = document.getElementById('spread-btn');
-    btn.disabled = SELECTED.length !== 2;
+  function updateActionButtonsState() {
+    const spreadBtn = document.getElementById('spread-btn');
+    spreadBtn.disabled = SELECTED.length !== 2;
     if (SELECTED.length !== 2) SPREAD_ON = false;
-    btn.classList.toggle('is-active', SPREAD_ON);
+    spreadBtn.classList.toggle('is-active', SPREAD_ON);
+
+    const excelBtn = document.getElementById('excel-btn');
+    excelBtn.disabled = SELECTED.length === 0;
   }
 
   // ---------- 데이터 조회 + 차트 렌더 ----------
   async function fetchSeries(item, startDate) {
+    const isEcon = item.source === 'us_econ' || item.source === 'kr_econ';
+    const needsYoY = isEcon && !LEVEL_ONLY_KEYS.has(chipKey(item));
+
+    // YoY 변환이 필요한 지표는 화면에 보여줄 시작일보다 13개월 앞선 시점부터 데이터를 미리
+    // 받아와야, 화면에 보여지는 첫 시점부터 바로 전년동기대비 %를 계산할 수 있음
+    let fetchStart = startDate;
+    if (needsYoY && startDate !== '1970-01-01') {
+      const d = new Date(startDate + 'T00:00:00');
+      d.setMonth(d.getMonth() - 13);
+      fetchStart = d.toISOString().slice(0, 10);
+    }
+
     const rows = await fetchRpc('get_indicator_series', {
       p_source: item.source,
       p_indicator: item.indicator_name,
-      p_start: startDate,
+      p_start: fetchStart,
     });
-    return rows.map((r) => ({ x: r.series_date, y: Number(r.value) }));
+    let series = rows.map((r) => ({ x: r.series_date, y: Number(r.value) }));
+
+    if (needsYoY) {
+      series = computeYoY(series).filter((p) => p.x >= startDate);
+    }
+    return series;
   }
 
   function computeSpread(seriesA, seriesB) {
@@ -285,6 +361,56 @@
     });
     return out;
   }
+
+  // 스프레드 값이 차트 하단 일부(fraction 비율)에만 그려지도록 y축 범위를 계산.
+  // (본 그래프인 금리/지표 라인이 시각적으로 주가 되고, 스프레드는 배경처럼 아래쪽에 깔리게 하기 위함)
+  function squishedAxisRange(values, fraction) {
+    if (!values.length) return { min: 0, max: 1 };
+    let min = Math.min(...values);
+    let max = Math.max(...values);
+    if (min === max) { min -= 0.1; max += 0.1; }
+    const span = max - min;
+    const axisMin = min - span * 0.08;
+    const axisMax = axisMin + (max - axisMin) / fraction;
+    return { min: axisMin, max: axisMax };
+  }
+
+  // ---------- 그래프 끝점에 마지막 값 라벨 표시 ----------
+  const endLabelPlugin = {
+    id: 'endLabel',
+    afterDatasetsDraw(chart) {
+      const { ctx, chartArea } = chart;
+      if (!chartArea) return;
+      chart.data.datasets.forEach((ds, i) => {
+        const meta = chart.getDatasetMeta(i);
+        if (!meta || meta.hidden || !ds.data || !ds.data.length) return;
+        const lastIdx = ds.data.length - 1;
+        const point = meta.data[lastIdx];
+        const raw = ds.data[lastIdx];
+        if (!point || raw == null || raw.y == null || isNaN(raw.y)) return;
+
+        const decimals = ds._decimals ?? 2;
+        const unit = ds._unit || '';
+        const text = `${Number(raw.y).toFixed(decimals)}${unit}`;
+
+        ctx.save();
+        ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif';
+        const textWidth = ctx.measureText(text).width;
+        const x = Math.min(point.x + 6, chart.width - textWidth - 6);
+        const y = point.y;
+
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.fillRect(x - 3, y - 8, textWidth + 6, 16);
+
+        ctx.fillStyle = ds.borderColor || '#111827';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'left';
+        ctx.fillText(text, x, y);
+        ctx.restore();
+      });
+    },
+  };
+  Chart.register(endLabelPlugin);
 
   async function refreshChart() {
     const emptyEl = document.getElementById('chart-empty');
@@ -304,29 +430,49 @@
       const startDate = startDateFor(RANGE_MONTHS);
       const seriesList = await Promise.all(SELECTED.map((item) => fetchSeries(item, startDate)));
 
-      const datasets = SELECTED.map((item, i) => ({
-        label: item.indicator_name,
-        data: seriesList[i],
-        borderColor: item.color,
-        backgroundColor: item.color,
-        yAxisID: item.axis === 'left' ? 'y' : 'y1',
-        borderWidth: 1.6,
-        pointRadius: 0,
-        tension: 0.05,
-      }));
+      const datasets = SELECTED.map((item, i) => {
+        const usesYoY = (item.source === 'us_econ' || item.source === 'kr_econ') && !LEVEL_ONLY_KEYS.has(chipKey(item));
+        const isRawPercent = item.source === 'us_econ' && item.indicator_name === '실업률';
+        let unit = '';
+        let decimals = item.source === 'rate' ? 3 : 1;
+        if (usesYoY || isRawPercent) { unit = '%'; decimals = 2; }
+
+        return {
+          label: item.indicator_name,
+          data: seriesList[i],
+          borderColor: item.color,
+          backgroundColor: item.color,
+          yAxisID: item.axis === 'left' ? 'y' : 'y1',
+          borderWidth: 1.6,
+          pointRadius: 0,
+          tension: 0.05,
+          pointStyle: 'line', // 범례에서 네모 대신 선으로 표시
+          _unit: unit,
+          _decimals: decimals,
+        };
+      });
+
+      let spreadAxisRange = { min: undefined, max: undefined };
 
       if (SPREAD_ON && SELECTED.length === 2) {
         const spread = computeSpread(seriesList[0], seriesList[1]);
+        const spreadValues = spread.map((p) => p.y).filter((v) => !isNaN(v));
+        spreadAxisRange = squishedAxisRange(spreadValues, 0.32);
+
         datasets.push({
           label: `스프레드 (${SELECTED[0].indicator_name} − ${SELECTED[1].indicator_name})`,
           data: spread,
-          borderColor: '#111827',
-          backgroundColor: '#111827',
+          borderColor: SPREAD_LINE_COLOR,
+          backgroundColor: SPREAD_FILL_COLOR,
           yAxisID: 'y2',
-          borderWidth: 1.6,
-          borderDash: [5, 4],
+          borderWidth: 1.5,
           pointRadius: 0,
           tension: 0.05,
+          fill: 'start',       // 면적 채우기
+          pointStyle: 'rect',  // 범례에서 채워진 네모로 표시 (면적임을 표현)
+          order: -1,           // 다른 선들보다 먼저(=아래에) 그려지게
+          _unit: '',
+          _decimals: 3,
         });
       }
 
@@ -342,27 +488,47 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: { padding: { right: 58 } }, // 끝점 라벨이 잘리지 않도록 오른쪽 여백 확보
           interaction: { mode: 'nearest', axis: 'x', intersect: false },
           plugins: {
-            legend: { display: true, position: 'top' },
+            legend: {
+              display: true,
+              position: 'top',
+              labels: { usePointStyle: true, boxWidth: 26, boxHeight: 10 },
+            },
             tooltip: {
               callbacks: {
-                label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(3)}`,
+                label: (ctx) => {
+                  const ds = ctx.dataset;
+                  const val = Number(ctx.parsed.y);
+                  return `${ds.label}: ${val.toFixed(ds._decimals ?? 3)}${ds._unit || ''}`;
+                },
               },
             },
           },
           scales: {
-            x: { type: 'time', time: { tooltipFormat: 'yyyy-MM-dd' } },
+            x: {
+              type: 'time',
+              time: {
+                tooltipFormat: 'yyyy.MM.dd',
+                displayFormats: {
+                  day: 'M.d',
+                  week: 'M.d',
+                  month: 'yy.M',
+                  quarter: 'yy.M',
+                  year: 'yyyy',
+                },
+              },
+            },
             y: { type: 'linear', position: 'left', title: { display: usesRight, text: '좌축' } },
             y1: {
               type: 'linear', position: 'right', title: { display: usesRight, text: '우축' },
               grid: { drawOnChartArea: false }, display: usesRight,
             },
             y2: {
-              type: 'linear', position: 'right', display: usesSpread,
+              type: 'linear', position: 'right', display: false,
+              min: spreadAxisRange.min, max: spreadAxisRange.max,
               grid: { drawOnChartArea: false },
-              title: { display: usesSpread, text: '스프레드' },
-              offset: true,
             },
           },
         },
@@ -373,12 +539,39 @@
     }
   }
 
+  // ---------- 엑셀로 저장 ----------
+  function exportToExcel() {
+    if (!chartInstance || SELECTED.length === 0) return;
+    const datasets = chartInstance.data.datasets;
+    const maps = datasets.map((ds) => new Map(ds.data.map((p) => [p.x, p.y])));
+    const allDatesSet = new Set();
+    datasets.forEach((ds) => ds.data.forEach((p) => allDatesSet.add(p.x)));
+    const allDates = Array.from(allDatesSet).sort();
+
+    const header = ['날짜', ...datasets.map((ds) => ds.label)];
+    const rows = allDates.map((date) => {
+      const row = [date];
+      maps.forEach((m) => {
+        const v = m.get(date);
+        row.push(v === undefined ? '' : Number(v.toFixed(4)));
+      });
+      return row;
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '차트데이터');
+    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    XLSX.writeFile(wb, `차트데이터_${todayStr}.xlsx`);
+  }
+
   // ---------- 프리셋 (index.html에서 "차트로 보기"로 들어올 때 기본 선택) ----------
   function applyPresetFromUrl() {
     const params = new URLSearchParams(location.search);
     const preset = params.get('preset');
     if (preset === 'rates') {
-      ['국고 3Y', '국고 10Y'].forEach((name) => {
+      // 기본값: 국고 10Y - 국고 3Y 순서로 스프레드 시작
+      ['국고 10Y', '국고 3Y'].forEach((name) => {
         if (ALL_INDICATORS.some((r) => r.source === 'rate' && r.indicator_name === name)) addIndicator('rate', name);
       });
       SPREAD_ON = true;
@@ -386,7 +579,7 @@
       if (ALL_INDICATORS.some((r) => r.source === 'us_econ' && r.indicator_name === 'CPI')) addIndicator('us_econ', 'CPI');
     }
     renderPickerList(ALL_INDICATORS);
-    updateSpreadButtonState();
+    updateActionButtonsState();
     refreshChart();
   }
 
@@ -409,13 +602,19 @@
     refreshChart();
   });
 
+  document.getElementById('excel-btn').addEventListener('click', exportToExcel);
+
   document.getElementById('clear-btn').addEventListener('click', () => {
     SELECTED = [];
     SPREAD_ON = false;
     renderChips();
-    updateSpreadButtonState();
+    updateActionButtonsState();
     renderPickerList(ALL_INDICATORS.length ? ALL_INDICATORS : []);
     refreshChart();
+  });
+
+  document.getElementById('close-btn').addEventListener('click', () => {
+    window.close();
   });
 
   renderChips();

@@ -444,11 +444,15 @@
   });
   document.getElementById('rate-chart-link').addEventListener('click', function (e) {
     e.preventDefault();
-    openCentered(this.href, 'rateChart', 1080, 780);
+    const w = Math.min(1600, screen.availWidth - 40);
+    const h = Math.min(950, screen.availHeight - 60);
+    openCentered(this.href, 'rateChart', w, h);
   });
   document.getElementById('econ-chart-link').addEventListener('click', function (e) {
     e.preventDefault();
-    openCentered(this.href, 'econChart', 1080, 780);
+    const w = Math.min(1600, screen.availWidth - 40);
+    const h = Math.min(950, screen.availHeight - 60);
+    openCentered(this.href, 'econChart', w, h);
   });
 </script>
 </body>

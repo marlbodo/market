@@ -65,6 +65,7 @@
   <section class="ai-insight-panel">
     <div class="panel-head">
       <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5l1.2 3.3 3.3 1.2-3.3 1.2L9 11.5l-1.2-3.3-3.3-1.2 3.3-1.2L9 2.5Z"/><path d="M14.5 11l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6.6-1.7Z"/></svg></span>AI 인사이트</h2>
+      <span class="ai-insight-updated" id="ai-insight-updated"></span>
     </div>
     <div class="ai-insight-layout">
       <div id="ai-insight-list" class="ai-insight-list">
@@ -85,7 +86,16 @@
       <div class="panel">
         <div class="panel-head">
           <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15V9M6.5 15V4M11 15V11M15.5 15V6.5"/></svg></span>주요금리</h2>
-          <a href="pages/chart.html?preset=rates" class="panel-more" id="rate-chart-link">차트로 보기</a>
+          <a href="pages/chart.html?preset=rates" class="panel-more panel-more-chart" id="rate-chart-link">
+            <svg class="panel-more-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M2.5 15.5 7 10l3 2.5 4-5.5 3.5 3" stroke="#0f7a6b" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="7" cy="10" r="1.4" fill="#0f7a6b"/>
+              <circle cx="10" cy="12.5" r="1.4" fill="#16305c"/>
+              <circle cx="14" cy="7" r="1.4" fill="#b7791f"/>
+              <circle cx="17.5" cy="10" r="1.4" fill="#7f77dd"/>
+            </svg>
+            차트로 보기
+          </a>
         </div>
         <table class="rate-table">
           <thead>
@@ -107,7 +117,16 @@
       <div class="panel">
         <div class="panel-head">
           <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="9" width="3" height="6.5" rx="0.6"/><rect x="7.5" y="5.5" width="3" height="10" rx="0.6"/><rect x="12.5" y="2.5" width="3" height="13" rx="0.6"/></svg></span>주요경제지표</h2>
-          <a href="pages/chart.html?preset=econ" class="panel-more" id="econ-chart-link">차트로 보기</a>
+          <a href="pages/chart.html?preset=econ" class="panel-more panel-more-chart" id="econ-chart-link">
+            <svg class="panel-more-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M2.5 15.5 7 10l3 2.5 4-5.5 3.5 3" stroke="#0f7a6b" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="7" cy="10" r="1.4" fill="#0f7a6b"/>
+              <circle cx="10" cy="12.5" r="1.4" fill="#16305c"/>
+              <circle cx="14" cy="7" r="1.4" fill="#b7791f"/>
+              <circle cx="17.5" cy="10" r="1.4" fill="#7f77dd"/>
+            </svg>
+            차트로 보기
+          </a>
         </div>
         <table class="rate-table">
           <thead>
@@ -130,8 +149,6 @@
         const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
 
-        // source: 'kr' -> bok_indicators / get_bok_indicator_comparisons
-        //         'us' -> economic_indicators / get_us_indicator_comparisons
         const INDICATORS = [
           { source: 'kr', key: '소비자물가지수', label: '소비자물가', mode: 'percent' },
           { source: 'kr', key: '국내총생산(실질, 계절조정)', label: 'GDP(실질)', mode: 'percent' },
@@ -143,50 +160,42 @@
           { source: 'us', key: '비농업고용자수', label: '비농업고용', mode: 'level_thousand_man' },
           { source: 'us', key: '실업률', label: '실업률', mode: 'pp' },
         ];
-        const SOURCE_BADGE = { kr: '[한국]', us: '[미국]' };
+        const SOURCE_BADGE = { kr: '[한]', us: '[미]' };
 
-        // 주요금리 패널과 동일한 스타일의 시계 아이콘
         const CLOCK_ICON = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6.8"/><path d="M9 5.2V9l3 1.8"/></svg>';
 
-        function fmtPeriod(period) {
+        // 월/분기 데이터는 "그 기간의 마지막 날"로 표시 (예: 10.1 -> 10.31, 26년2Q -> 26.6.30)
+        const QUARTERLY_KEYS = new Set(['kr::국내총생산(실질, 계절조정)', 'us::GDP(실질)']);
+        function endOfMonthStr(y, mIndex0) {
+          const d = new Date(y, mIndex0 + 1, 0);
+          return `${d.getMonth() + 1}.${d.getDate()}`;
+        }
+        function fmtPeriod(period, source, key) {
+          const isQuarterly = QUARTERLY_KEYS.has(`${source}::${key}`);
           if (period.includes("Q")) {
             const [y, q] = period.split("Q");
-            const shortY = y.slice(2); // '2026' -> '26'
-            return `${shortY}년 ${q}분기`;
+            const shortY = y.slice(2);
+            const qEndMonthIndex0 = Number(q) * 3 - 1; // 1Q->2(3월index), 2Q->5(6월index) ...
+            return `${shortY}.${endOfMonthStr(Number(y), qEndMonthIndex0)}`;
           }
-          if (period.length === 6) return `${period.slice(0, 4)}.${period.slice(4)}`;
+          if (period.length === 6) {
+            const y = Number(period.slice(0, 4));
+            const mIndex0 = Number(period.slice(4)) - 1;
+            const shortY = String(y).slice(2);
+            if (isQuarterly) return `${shortY}.${endOfMonthStr(y, mIndex0)}`;
+            return `${shortY}.${endOfMonthStr(y, mIndex0)}`;
+          }
           return period;
         }
 
-        // DB에 저장된 실제 타임스탬프를 "YYYY. MM. DD. HH:MM" 형식으로 표시 (초 단위 제외)
         function fmtDateTime(value) {
           const d = new Date(value);
           if (isNaN(d.getTime())) return null;
-          const y = d.getFullYear();
-          const m = String(d.getMonth() + 1).padStart(2, "0");
-          const day = String(d.getDate()).padStart(2, "0");
           const hh = String(d.getHours()).padStart(2, "0");
           const mm = String(d.getMinutes()).padStart(2, "0");
-          return `${y}. ${m}. ${day}. ${hh}:${mm}`;
+          return `${hh}:${mm}`;
         }
 
-        // 전월/전기대비, 전년동기대비 등 증감을 한 줄짜리 화살표+수치로 표시
-        // (예전엔 "(전월대비)"/"(전기대비)" 부가 설명을 아래 줄에 더 넣었으나,
-        //  2줄로 줄바꿈되는 문제가 있어 제거함 - 헤더의 "전월/전기대비" 문구로 충분히 구분 가능)
-        //
-        // mode별 표시 방식:
-        //   percent            : 지수/레벨값의 상대적 변화율 (CPI, PCE 등 - 흔히 "인플레이션 X%"처럼 쓰는 방식)
-        //   percent_annualized : GDP(미국)처럼 "분기 대비" 값을 미국식 연율(SAAR)로 환산해서 보여주는 모드.
-        //                        미국 BEA는 분기 성장률을 단순 ×4가 아니라 복리로 연율화해서 발표함:
-        //                          연율(%) = [(1 + 분기성장률)^4 - 1] × 100
-        //                        단, 전년동기대비(yoy, includeLevel=false) 칸은 이미 1년 간격 비교라
-        //                        추가로 연율화하면 안 되므로 이때는 percent와 동일하게 단순 계산.
-        //                        전월/전기대비(mom, includeLevel=true) 칸에서만 연율화를 적용하고
-        //                        "(연율)" 표기를 붙여 원자료(분기 대비)와 구분되게 함.
-        //   pp (percentage point): 실업률처럼 이미 %인 값. includeLevel=true인 칸(전월/전기대비)에서만
-        //                          현재 절대값(예: 4.10%)을 같이 보여주고, 나머지 칸(전년동기대비)은
-        //                          같은 값이 반복 표시되는 걸 막기 위해 증감만 표시
-        //   level_thousand_man : 천 명 단위 레벨값(비농업고용자수)의 절대 증감을 "만 명" 단위로 환산해 표시
         function fmtCell(mode, latest, other, includeLevel) {
           if (other === null || other === undefined) {
             if (mode === "pp" && includeLevel) {
@@ -201,25 +210,20 @@
 
           if (mode === "percent" || mode === "percent_annualized") {
             if (isFlat) return '<span style="color:#6b7280">보합</span>';
-            const rawPct = (diff / Number(other)) * 100; // 분기(또는 전월) 대비 원 변화율
-
-            // percent_annualized + 전월/전기대비 칸에서만 복리 연율화 적용
+            const rawPct = (diff / Number(other)) * 100;
             const shouldAnnualize = mode === "percent_annualized" && includeLevel;
             const displayPct = shouldAnnualize
               ? (Math.pow(1 + rawPct / 100, 4) - 1) * 100
               : rawPct;
             const suffix = shouldAnnualize ? '(연율)' : '';
-
             return `<span style="color:${color}">${arrow}${Math.abs(displayPct).toFixed(2)}%${suffix}</span>`;
           }
           if (mode === "pp") {
             if (!includeLevel) {
-              // 전년동기대비 칸: 괄호 없이 증감만 표시
               return isFlat
                 ? '<span style="color:#6b7280">보합</span>'
                 : `<span style="color:${color}">${arrow}${Math.abs(diff).toFixed(2)}%p</span>`;
             }
-            // 전월/전기대비 칸: 절대값 뒤에 괄호로 증감(보합 포함) 표시 - 예: 4.10%(보합), 4.10%(▲0.10%p)
             const level = Number(latest).toFixed(2) + "%";
             const changeText = isFlat ? '보합' : `${arrow}${Math.abs(diff).toFixed(2)}%p`;
             const changeColor = isFlat ? '#6b7280' : color;
@@ -227,7 +231,7 @@
           }
           if (mode === "level_thousand_man") {
             if (isFlat) return '<span style="color:#6b7280">보합</span>';
-            const manDiff = Math.abs(diff) / 10; // 원값 단위: 천 명 -> 10으로 나누면 만 명
+            const manDiff = Math.abs(diff) / 10;
             return `<span style="color:${color}">${arrow}${manDiff.toFixed(1)}만명</span>`;
           }
           return '';
@@ -274,7 +278,7 @@
                     <td class="rate-td-name" style="white-space:normal;"><span class="indicator-flag">${SOURCE_BADGE[ind.source]}</span> ${escapeHtml(ind.label)}</td>
                     <td>${mom}</td>
                     <td>${yoy}</td>
-                    <td>${fmtPeriod(row.latest_period)}</td>
+                    <td>${fmtPeriod(row.latest_period, ind.source, ind.key)}</td>
                   </tr>`;
               })
               .join("");

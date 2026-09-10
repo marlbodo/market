@@ -209,7 +209,7 @@
           const color = diff > 0 ? "#c0392b" : "#2b6fd9";
 
           if (mode === "percent" || mode === "percent_annualized") {
-            if (isFlat) return '<span style="color:#6b7280">보합</span>';
+            if (isFlat) return '<span style="color:#6b7280">-</span>';
             const rawPct = (diff / Number(other)) * 100;
             const shouldAnnualize = mode === "percent_annualized" && includeLevel;
             const displayPct = shouldAnnualize
@@ -221,16 +221,16 @@
           if (mode === "pp") {
             if (!includeLevel) {
               return isFlat
-                ? '<span style="color:#6b7280">보합</span>'
+                ? '<span style="color:#6b7280">-</span>'
                 : `<span style="color:${color}">${arrow}${Math.abs(diff).toFixed(2)}%p</span>`;
             }
             const level = Number(latest).toFixed(2) + "%";
-            const changeText = isFlat ? '보합' : `${arrow}${Math.abs(diff).toFixed(2)}%p`;
+            const changeText = isFlat ? '-' : `${arrow}${Math.abs(diff).toFixed(2)}%p`;
             const changeColor = isFlat ? '#6b7280' : color;
             return `${level}<span style="color:${changeColor}">(${changeText})</span>`;
           }
           if (mode === "level_thousand_man") {
-            if (isFlat) return '<span style="color:#6b7280">보합</span>';
+            if (isFlat) return '<span style="color:#6b7280">-</span>';
             const manDiff = Math.abs(diff) / 10;
             return `<span style="color:${color}">${arrow}${manDiff.toFixed(1)}만명</span>`;
           }

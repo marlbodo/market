@@ -67,7 +67,7 @@ _HEADER_NAMES = {"종목명", "기업명", "기업 명"}
 
 def _iter_rows(html, min_cells=3):
     """<tr><td>...가 min_cells개 이상 있고 첫 칸이 종목명처럼 생긴 행을 순회하며
-    (종목명, [셀 텍스트...], 첫 칸 안의 <a> 태그 또는 None)을 반환한다."""
+    (종목명, [셀 텍스트...])을 반환한다."""
     soup = BeautifulSoup(html, "html.parser")
     seen = set()
     for tr in soup.find_all("tr"):
@@ -88,7 +88,7 @@ def _iter_rows(html, min_cells=3):
         if key in seen:
             continue
         seen.add(key)
-        yield name, cells, tds[0].find("a")
+        yield name, cells
 
 
 # --- 숫자/날짜 파서 ---------------------------------------------------------
@@ -191,17 +191,6 @@ def parse_date_slash(s):
     return f"{y}-{mo}-{d}"
 
 
-def _detail_url(a):
-    if a is None or not a.get("href"):
-        return None
-    href = a["href"]
-    if href.startswith("http"):
-        return href
-    if href.startswith("/"):
-        return BASE + href
-    return f"{BASE}/html/fund/{href}"
-
-
 # ---------------------------------------------------------------------------
 # 1) 수요예측 일정 (o=r)
 #    셀: [종목명, 수요예측일, 희망공모가, 확정공모가, 공모금액(백만원), 주간사]
@@ -218,7 +207,7 @@ def fetch_demand_schedule(max_pages=5):
             break
 
         found_any = False
-        for name, cells, a in _iter_rows(html):
+        for name, cells in _iter_rows(html):
             if len(cells) < 3:
                 continue
             start, end = parse_date_range_dot(cells[1])
@@ -235,7 +224,6 @@ def fetch_demand_schedule(max_pages=5):
                 "confirmed_price": parse_price(cells[3]) if len(cells) > 3 else None,
                 "offering_amount_eok": parse_amount_eok(cells[4]) if len(cells) > 4 else None,
                 "lead_underwriter": cells[5] if len(cells) > 5 else None,
-                "source_url": _detail_url(a),
                 "last_stage": "forecast_schedule",
             })
 
@@ -263,7 +251,7 @@ def fetch_demand_results(max_pages=5):
             break
 
         found_any = False
-        for name, cells, a in _iter_rows(html):
+        for name, cells in _iter_rows(html):
             if len(cells) < 5:
                 continue
             pred_date = parse_date_dot(cells[1])
@@ -280,7 +268,6 @@ def fetch_demand_results(max_pages=5):
                 "institutional_competition_rate": parse_ratio(cells[5]) if len(cells) > 5 else None,
                 "lockup_commitment_ratio": parse_percent(cells[6]) if len(cells) > 6 else None,
                 "lead_underwriter": cells[7] if len(cells) > 7 else None,
-                "source_url": _detail_url(a),
                 "last_stage": "forecast_result",
             })
 
@@ -308,7 +295,7 @@ def fetch_subscription_schedule(max_pages=5):
             break
 
         found_any = False
-        for name, cells, a in _iter_rows(html):
+        for name, cells in _iter_rows(html):
             if len(cells) < 2:
                 continue
             start, end = parse_date_range_dot(cells[1])
@@ -325,7 +312,6 @@ def fetch_subscription_schedule(max_pages=5):
                 "price_band_high": band_hi,
                 "subscription_competition_rate": parse_ratio(cells[4]) if len(cells) > 4 else None,
                 "lead_underwriter": cells[5] if len(cells) > 5 else None,
-                "source_url": _detail_url(a),
                 "last_stage": "subscription",
             })
 
@@ -353,7 +339,7 @@ def fetch_listing_results(max_pages=5):
             break
 
         found_any = False
-        for name, cells, a in _iter_rows(html):
+        for name, cells in _iter_rows(html):
             if len(cells) < 2:
                 continue
             iso = parse_date_slash(cells[1]) or parse_date_dot(cells[1])
@@ -366,7 +352,6 @@ def fetch_listing_results(max_pages=5):
                 "listing_offering_price": parse_price(cells[4]) if len(cells) > 4 else None,
                 "listing_open_price": parse_price(cells[6]) if len(cells) > 6 else None,
                 "listing_first_close_price": parse_price(cells[8]) if len(cells) > 8 else None,
-                "source_url": _detail_url(a),
                 "last_stage": "listing",
             })
 

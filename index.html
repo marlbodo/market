@@ -172,18 +172,31 @@
         }
         function fmtPeriod(period, source, key) {
           const isQuarterly = QUARTERLY_KEYS.has(`${source}::${key}`);
-          if (period.includes("Q")) {
-            const [y, q] = period.split("Q");
-            const shortY = y.slice(2);
-            const qEndMonthIndex0 = Number(q) * 3 - 1; // 1Q->2(3월index), 2Q->5(6월index) ...
-            return `${shortY}.${endOfMonthStr(Number(y), qEndMonthIndex0)}`;
+
+          if (isQuarterly) {
+            // GDP처럼 분기당 한 번만 발표되는 지표는 만료일 대신 분기 자체를 표시 (예: 26.2Q)
+            if (period.includes("Q")) {
+              const [y, q] = period.split("Q");
+              return `${y.slice(2)}.${q}Q`;
+            }
+            if (period.length === 6) {
+              const y = Number(period.slice(0, 4));
+              const q = Math.ceil(Number(period.slice(4)) / 3);
+              return `${String(y).slice(2)}.${q}Q`;
+            }
+            return period;
           }
+
+          // 월 단위 지표는 "해당 기간의 마지막 날"로 표시 (예: 10.1 대신 26.10.31)
           if (period.length === 6) {
             const y = Number(period.slice(0, 4));
             const mIndex0 = Number(period.slice(4)) - 1;
-            const shortY = String(y).slice(2);
-            if (isQuarterly) return `${shortY}.${endOfMonthStr(y, mIndex0)}`;
-            return `${shortY}.${endOfMonthStr(y, mIndex0)}`;
+            return `${String(y).slice(2)}.${endOfMonthStr(y, mIndex0)}`;
+          }
+          if (period.includes("Q")) {
+            const [y, q] = period.split("Q");
+            const qEndMonthIndex0 = Number(q) * 3 - 1;
+            return `${y.slice(2)}.${endOfMonthStr(Number(y), qEndMonthIndex0)}`;
           }
           return period;
         }
@@ -391,6 +404,12 @@
             <div class="app-desc">금융감독원 공시 데이터를 매시간 자동 갱신해서 은행별로 비교해드려요</div>
           </div>
         </a>
+        <a class="app-card" href="apps/calendar.html" id="calendar-link">
+          <div>
+            <div class="app-name">경제지표 캘린더</div>
+            <div class="app-desc">금통위·FOMC·ECB 등 중앙은행 일정과 주요 지표 발표일, 공모주 일정을 한눈에 보여드려요</div>
+          </div>
+        </a>
       </div>
 
     </aside>
@@ -444,6 +463,10 @@
     const w = Math.min(1300, screen.availWidth - 40);
     const h = screen.availHeight - 60;
     openCentered(this.href, 'depositRates', w, h);
+  });
+  document.getElementById('calendar-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    openCentered(this.href, 'econCalendar', 760, 900);
   });
   document.getElementById('research-more-link').addEventListener('click', function (e) {
     e.preventDefault();

@@ -68,13 +68,16 @@ function renderNewsList(el, rows, options) {
     el.innerHTML = '<li class="list-empty">불러올 뉴스가 없습니다.</li>';
     return;
   }
+  // timeOnly일 때만 날짜 칸 폭을 좁힘 (인라인 스타일로 이 렌더링에만 적용 —
+  // news-all.html처럼 timeOnly 없이 이 함수를 쓰는 페이지의 레이아웃엔 영향 없음)
+  const dateStyle = timeOnly ? ' style="width:40px"' : '';
   el.innerHTML = rows.map((row) => {
     const ts = row.article_published_at || row.created_at;
     const dateLabel = timeOnly ? formatTimeOnly(ts) : formatDateTimeShort(ts);
     return `
       <li class="news-item">
         <div class="news-row">
-          <span class="news-date">${dateLabel}</span>
+          <span class="news-date"${dateStyle}>${dateLabel}</span>
           <a class="news-title" href="${escapeHtml(row.link)}" target="_blank" rel="noopener">${escapeHtml(row.title)}</a>
         </div>
       </li>`;

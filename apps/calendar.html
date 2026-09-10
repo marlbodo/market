@@ -47,16 +47,17 @@
     display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
     margin-bottom: 12px;
   }
-  .month-nav { display: flex; align-items: center; gap: 10px; }
+  .month-nav { display: flex; align-items: center; gap: 10px; flex: none; flex-wrap: nowrap; }
   .month-nav button {
     width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--line);
-    background: #fff; color: var(--ink); font-size: 15px; cursor: pointer;
+    background: #fff; color: var(--ink); font-size: 15px; cursor: pointer; flex: none;
   }
   .month-nav button:disabled { opacity: 0.35; cursor: not-allowed; }
   .month-label { font-size: 18px; font-weight: 800; min-width: 104px; text-align: center; }
   .today-btn {
     border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
     padding: 6px 13px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;
+    white-space: nowrap; flex: none;
   }
 
   .filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
@@ -75,12 +76,12 @@
 
   /* ---------- 월간 그리드 ---------- */
   .grid-wrap { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
-  .dow-row { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--ink); }
+  .dow-row { display: grid; grid-template-columns: 0.6fr repeat(6, 1fr); background: var(--ink); }
   .dow-cell { text-align: center; font-size: 13px; font-weight: 700; color: #fff; padding: 9px 0; }
   .dow-cell.sun { color: #ffb4b4; }
   .dow-cell.sat { color: #a9c4ff; }
 
-  .week-row { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid var(--line); }
+  .week-row { display: grid; grid-template-columns: 0.6fr repeat(6, 1fr); border-top: 1px solid var(--line); }
   .day-cell {
     min-height: 118px; padding: 7px 7px 8px; border-right: 1px solid var(--line);
     cursor: pointer; position: relative; background: #fff;

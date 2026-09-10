@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>경제지표 캘린더 | 데일리 마켓 브리핑</title>
+<style>
+  :root {
+    --ink: #12253f;
+    --ink-soft: #4c5c72;
+    --paper: #f2f5f7;
+    --line: #d7dee4;
+    --accent: #16305c;
+    --accent-soft: #eaf0fb;
+    --amber: #b7791f;
+    --amber-soft: #fbf0dd;
+    --teal: #0f7a6b;
+    --teal-soft: #e1f3ef;
+    --up: #c0392b;
+    --down: #2b6fd9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 24px 18px 50px; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 14px; margin-bottom: 16px;
+  }
+  h1 { font-size: 20px; margin: 0; }
+  .sub { font-size: 12.5px; color: var(--ink-soft); margin: 3px 0 0; }
+  .close-btn {
+    border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
+    padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; flex: none;
+  }
+  .close-btn:hover { border-color: var(--ink-soft); color: var(--ink); }
+
+  .filter-block { margin-bottom: 18px; }
+  .filter-label { font-size: 11.5px; color: var(--ink-soft); font-weight: 700; margin-bottom: 6px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .chip {
+    border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
+    padding: 5px 12px; border-radius: 999px; font-size: 12.5px; cursor: pointer; font-weight: 600;
+  }
+  .chip.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 11.5px; color: var(--ink-soft); margin-bottom: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .dot.high { background: var(--up); }
+  .dot.medium { background: var(--amber); }
+  .dot.low { background: #9aa5b1; }
+
+  .day-group { margin-bottom: 22px; }
+  .day-head {
+    display: flex; align-items: baseline; gap: 8px;
+    font-size: 13.5px; font-weight: 800; color: var(--ink);
+    padding-bottom: 6px; border-bottom: 1px solid var(--line); margin-bottom: 8px;
+  }
+  .day-head .dow { font-weight: 500; color: var(--ink-soft); font-size: 12px; }
+  .day-head .today-badge {
+    font-size: 10.5px; font-weight: 700; color: #fff; background: var(--teal);
+    border-radius: 4px; padding: 1px 6px;
+  }
+
+  .event-row {
+    display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line);
+  }
+  .event-row:last-child { border-bottom: none; }
+  .event-dot-col { flex: none; width: 8px; padding-top: 6px; }
+  .event-body { flex: 1; min-width: 0; }
+  .event-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 2px; }
+  .event-time { font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
+  .region-badge {
+    font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 3px; flex: none;
+  }
+  .region-KR { background: var(--accent-soft); color: var(--accent); }
+  .region-US { background: var(--amber-soft); color: var(--amber); }
+  .region-EU { background: #eef0fb; color: #4b4fb0; }
+  .region-UK { background: #fbe9ec; color: #a13f52; }
+  .region-JP { background: #fdeeee; color: #b0413f; }
+  .region-AU { background: var(--teal-soft); color: var(--teal); }
+  .region-IPO { background: #fbf0dd; color: var(--amber); }
+
+  .cat-badge {
+    font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 3px; flex: none;
+    background: #eef1f4; color: var(--ink-soft);
+  }
+
+  .event-title { font-size: 13.5px; font-weight: 700; color: var(--ink); line-height: 1.4; }
+  .event-sub { font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
+  .event-sub .up { color: var(--up); font-weight: 700; }
+  .event-sub .down { color: var(--down); font-weight: 700; }
+  .event-note { font-size: 11px; color: #9aa5b1; margin-top: 2px; }
+
+  .list-empty, .list-loading { padding: 30px 0; text-align: center; color: var(--ink-soft); font-size: 13px; }
+
+  .disclaimer {
+    margin-top: 24px; font-size: 11.5px; color: var(--ink-soft);
+    border-top: 1px solid var(--line); padding-top: 14px; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>📅 경제지표 캘린더</h1>
+      <p class="sub">중앙은행 회의 · 주요 경제지표 발표 · 공모주 일정을 한 번에</p>
+      <p class="sub" id="range-note" style="color:#b7791f;font-weight:600;">2026년 12월까지 일정이 등록되어 있습니다. 그 이후 일정은 추후 업데이트될 예정입니다.</p>
+    </div>
+    <button class="close-btn" onclick="window.close()">닫기</button>
+  </header>
+
+  <div class="filter-block">
+    <div class="filter-label">구분</div>
+    <div class="chip-row" id="cat-filter">
+      <button class="chip is-active" data-cat="all">전체</button>
+      <button class="chip" data-cat="central_bank">중앙은행</button>
+      <button class="chip" data-cat="indicator">경제지표</button>
+      <button class="chip" data-cat="ipo">공모주</button>
+    </div>
+    <div class="filter-label">지역</div>
+    <div class="chip-row" id="region-filter">
+      <button class="chip is-active" data-region="all">전체</button>
+      <button class="chip" data-region="KR">한국</button>
+      <button class="chip" data-region="US">미국</button>
+      <button class="chip" data-region="EU">유럽</button>
+      <button class="chip" data-region="UK">영국</button>
+      <button class="chip" data-region="JP">일본</button>
+      <button class="chip" data-region="AU">호주</button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="dot high"></span>중요도 높음</span>
+    <span class="legend-item"><span class="dot medium"></span>중요도 중간</span>
+    <span class="legend-item"><span class="dot low"></span>중요도 낮음</span>
+  </div>
+
+  <div id="calendar-list">
+    <div class="list-loading">일정을 불러오는 중…</div>
+  </div>
+
+  <p class="disclaimer">
+    발표 일정은 각 기관 사정에 따라 변경될 수 있습니다. "(추정)" 표시가 붙은 일정은 과거 발표 주기를 바탕으로 추정한 값이며,
+    공식 확정 전이므로 해당 기관(BLS·BEA·통계청·한국은행 등) 공식 발표로 재확인하시기 바랍니다. 공모주 일정은 메인 페이지의
+    공모주(IPO) 일정과 동일한 데이터를 사용합니다. 투자 판단의 참고 자료이며, 투자 권유가 아닙니다.
+  </p>
+</div>
+
+<script>
+(function () {
+  const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
+
+  const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+  // 시드 데이터 범위: 오늘부터 연말까지 (필요 시 이후 분기 데이터를 economic_events에 추가하면 자동으로 표시됨)
+  const RANGE_END = '2026-12-31';
+
+  let CAT_FILTER = 'all';
+  let REGION_FILTER = 'all';
+  let ALL_ITEMS = []; // economic_events + ipo 이벤트를 합친 통합 리스트
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+  function fmtDayHead(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+  }
+  function dowOf(dateStr) {
+    return DOW[new Date(dateStr + 'T00:00:00').getDay()];
+  }
+
+  async function fetchRpc(fnName, body) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify(body || {}),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} (${fnName})`);
+    return res.json();
+  }
+  async function fetchTable(path) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+
+  // ---------- 지표별 "직전 발표값" 서브텍스트 렌더링 ----------
+  function fmtEventSub(item) {
+    const { display_mode, latest_value, prev_value, yoy_value } = item;
+    if (latest_value === null || latest_value === undefined) return '';
+    const lv = Number(latest_value);
+
+    if (display_mode === 'rate_level') {
+      return `현재 기준금리 <b>${lv.toFixed(3)}%</b>`;
+    }
+    if (display_mode === 'yoy_percent') {
+      if (yoy_value === null || yoy_value === undefined) return `직전 값 ${lv.toFixed(2)}`;
+      const pct = ((lv - Number(yoy_value)) / Math.abs(Number(yoy_value))) * 100;
+      const cls = pct > 0 ? 'up' : pct < 0 ? 'down' : '';
+      const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '';
+      return `직전(전년동기대비) <span class="${cls}">${arrow}${Math.abs(pct).toFixed(2)}%</span>`;
+    }
+    if (display_mode === 'mom_diff_thousand') {
+      if (prev_value === null || prev_value === undefined) return '';
+      const diff = (lv - Number(prev_value)) / 10; // 천명 -> 만명
+      const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : '';
+      const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '';
+      let extra = '';
+      if (item._unemploymentRate != null) extra = ` · 실업률 ${Number(item._unemploymentRate).toFixed(1)}%(원값)`;
+      return `직전 발표(전월대비) <span class="${cls}">${arrow}${Math.abs(diff).toFixed(1)}만명</span>${extra}`;
+    }
+    if (display_mode === 'qoq_percent' || display_mode === 'qoq_percent_annualized') {
+      if (prev_value === null || prev_value === undefined) return '';
+      const rawPct = ((lv - Number(prev_value)) / Number(prev_value)) * 100;
+      const pct = display_mode === 'qoq_percent_annualized'
+        ? (Math.pow(1 + rawPct / 100, 4) - 1) * 100
+        : rawPct;
+      const suffix = display_mode === 'qoq_percent_annualized' ? '(연율)' : '';
+      const cls = pct > 0 ? 'up' : pct < 0 ? 'down' : '';
+      const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '';
+      return `직전 분기 <span class="${cls}">${arrow}${Math.abs(pct).toFixed(2)}%${suffix}</span>`;
+    }
+    return '';
+  }
+
+  // ---------- 공모주 일정 -> 캘린더 아이템으로 변환 (main.js의 buildIpoEvents와 동일 로직) ----------
+  function buildIpoCalendarItems(rows) {
+    const items = [];
+    rows.forEach((r) => {
+      const stock = r.stock_name;
+      if (r.demand_forecast_start_date && r.demand_forecast_start_date >= TODAY && r.demand_forecast_start_date <= RANGE_END) {
+        items.push({ event_date: r.demand_forecast_start_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 수요예측 시작`, importance: 'low', display_mode: null, latest_value: null });
+      }
+      if (r.subscription_start_date && r.subscription_start_date >= TODAY && r.subscription_start_date <= RANGE_END) {
+        items.push({ event_date: r.subscription_start_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 청약 시작`, importance: 'low', display_mode: null, latest_value: null });
+      }
+      if (r.listing_date && r.listing_date >= TODAY && r.listing_date <= RANGE_END) {
+        items.push({ event_date: r.listing_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 상장`, importance: 'medium', display_mode: null, latest_value: null });
+      }
+    });
+    return items;
+  }
+
+  async function loadAll() {
+    const listEl = document.getElementById('calendar-list');
+    try {
+      const [events, ipoRows, usComparisons] = await Promise.all([
+        fetchRpc('get_calendar_events', { p_start: TODAY, p_end: RANGE_END }),
+        fetchTable(`ipo_history?select=stock_name,demand_forecast_start_date,subscription_start_date,listing_date&or=(listing_date.is.null,listing_date.gte.${TODAY})`),
+        fetchRpc('get_us_indicator_comparisons'),
+      ]);
+
+      // 비농업고용 이벤트에 실업률(원값)을 같이 보여주기 위한 보조 조회
+      const unemploymentRow = (usComparisons || []).find((r) => r.indicator_name === '실업률');
+      events.forEach((ev) => {
+        if (ev.indicator_key === '비농업고용자수' && unemploymentRow) {
+          ev._unemploymentRate = unemploymentRow.latest_value;
+        }
+      });
+
+      const ipoItems = buildIpoCalendarItems(ipoRows || []);
+      ALL_ITEMS = [...events, ...ipoItems].sort((a, b) => {
+        if (a.event_date !== b.event_date) return a.event_date < b.event_date ? -1 : 1;
+        return (a.importance === 'high' ? 0 : 1) - (b.importance === 'high' ? 0 : 1);
+      });
+
+      render();
+    } catch (err) {
+      console.error(err);
+      listEl.innerHTML = `<div class="list-empty">⚠ 일정을 불러오지 못했습니다: ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  function render() {
+    const listEl = document.getElementById('calendar-list');
+    let items = ALL_ITEMS;
+    if (CAT_FILTER !== 'all') items = items.filter((it) => it.category === CAT_FILTER);
+    if (REGION_FILTER !== 'all') items = items.filter((it) => it.region === REGION_FILTER);
+
+    if (items.length === 0) {
+      listEl.innerHTML = '<div class="list-empty">해당 조건의 일정이 없습니다.</div>';
+      return;
+    }
+
+    const byDate = {};
+    items.forEach((it) => {
+      if (!byDate[it.event_date]) byDate[it.event_date] = [];
+      byDate[it.event_date].push(it);
+    });
+
+    const dates = Object.keys(byDate).sort();
+    listEl.innerHTML = dates.map((date) => {
+      const rows = byDate[date].map((it) => {
+        const sub = fmtEventSub(it);
+        const timeHtml = it.event_time ? `<span class="event-time">${escapeHtml(it.event_time)}</span>` : '';
+        const catLabel = it.category === 'central_bank' ? '중앙은행' : it.category === 'indicator' ? '지표' : '공모주';
+        return `
+          <div class="event-row">
+            <div class="event-dot-col"><span class="dot ${it.importance}"></span></div>
+            <div class="event-body">
+              <div class="event-top">
+                ${timeHtml}
+                <span class="region-badge region-${it.region}">${it.region}</span>
+                <span class="cat-badge">${catLabel}</span>
+              </div>
+              <div class="event-title">${escapeHtml(it.title)}</div>
+              ${sub ? `<div class="event-sub">${sub}</div>` : ''}
+              ${it.source_note ? `<div class="event-note">${escapeHtml(it.source_note)}</div>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+      const isToday = date === TODAY;
+      return `
+        <div class="day-group">
+          <div class="day-head">
+            ${fmtDayHead(date)} <span class="dow">(${dowOf(date)})</span>
+            ${isToday ? '<span class="today-badge">오늘</span>' : ''}
+          </div>
+          ${rows}
+        </div>`;
+    }).join('');
+  }
+
+  document.getElementById('cat-filter').addEventListener('click', (e) => {
+    if (!e.target.dataset.cat) return;
+    CAT_FILTER = e.target.dataset.cat;
+    document.querySelectorAll('#cat-filter .chip').forEach((c) => c.classList.remove('is-active'));
+    e.target.classList.add('is-active');
+    render();
+  });
+  document.getElementById('region-filter').addEventListener('click', (e) => {
+    if (!e.target.dataset.region) return;
+    REGION_FILTER = e.target.dataset.region;
+    document.querySelectorAll('#region-filter .chip').forEach((c) => c.classList.remove('is-active'));
+    e.target.classList.add('is-active');
+    render();
+  });
+
+  loadAll();
+})();
+</script>
+</body>
+</html>

@@ -92,6 +92,15 @@ img { max-width: 100%; display: block; }
 /* ---------- AI 인사이트 (맨 위 패널) ---------- */
 .ai-insight-panel { padding-top: 28px; }
 .ai-insight-panel .section-icon { color: #7f77dd; }
+.ai-insight-panel .panel-head { border-bottom: none; margin-bottom: 10px; padding-bottom: 0; }
+
+/* 패널 헤더 우측에 "HH:mm 업데이트" 한 번만 표시 (항목마다 반복 표시하던 날짜/시간을 통합) */
+.ai-insight-updated {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  font-weight: 500;
+  white-space: nowrap;
+}
 
 .ai-insight-layout {
   display: flex;
@@ -247,6 +256,19 @@ img { max-width: 100%; display: block; }
 }
 .panel-more:hover { border-color: var(--accent); color: var(--accent); }
 
+/* "차트로 보기" 버튼: 앞에 작은 미니 라인차트 아이콘을 붙임 */
+.panel-more-chart {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.panel-more-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  display: block;
+}
+
 /* ---------- News list ---------- */
 .news-list { list-style: none; margin: 0; padding: 0; }
 
@@ -262,6 +284,10 @@ img { max-width: 100%; display: block; }
 .news-title:hover { color: var(--accent); }
 
 .list-empty, .list-loading { padding: 16px 0; font-size: 12.5px; color: var(--text-faint); }
+
+/* 메인 페이지 뉴스(시:분만 표시)는 날짜 칸이 훨씬 짧아지므로 폭을 줄여 제목에 공간을 더 줌.
+   news-all.html 등 날짜까지 표시하는 페이지는 이 클래스를 쓰지 않으므로 영향 없음. */
+.news-list .news-date { width: 40px; }
 
 /* ---------- 주요금리 (좌측, 격자형 표) ---------- */
 .rate-table {
@@ -318,6 +344,15 @@ img { max-width: 100%; display: block; }
   margin-top: 6px;
   font-size: 10.5px;
   color: var(--text-faint);
+}
+
+/* 경제지표 표의 [한]/[미] 배지 (기존 [한국]/[미국]보다 좁아 모바일에서 안 밀림) */
+.indicator-flag {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--text-faint);
+  margin-right: 2px;
 }
 
 /* ---------- 마지막 업데이트 표시 (공통) ---------- */
@@ -495,6 +530,7 @@ a.research-title:hover { color: var(--accent); }
   .brand-visual { width: 70px; height: 34px; }
   .brand-mark { font-size: 17px; }
   .brand-tagline { font-size: 11px; }
+  .ai-insight-panel .panel-head { flex-wrap: wrap; row-gap: 4px; }
 }
 
 /* ---------- Focus ---------- */

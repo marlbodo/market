@@ -388,23 +388,26 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel apps-panel">
         <div class="panel-head">
-          <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="5.5" height="5.5" rx="1"/><rect x="10" y="2.5" width="5.5" height="5.5" rx="1"/><rect x="2.5" y="10" width="5.5" height="5.5" rx="1"/><rect x="10" y="10" width="5.5" height="5.5" rx="1"/></svg></span>유용한 앱</h2>
+          <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="5" height="5" rx="1.2"/><rect x="10.5" y="2.5" width="5" height="5" rx="1.2"/><rect x="2.5" y="10.5" width="5" height="5" rx="1.2"/><circle cx="13" cy="13" r="2.7"/></svg></span>유용한 앱</h2>
         </div>
         <a class="app-card" href="apps/repo-fund-simulator.html" id="repo-fund-link">
+          <span class="app-icon app-icon-accent">📊</span>
           <div>
             <div class="app-name">레포펀드 시뮬레이터</div>
             <div class="app-desc">투자 기간·금리 조건을 입력하면 예상 수익(률)을 계산해드려요</div>
           </div>
         </a>
         <a class="app-card" href="apps/deposit.html" id="deposit-link">
+          <span class="app-icon app-icon-teal">🏦</span>
           <div>
             <div class="app-name">정기예금 금리 비교</div>
             <div class="app-desc">금융감독원 공시 데이터를 매시간 자동 갱신해서 은행별로 비교해드려요</div>
           </div>
         </a>
         <a class="app-card" href="apps/calendar.html" id="calendar-link">
+          <span class="app-icon app-icon-amber">📅</span>
           <div>
             <div class="app-name">경제지표 캘린더</div>
             <div class="app-desc">금통위·FOMC·ECB 등 중앙은행 일정과 주요 지표 발표일, 공모주 일정을 한눈에 보여드려요</div>
@@ -466,7 +469,9 @@
   });
   document.getElementById('calendar-link').addEventListener('click', function (e) {
     e.preventDefault();
-    openCentered(this.href, 'econCalendar', 760, 900);
+    const w = Math.min(1300, screen.availWidth - 40);
+    const h = Math.min(950, screen.availHeight - 60);
+    openCentered(this.href, 'econCalendar', w, h);
   });
   document.getElementById('research-more-link').addEventListener('click', function (e) {
     e.preventDefault();

@@ -355,6 +355,19 @@ async function loadResearchReports() {
 // 표시하고 각 항목에서는 제거함 (모바일에서 제목이 3줄까지 늘어지는 문제 해결)
 const AI_INSIGHT_LABELS = { bond: '채권·금리', ipo: '공모주(IPO)' };
 
+function formatDateTimeDot(iso) {
+  // "2026-09-10T08:00:00+00:00" -> "2026.09.10. 08:00" (KST 고정)
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(d);
+  const get = (type) => (parts.find((p) => p.type === type) || {}).value || '';
+  return `${get('year')}.${get('month')}.${get('day')}. ${get('hour')}:${get('minute')}`;
+}
+
 async function loadAiInsights() {
   const el = document.getElementById('ai-insight-list');
   const updatedEl = document.getElementById('ai-insight-updated');
@@ -393,7 +406,7 @@ async function loadAiInsights() {
 
     if (updatedEl) {
       const latestTs = getMaxTimestamp(items, ['updated_at']);
-      updatedEl.textContent = latestTs ? `${formatTimeOnly(latestTs)} 업데이트` : '';
+      updatedEl.textContent = latestTs ? `${formatDateTimeDot(latestTs)} 업데이트` : '';
     }
 
     el.querySelectorAll('.ai-insight-title').forEach((link) => {

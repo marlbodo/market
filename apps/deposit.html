@@ -9,10 +9,13 @@
     --ink: #12253f;
     --ink-soft: #4c5c72;
     --paper: #f2f5f7;
-    --line: #d7dee4;
+    --line: #b9c4cd;
+    --line-soft: #d7dee4;
     --accent: #1f7a5c;
     --accent-soft: #e4f2ec;
     --warn: #9c5a12;
+    --row-alt: #eef2f5;
+    --row-hover: #e4ecf1;
   }
   * { box-sizing: border-box; }
   body {
@@ -55,7 +58,7 @@
     position: absolute;
     right: 0;
     top: 0;
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-soft);
     background: #fff;
     color: var(--ink-soft);
     font-size: 13px;
@@ -92,7 +95,7 @@
   }
   .filters select {
     padding: 7px 10px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-soft);
     border-radius: 6px;
     background: #fff;
     color: var(--ink);
@@ -102,7 +105,7 @@
     gap: 6px;
   }
   .chip {
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-soft);
     background: #fff;
     padding: 6px 12px;
     border-radius: 999px;
@@ -122,13 +125,15 @@
     border-collapse: collapse;
     background: #fff;
     font-size: 13.5px;
+    border: 1px solid var(--line);
   }
   thead th {
     text-align: center;
-    font-weight: 600;
-    color: var(--ink-soft);
-    border-bottom: 1px solid var(--ink);
-    padding: 10px 10px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--ink);
+    border-bottom: 2px solid var(--ink);
+    padding: 11px 10px;
     white-space: nowrap;
   }
   th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -137,15 +142,17 @@
     padding: 10px 10px;
     border-bottom: 1px solid var(--line);
     vertical-align: top;
+    color: var(--ink);
   }
+  tbody tr:nth-child(even) { background: var(--row-alt); }
+  tbody tr:hover { background: var(--row-hover); }
   td.cond {
     max-width: 420px;
     font-size: 12.5px;
     color: var(--ink-soft);
     line-height: 1.4;
   }
-  tbody tr:hover { background: #fafcfd; }
-  .best { color: var(--accent); font-weight: 700; }
+  .best { color: var(--accent); font-weight: 800; }
 
   .empty, .loading {
     padding: 40px 0;
@@ -157,7 +164,7 @@
     margin-top: 22px;
     font-size: 12px;
     color: var(--ink-soft);
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--line-soft);
     padding-top: 14px;
   }
 </style>
@@ -213,7 +220,7 @@
 
   function fmtJoinWay(joinWay) {
     if (!joinWay) return "-";
-    return joinWay; // DB에 저장된 원문 그대로 표시 (예: "영업점,인터넷,스마트폰")
+    return joinWay;
   }
 
   async function fetchByTerm(term) {
@@ -245,6 +252,7 @@
 
     const maxRate = Math.max(...rows.map(r => r.intr_rate2 ?? 0));
 
+    // 표시 순서: 금융회사 · 상품명 · 기본금리 · 최고금리 · 가입방법 · 우대조건
     const bodyHtml = rows.slice(0, 100).map(r => {
       const isBest = r.intr_rate2 !== null && r.intr_rate2 === maxRate;
       const rateCell = `${(r.intr_rate2 ?? 0).toFixed(2)}%`;
@@ -252,9 +260,9 @@
       return `<tr>
         <td>${r.kor_co_nm}</td>
         <td>${r.fin_prdt_nm ?? ""}</td>
-        <td>${fmtJoinWay(r.join_way)}</td>
         <td class="num">${(r.intr_rate ?? 0).toFixed(2)}%</td>
         <td class="num ${isBest ? "best" : ""}">${rateCell}</td>
+        <td>${fmtJoinWay(r.join_way)}</td>
         <td class="cond">${r.spcl_cnd ?? "-"}</td>
       </tr>`;
     }).join("");
@@ -265,9 +273,9 @@
           <tr>
             <th>금융회사</th>
             <th>상품명</th>
-            <th>가입방법</th>
             <th class="num">기본금리</th>
             <th class="num">최고금리</th>
+            <th>가입방법</th>
             <th>우대조건</th>
           </tr>
         </thead>

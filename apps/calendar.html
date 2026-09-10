@@ -27,38 +27,103 @@
     font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
     line-height: 1.5;
   }
-  .wrap { max-width: 900px; margin: 0 auto; padding: 24px 18px 50px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 22px 16px 50px; }
 
   header {
     display: flex; align-items: center; justify-content: space-between;
     border-bottom: 2px solid var(--ink);
-    padding-bottom: 14px; margin-bottom: 16px;
+    padding-bottom: 14px; margin-bottom: 14px;
   }
-  h1 { font-size: 20px; margin: 0; }
-  .sub { font-size: 12.5px; color: var(--ink-soft); margin: 3px 0 0; }
+  h1 { font-size: 19px; margin: 0; }
+  .sub { font-size: 12px; color: var(--ink-soft); margin: 3px 0 0; }
   .close-btn {
     border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
     padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; flex: none;
   }
   .close-btn:hover { border-color: var(--ink-soft); color: var(--ink); }
+  .range-note { color: var(--amber); font-weight: 600; }
 
-  .filter-block { margin-bottom: 18px; }
-  .filter-label { font-size: 11.5px; color: var(--ink-soft); font-weight: 700; margin-bottom: 6px; }
-  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+  }
+  .month-nav { display: flex; align-items: center; gap: 10px; }
+  .month-nav button {
+    width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink); font-size: 15px; cursor: pointer;
+  }
+  .month-nav button:disabled { opacity: 0.35; cursor: not-allowed; }
+  .month-label { font-size: 16px; font-weight: 800; min-width: 96px; text-align: center; }
+  .today-btn {
+    border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
+    padding: 5px 11px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600;
+  }
+
+  .filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
   .chip {
     border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
-    padding: 5px 12px; border-radius: 999px; font-size: 12.5px; cursor: pointer; font-weight: 600;
+    padding: 5px 11px; border-radius: 999px; font-size: 12px; cursor: pointer; font-weight: 600;
   }
   .chip.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 11.5px; color: var(--ink-soft); margin-bottom: 20px; }
-  .legend-item { display: flex; align-items: center; gap: 5px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--ink-soft); margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
   .dot.high { background: var(--up); }
   .dot.medium { background: var(--amber); }
   .dot.low { background: #9aa5b1; }
 
-  .day-group { margin-bottom: 22px; }
+  /* ---------- 월간 그리드 ---------- */
+  .grid-wrap { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
+  .dow-row { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--ink); }
+  .dow-cell { text-align: center; font-size: 11.5px; font-weight: 700; color: #fff; padding: 7px 0; }
+  .dow-cell.sun { color: #ffb4b4; }
+  .dow-cell.sat { color: #a9c4ff; }
+
+  .week-row { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid var(--line); }
+  .day-cell {
+    min-height: 92px; padding: 5px 5px 6px; border-right: 1px solid var(--line);
+    cursor: pointer; position: relative; background: #fff;
+  }
+  .day-cell:last-child { border-right: none; }
+  .day-cell.other-month { background: #fafbfc; }
+  .day-cell.other-month .day-num { color: #c3ccd3; }
+  .day-cell.is-today { background: var(--accent-soft); }
+  .day-cell.is-selected { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .day-cell:hover { background: #f5f7fa; }
+  .day-cell.is-today:hover { background: var(--accent-soft); }
+
+  .day-num { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+  .day-num.sun { color: var(--up); }
+  .day-num.sat { color: var(--down); }
+  .today-dot { display: inline-block; width: 16px; height: 16px; line-height: 16px; text-align: center; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; }
+
+  .pill {
+    display: flex; align-items: center; gap: 3px; font-size: 10px; padding: 1.5px 4px 1.5px 3px;
+    border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    background: #f1f3f6; color: var(--ink-soft);
+  }
+  .pill .pdot { width: 5px; height: 5px; border-radius: 50%; flex: none; }
+  .pill.pill-high { background: #fdeceb; color: #8a2c22; }
+  .pill.pill-medium { background: #fbf0dd; color: #7a5613; }
+  .more-count { font-size: 10px; color: var(--ink-soft); font-weight: 700; padding-left: 3px; }
+
+  @media (max-width: 640px) {
+    .day-cell { min-height: 66px; padding: 4px 3px 5px; }
+    .pill { font-size: 9px; }
+    .month-label { font-size: 14px; min-width: 76px; }
+    .filter-row { margin-left: 0; width: 100%; }
+  }
+
+  .view-toggle { display: flex; gap: 4px; border: 1px solid var(--line); border-radius: 7px; padding: 2px; background: #fff; }
+  .view-toggle button {
+    border: none; background: transparent; color: var(--ink-soft); font-size: 12.5px; font-weight: 700;
+    padding: 5px 12px; border-radius: 5px; cursor: pointer;
+  }
+  .view-toggle button.is-active { background: var(--accent); color: #fff; }
+
+  /* ---------- 일정 리스트(날짜별) 뷰 ---------- */
+  .day-group { margin-bottom: 20px; }
   .day-head {
     display: flex; align-items: baseline; gap: 8px;
     font-size: 13.5px; font-weight: 800; color: var(--ink);
@@ -69,18 +134,20 @@
     font-size: 10.5px; font-weight: 700; color: #fff; background: var(--teal);
     border-radius: 4px; padding: 1px 6px;
   }
-
-  .event-row {
-    display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line);
+  .detail-panel { margin-top: 20px; }
+  .detail-head {
+    display: flex; align-items: baseline; gap: 8px; font-size: 14.5px; font-weight: 800;
+    padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 8px;
   }
+  .detail-head .dow-tag { font-size: 12px; font-weight: 500; color: var(--ink-soft); }
+
+  .event-row { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
   .event-row:last-child { border-bottom: none; }
   .event-dot-col { flex: none; width: 8px; padding-top: 6px; }
   .event-body { flex: 1; min-width: 0; }
   .event-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 2px; }
   .event-time { font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
-  .region-badge {
-    font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 3px; flex: none;
-  }
+  .region-badge { font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 3px; flex: none; }
   .region-KR { background: var(--accent-soft); color: var(--accent); }
   .region-US { background: var(--amber-soft); color: var(--amber); }
   .region-EU { background: #eef0fb; color: #4b4fb0; }
@@ -88,19 +155,13 @@
   .region-JP { background: #fdeeee; color: #b0413f; }
   .region-AU { background: var(--teal-soft); color: var(--teal); }
   .region-IPO { background: #fbf0dd; color: var(--amber); }
-
-  .cat-badge {
-    font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 3px; flex: none;
-    background: #eef1f4; color: var(--ink-soft);
-  }
-
+  .cat-badge { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 3px; flex: none; background: #eef1f4; color: var(--ink-soft); }
   .event-title { font-size: 13.5px; font-weight: 700; color: var(--ink); line-height: 1.4; }
   .event-sub { font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
   .event-sub .up { color: var(--up); font-weight: 700; }
   .event-sub .down { color: var(--down); font-weight: 700; }
   .event-note { font-size: 11px; color: #9aa5b1; margin-top: 2px; }
-
-  .list-empty, .list-loading { padding: 30px 0; text-align: center; color: var(--ink-soft); font-size: 13px; }
+  .list-empty, .list-loading { padding: 20px 0; text-align: center; color: var(--ink-soft); font-size: 13px; }
 
   .disclaimer {
     margin-top: 24px; font-size: 11.5px; color: var(--ink-soft);
@@ -114,22 +175,32 @@
     <div>
       <h1>📅 경제지표 캘린더</h1>
       <p class="sub">중앙은행 회의 · 주요 경제지표 발표 · 공모주 일정을 한 번에</p>
-      <p class="sub" id="range-note" style="color:#b7791f;font-weight:600;">2026년 12월까지 일정이 등록되어 있습니다. 그 이후 일정은 추후 업데이트될 예정입니다.</p>
+      <p class="sub range-note">2026년 12월까지 일정이 등록되어 있습니다. 그 이후 일정은 추후 업데이트될 예정입니다.</p>
     </div>
     <button class="close-btn" onclick="window.close()">닫기</button>
   </header>
 
-  <div class="filter-block">
-    <div class="filter-label">구분</div>
-    <div class="chip-row" id="cat-filter">
+  <div class="toolbar">
+    <div class="view-toggle" id="view-toggle">
+      <button class="is-active" data-view="calendar" type="button">📅 달력</button>
+      <button data-view="list" type="button">📋 리스트</button>
+    </div>
+    <div class="month-nav" id="month-nav">
+      <button id="prev-month" type="button">‹</button>
+      <span class="month-label" id="month-label">-</span>
+      <button id="next-month" type="button">›</button>
+      <button class="today-btn" id="today-btn" type="button">오늘</button>
+    </div>
+    <div class="filter-row" id="cat-filter">
       <button class="chip is-active" data-cat="all">전체</button>
       <button class="chip" data-cat="central_bank">중앙은행</button>
       <button class="chip" data-cat="indicator">경제지표</button>
       <button class="chip" data-cat="ipo">공모주</button>
     </div>
-    <div class="filter-label">지역</div>
-    <div class="chip-row" id="region-filter">
-      <button class="chip is-active" data-region="all">전체</button>
+  </div>
+  <div class="toolbar" style="margin-top:-4px;">
+    <div class="filter-row" id="region-filter" style="margin-left:0;">
+      <button class="chip is-active" data-region="all">전체 지역</button>
       <button class="chip" data-region="KR">한국</button>
       <button class="chip" data-region="US">미국</button>
       <button class="chip" data-region="EU">유럽</button>
@@ -145,8 +216,23 @@
     <span class="legend-item"><span class="dot low"></span>중요도 낮음</span>
   </div>
 
-  <div id="calendar-list">
-    <div class="list-loading">일정을 불러오는 중…</div>
+  <div id="calendar-view">
+    <div class="grid-wrap">
+      <div class="dow-row">
+        <div class="dow-cell sun">일</div><div class="dow-cell">월</div><div class="dow-cell">화</div>
+        <div class="dow-cell">수</div><div class="dow-cell">목</div><div class="dow-cell">금</div><div class="dow-cell sat">토</div>
+      </div>
+      <div id="grid-body"><div class="list-loading">달력을 불러오는 중…</div></div>
+    </div>
+
+    <div class="detail-panel">
+      <div class="detail-head" id="detail-head">날짜를 선택하면 상세 일정이 여기에 표시됩니다</div>
+      <div id="detail-list"></div>
+    </div>
+  </div>
+
+  <div id="list-view" style="display:none;">
+    <div id="agenda-list"><div class="list-loading">일정을 불러오는 중…</div></div>
   </div>
 
   <p class="disclaimer">
@@ -162,33 +248,33 @@
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
 
   const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
-  // 시드 데이터 범위: 오늘부터 연말까지 (필요 시 이후 분기 데이터를 economic_events에 추가하면 자동으로 표시됨)
-  const RANGE_END = '2026-12-31';
+  const DATA_MIN = '2026-09-01';   // 등록된 데이터 시작 범위 (그 이전 달은 탐색 비활성화)
+  const DATA_MAX = '2026-12-31';   // 등록된 데이터 끝 범위
 
   let CAT_FILTER = 'all';
   let REGION_FILTER = 'all';
-  let ALL_ITEMS = []; // economic_events + ipo 이벤트를 합친 통합 리스트
+  let CURRENT_VIEW = 'calendar'; // 'calendar' | 'list'
+  let ALL_ITEMS = [];
+  let ITEMS_BY_DATE = {};
+  let cursorYear, cursorMonth;
+  let selectedDate = TODAY;
+
+  const todayD = new Date(`${TODAY}T00:00:00`);
+  cursorYear = todayD.getFullYear();
+  cursorMonth = todayD.getMonth();
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
   const DOW = ['일', '월', '화', '수', '목', '금', '토'];
-  function fmtDayHead(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00');
-    return `${d.getMonth() + 1}월 ${d.getDate()}일`;
-  }
-  function dowOf(dateStr) {
-    return DOW[new Date(dateStr + 'T00:00:00').getDay()];
-  }
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function isoOf(y, mIndex0, d) { return `${y}-${pad2(mIndex0 + 1)}-${pad2(d)}`; }
+  function monthKeyOf(y, mIndex0) { return `${y}-${pad2(mIndex0 + 1)}`; }
 
   async function fetchRpc(fnName, body) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-      },
+      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
       body: JSON.stringify(body || {}),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status} (${fnName})`);
@@ -202,15 +288,12 @@
     return res.json();
   }
 
-  // ---------- 지표별 "직전 발표값" 서브텍스트 렌더링 ----------
   function fmtEventSub(item) {
     const { display_mode, latest_value, prev_value, yoy_value } = item;
     if (latest_value === null || latest_value === undefined) return '';
     const lv = Number(latest_value);
 
-    if (display_mode === 'rate_level') {
-      return `현재 기준금리 <b>${lv.toFixed(3)}%</b>`;
-    }
+    if (display_mode === 'rate_level') return `현재 기준금리 <b>${lv.toFixed(3)}%</b>`;
     if (display_mode === 'yoy_percent') {
       if (yoy_value === null || yoy_value === undefined) return `직전 값 ${lv.toFixed(2)}`;
       const pct = ((lv - Number(yoy_value)) / Math.abs(Number(yoy_value))) * 100;
@@ -220,7 +303,7 @@
     }
     if (display_mode === 'mom_diff_thousand') {
       if (prev_value === null || prev_value === undefined) return '';
-      const diff = (lv - Number(prev_value)) / 10; // 천명 -> 만명
+      const diff = (lv - Number(prev_value)) / 10;
       const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : '';
       const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '';
       let extra = '';
@@ -230,9 +313,7 @@
     if (display_mode === 'qoq_percent' || display_mode === 'qoq_percent_annualized') {
       if (prev_value === null || prev_value === undefined) return '';
       const rawPct = ((lv - Number(prev_value)) / Number(prev_value)) * 100;
-      const pct = display_mode === 'qoq_percent_annualized'
-        ? (Math.pow(1 + rawPct / 100, 4) - 1) * 100
-        : rawPct;
+      const pct = display_mode === 'qoq_percent_annualized' ? (Math.pow(1 + rawPct / 100, 4) - 1) * 100 : rawPct;
       const suffix = display_mode === 'qoq_percent_annualized' ? '(연율)' : '';
       const cls = pct > 0 ? 'up' : pct < 0 ? 'down' : '';
       const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '';
@@ -241,18 +322,17 @@
     return '';
   }
 
-  // ---------- 공모주 일정 -> 캘린더 아이템으로 변환 (main.js의 buildIpoEvents와 동일 로직) ----------
   function buildIpoCalendarItems(rows) {
     const items = [];
     rows.forEach((r) => {
       const stock = r.stock_name;
-      if (r.demand_forecast_start_date && r.demand_forecast_start_date >= TODAY && r.demand_forecast_start_date <= RANGE_END) {
+      if (r.demand_forecast_start_date && r.demand_forecast_start_date >= DATA_MIN && r.demand_forecast_start_date <= DATA_MAX) {
         items.push({ event_date: r.demand_forecast_start_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 수요예측 시작`, importance: 'low', display_mode: null, latest_value: null });
       }
-      if (r.subscription_start_date && r.subscription_start_date >= TODAY && r.subscription_start_date <= RANGE_END) {
+      if (r.subscription_start_date && r.subscription_start_date >= DATA_MIN && r.subscription_start_date <= DATA_MAX) {
         items.push({ event_date: r.subscription_start_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 청약 시작`, importance: 'low', display_mode: null, latest_value: null });
       }
-      if (r.listing_date && r.listing_date >= TODAY && r.listing_date <= RANGE_END) {
+      if (r.listing_date && r.listing_date >= DATA_MIN && r.listing_date <= DATA_MAX) {
         items.push({ event_date: r.listing_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 상장`, importance: 'medium', display_mode: null, latest_value: null });
       }
     });
@@ -260,55 +340,163 @@
   }
 
   async function loadAll() {
-    const listEl = document.getElementById('calendar-list');
     try {
       const [events, ipoRows, usComparisons] = await Promise.all([
-        fetchRpc('get_calendar_events', { p_start: TODAY, p_end: RANGE_END }),
-        fetchTable(`ipo_history?select=stock_name,demand_forecast_start_date,subscription_start_date,listing_date&or=(listing_date.is.null,listing_date.gte.${TODAY})`),
+        fetchRpc('get_calendar_events', { p_start: DATA_MIN, p_end: DATA_MAX }),
+        fetchTable(`ipo_history?select=stock_name,demand_forecast_start_date,subscription_start_date,listing_date&or=(listing_date.is.null,listing_date.gte.${DATA_MIN})`),
         fetchRpc('get_us_indicator_comparisons'),
       ]);
 
-      // 비농업고용 이벤트에 실업률(원값)을 같이 보여주기 위한 보조 조회
       const unemploymentRow = (usComparisons || []).find((r) => r.indicator_name === '실업률');
       events.forEach((ev) => {
-        if (ev.indicator_key === '비농업고용자수' && unemploymentRow) {
-          ev._unemploymentRate = unemploymentRow.latest_value;
-        }
+        if (ev.indicator_key === '비농업고용자수' && unemploymentRow) ev._unemploymentRate = unemploymentRow.latest_value;
       });
 
       const ipoItems = buildIpoCalendarItems(ipoRows || []);
-      ALL_ITEMS = [...events, ...ipoItems].sort((a, b) => {
-        if (a.event_date !== b.event_date) return a.event_date < b.event_date ? -1 : 1;
-        return (a.importance === 'high' ? 0 : 1) - (b.importance === 'high' ? 0 : 1);
+      ALL_ITEMS = [...events, ...ipoItems];
+
+      ITEMS_BY_DATE = {};
+      ALL_ITEMS.forEach((it) => {
+        if (!ITEMS_BY_DATE[it.event_date]) ITEMS_BY_DATE[it.event_date] = [];
+        ITEMS_BY_DATE[it.event_date].push(it);
+      });
+      Object.values(ITEMS_BY_DATE).forEach((arr) => {
+        arr.sort((a, b) => (a.importance === 'high' ? 0 : 1) - (b.importance === 'high' ? 0 : 1));
       });
 
-      render();
+      renderMonth();
+      renderDetail(selectedDate);
+      renderAgendaList();
     } catch (err) {
       console.error(err);
-      listEl.innerHTML = `<div class="list-empty">⚠ 일정을 불러오지 못했습니다: ${escapeHtml(err.message)}</div>`;
+      document.getElementById('grid-body').innerHTML = `<div class="list-empty">⚠ 일정을 불러오지 못했습니다: ${escapeHtml(err.message)}</div>`;
+      document.getElementById('agenda-list').innerHTML = `<div class="list-empty">⚠ 일정을 불러오지 못했습니다: ${escapeHtml(err.message)}</div>`;
     }
   }
 
-  function render() {
-    const listEl = document.getElementById('calendar-list');
-    let items = ALL_ITEMS;
+  function filteredItemsForDate(dateStr) {
+    let items = ITEMS_BY_DATE[dateStr] || [];
     if (CAT_FILTER !== 'all') items = items.filter((it) => it.category === CAT_FILTER);
     if (REGION_FILTER !== 'all') items = items.filter((it) => it.region === REGION_FILTER);
+    return items;
+  }
 
+  function renderMonth() {
+    document.getElementById('month-label').textContent = `${cursorYear}년 ${cursorMonth + 1}월`;
+
+    const prevBtn = document.getElementById('prev-month');
+    const nextBtn = document.getElementById('next-month');
+    prevBtn.disabled = monthKeyOf(cursorYear, cursorMonth) <= DATA_MIN.slice(0, 7);
+    nextBtn.disabled = monthKeyOf(cursorYear, cursorMonth) >= DATA_MAX.slice(0, 7);
+
+    const firstOfMonth = new Date(cursorYear, cursorMonth, 1);
+    const startWeekday = firstOfMonth.getDay();
+    const daysInMonth = new Date(cursorYear, cursorMonth + 1, 0).getDate();
+    const daysInPrevMonth = new Date(cursorYear, cursorMonth, 0).getDate();
+    const prevM = cursorMonth === 0 ? 11 : cursorMonth - 1;
+    const prevY = cursorMonth === 0 ? cursorYear - 1 : cursorYear;
+    const nextM = cursorMonth === 11 ? 0 : cursorMonth + 1;
+    const nextY = cursorMonth === 11 ? cursorYear + 1 : cursorYear;
+
+    const cells = [];
+    for (let i = 0; i < startWeekday; i++) {
+      cells.push({ y: prevY, m: prevM, d: daysInPrevMonth - startWeekday + 1 + i, other: true });
+    }
+    for (let d = 1; d <= daysInMonth; d++) cells.push({ y: cursorYear, m: cursorMonth, d, other: false });
+    let nd = 1;
+    while (cells.length % 7 !== 0) cells.push({ y: nextY, m: nextM, d: nd++, other: true });
+
+    let html = '';
+    for (let w = 0; w < cells.length / 7; w++) {
+      html += '<div class="week-row">';
+      for (let c = 0; c < 7; c++) {
+        const cell = cells[w * 7 + c];
+        const iso = isoOf(cell.y, cell.m, cell.d);
+        const items = filteredItemsForDate(iso);
+        const isToday = iso === TODAY;
+        const isSelected = iso === selectedDate;
+        const dowClass = c === 0 ? 'sun' : c === 6 ? 'sat' : '';
+
+        const visiblePills = items.slice(0, 3).map((it) => {
+          const pillCls = it.importance === 'high' ? 'pill-high' : it.importance === 'medium' ? 'pill-medium' : '';
+          const short = it.title.length > 11 ? it.title.slice(0, 11) + '…' : it.title;
+          return `<div class="pill ${pillCls}"><span class="pdot region-${it.region}" style="background:currentColor;opacity:0.5;"></span>${escapeHtml(short)}</div>`;
+        }).join('');
+        const moreHtml = items.length > 3 ? `<div class="more-count">+${items.length - 3}개</div>` : '';
+
+        html += `
+          <div class="day-cell ${cell.other ? 'other-month' : ''} ${isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''}" data-date="${iso}">
+            <div class="day-num ${dowClass}">${isToday ? `<span class="today-dot">${cell.d}</span>` : cell.d}</div>
+            ${visiblePills}${moreHtml}
+          </div>`;
+      }
+      html += '</div>';
+    }
+    document.getElementById('grid-body').innerHTML = html;
+
+    document.querySelectorAll('.day-cell').forEach((el) => {
+      el.addEventListener('click', () => {
+        selectedDate = el.getAttribute('data-date');
+        renderMonth();
+        renderDetail(selectedDate);
+      });
+    });
+  }
+
+  function renderDetail(dateStr) {
+    const headEl = document.getElementById('detail-head');
+    const listEl = document.getElementById('detail-list');
+    const d = new Date(`${dateStr}T00:00:00`);
+    const isToday = dateStr === TODAY;
+    headEl.innerHTML = `${d.getMonth() + 1}월 ${d.getDate()}일 <span class="dow-tag">(${DOW[d.getDay()]})</span> ${isToday ? '<span class="today-dot" style="width:auto;padding:1px 8px;border-radius:10px;">오늘</span>' : ''}`;
+
+    const items = filteredItemsForDate(dateStr);
     if (items.length === 0) {
+      listEl.innerHTML = '<div class="list-empty">이 날짜에는 등록된 일정이 없습니다.</div>';
+      return;
+    }
+
+    listEl.innerHTML = items.map((it) => {
+      const sub = fmtEventSub(it);
+      const timeHtml = it.event_time ? `<span class="event-time">${escapeHtml(it.event_time)}</span>` : '';
+      const catLabel = it.category === 'central_bank' ? '중앙은행' : it.category === 'indicator' ? '지표' : '공모주';
+      return `
+        <div class="event-row">
+          <div class="event-dot-col"><span class="dot ${it.importance}"></span></div>
+          <div class="event-body">
+            <div class="event-top">
+              ${timeHtml}
+              <span class="region-badge region-${it.region}">${it.region}</span>
+              <span class="cat-badge">${catLabel}</span>
+            </div>
+            <div class="event-title">${escapeHtml(it.title)}</div>
+            ${sub ? `<div class="event-sub">${sub}</div>` : ''}
+            ${it.source_note ? `<div class="event-note">${escapeHtml(it.source_note)}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ---------- 전체 일정 리스트(날짜별) 렌더 ----------
+  function renderAgendaList() {
+    const listEl = document.getElementById('agenda-list');
+    const dates = Object.keys(ITEMS_BY_DATE)
+      .filter((d) => d >= TODAY && d <= DATA_MAX)
+      .sort();
+
+    const withItems = dates
+      .map((d) => ({ date: d, items: filteredItemsForDate(d) }))
+      .filter((g) => g.items.length > 0);
+
+    if (withItems.length === 0) {
       listEl.innerHTML = '<div class="list-empty">해당 조건의 일정이 없습니다.</div>';
       return;
     }
 
-    const byDate = {};
-    items.forEach((it) => {
-      if (!byDate[it.event_date]) byDate[it.event_date] = [];
-      byDate[it.event_date].push(it);
-    });
-
-    const dates = Object.keys(byDate).sort();
-    listEl.innerHTML = dates.map((date) => {
-      const rows = byDate[date].map((it) => {
+    listEl.innerHTML = withItems.map(({ date, items }) => {
+      const d = new Date(`${date}T00:00:00`);
+      const isToday = date === TODAY;
+      const rows = items.map((it) => {
         const sub = fmtEventSub(it);
         const timeHtml = it.event_time ? `<span class="event-time">${escapeHtml(it.event_time)}</span>` : '';
         const catLabel = it.category === 'central_bank' ? '중앙은행' : it.category === 'indicator' ? '지표' : '공모주';
@@ -327,11 +515,10 @@
             </div>
           </div>`;
       }).join('');
-      const isToday = date === TODAY;
       return `
         <div class="day-group">
           <div class="day-head">
-            ${fmtDayHead(date)} <span class="dow">(${dowOf(date)})</span>
+            ${d.getMonth() + 1}월 ${d.getDate()}일 <span class="dow">(${DOW[d.getDay()]})</span>
             ${isToday ? '<span class="today-badge">오늘</span>' : ''}
           </div>
           ${rows}
@@ -339,19 +526,53 @@
     }).join('');
   }
 
+  function setView(view) {
+    CURRENT_VIEW = view;
+    document.querySelectorAll('#view-toggle button').forEach((b) => b.classList.toggle('is-active', b.dataset.view === view));
+    document.getElementById('calendar-view').style.display = view === 'calendar' ? '' : 'none';
+    document.getElementById('list-view').style.display = view === 'list' ? '' : 'none';
+    document.getElementById('month-nav').style.display = view === 'calendar' ? '' : 'none';
+  }
+
+  document.getElementById('view-toggle').addEventListener('click', (e) => {
+    if (!e.target.dataset.view) return;
+    setView(e.target.dataset.view);
+  });
+
+  document.getElementById('prev-month').addEventListener('click', () => {
+    cursorMonth -= 1;
+    if (cursorMonth < 0) { cursorMonth = 11; cursorYear -= 1; }
+    renderMonth();
+  });
+  document.getElementById('next-month').addEventListener('click', () => {
+    cursorMonth += 1;
+    if (cursorMonth > 11) { cursorMonth = 0; cursorYear += 1; }
+    renderMonth();
+  });
+  document.getElementById('today-btn').addEventListener('click', () => {
+    cursorYear = todayD.getFullYear();
+    cursorMonth = todayD.getMonth();
+    selectedDate = TODAY;
+    renderMonth();
+    renderDetail(selectedDate);
+  });
   document.getElementById('cat-filter').addEventListener('click', (e) => {
     if (!e.target.dataset.cat) return;
     CAT_FILTER = e.target.dataset.cat;
     document.querySelectorAll('#cat-filter .chip').forEach((c) => c.classList.remove('is-active'));
     e.target.classList.add('is-active');
-    render();
+    renderMonth();
+    renderDetail(selectedDate);
+    renderAgendaList();
   });
   document.getElementById('region-filter').addEventListener('click', (e) => {
     if (!e.target.dataset.region) return;
     REGION_FILTER = e.target.dataset.region;
     document.querySelectorAll('#region-filter .chip').forEach((c) => c.classList.remove('is-active'));
     e.target.classList.add('is-active');
-    render();
+    renderMonth();
+    renderDetail(selectedDate);
+    renderAgendaList();
   });
 
   loadAll();

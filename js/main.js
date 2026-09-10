@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-05-r (날씨 2줄 표시)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-10-r (모바일 날짜/시간 표시 정리)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 
@@ -13,18 +13,15 @@ function dowKo(dateStr) {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   return days[new Date(`${dateStr}T00:00:00`).getDay()];
 }
-// 기준일이 속한 달의 1일 (예: 2026-09-01 → 2026-09-01, 2026-09-15 → 2026-09-01)
 function firstOfMonth(dateStr) {
   const d = new Date(`${dateStr}T00:00:00`);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
-// 기준일이 속한 연도의 1월 1일
 function firstOfYear(dateStr) {
   const d = new Date(`${dateStr}T00:00:00`);
   return `${d.getFullYear()}-01-01`;
 }
 
-// 진단용: 에러가 나면 스피너에 멈춰있지 않고 실제 에러를 화면에 표시
 function showError(el, label, err) {
   console.error(label, err);
   const msg = (err && err.message) ? err.message : String(err);
@@ -32,8 +29,8 @@ function showError(el, label, err) {
 }
 
 // ---------- 마지막 업데이트 표시 ----------
-// rows: DB에서 가져온 배열, fields: 우선순위대로 확인할 타임스탬프 컬럼명들
-// 배열/컬럼에서 값을 못 찾으면 현재 시각(페이지 로드 시각)으로 대체 표시
+// 메인 페이지는 "오늘" 기준 최신 데이터만 다루므로 날짜는 생략하고 시:분만 표시
+// (모바일 폭이 좁을 때 "2026. 09. 09. 18:30" 같은 긴 문자열이 줄바꿈되며 깨지는 문제 해결)
 function getMaxTimestamp(rows, fields = ['updated_at', 'created_at']) {
   if (!rows || rows.length === 0) return null;
   let max = null;
@@ -50,17 +47,8 @@ function setLastUpdated(elementId, timestamp) {
   const el = document.getElementById(elementId);
   if (!el) return;
 
-  const d = timestamp ? new Date(timestamp) : new Date();
-  const formatted = new Intl.DateTimeFormat('ko-KR', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(d);
-
+  // formatTimeOnly는 helpers.js에 정의됨 (시:분만 표시, KST 고정)
+  const formatted = formatTimeOnly(timestamp || new Date().toISOString());
   const CLOCK_ICON = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6.5"/><path d="M9 5.5V9l3 1.7"/></svg>';
   el.innerHTML = `${CLOCK_ICON}마지막 업데이트: ${formatted}`;
 }
@@ -75,7 +63,8 @@ async function loadFinancialNews() {
       .order('article_published_at', { ascending: false })
       .limit(10);
     if (error) throw error;
-    renderNewsList(el, data);
+    // 메인 페이지 뉴스 목록은 시:분만 표시 (renderNewsList에 timeOnly 옵션 전달, helpers.js 참고)
+    renderNewsList(el, data, { timeOnly: true });
     setLastUpdated('news-updated', getMaxTimestamp(data, ['created_at']));
   } catch (err) {
     showError(el, '채권·금리 뉴스', err);
@@ -89,7 +78,6 @@ const RATE_ORDER = [
   'Fed금리',
 ];
 
-// DB에는 계속 쌓이지만(수집은 유지) 메인 화면 표에는 표시하지 않을 지표
 const HIDDEN_INDICATORS = new Set(['미국 10Y']);
 function rateSortKey(name) {
   const norm = name.replace(/\s+/g, '');
@@ -110,8 +98,6 @@ async function loadIndicators() {
   const el = document.getElementById('rate-list');
   const dateThEl = document.getElementById('rate-date-th');
   try {
-    // 1) 지표별 "현재값" 가져오기 (모든 지표가 최신일자를 공유한다고 가정, 여유 있게 60행)
-    // created_at이 있다면 함께 가져와 "마지막 업데이트" 시각으로 활용
     const { data: latestRows, error: latestErr } = await db
       .from('interest_rates')
       .select('indicator, date, value, created_at')
@@ -128,12 +114,11 @@ async function loadIndicators() {
 
     const currentByIndicator = {};
     latestRows.forEach((row) => {
-      if (!currentByIndicator[row.indicator]) currentByIndicator[row.indicator] = row; // 먼저 나온(=가장 최신) 것만 유지
+      if (!currentByIndicator[row.indicator]) currentByIndicator[row.indicator] = row;
     });
     const indicatorList = Object.entries(currentByIndicator)
-      .filter(([name]) => !HIDDEN_INDICATORS.has(name)); // 화면에 숨길 지표 제외 (DB엔 그대로 남음)
+      .filter(([name]) => !HIDDEN_INDICATORS.has(name));
 
-    // 2) 지표 하나당, 특정 날짜보다 "작은" 날짜 중 가장 큰 값을 정확히 targeted 조회
     const fetchBefore = async (name, thresholdDate) => {
       const { data, error } = await db
         .from('interest_rates')
@@ -171,7 +156,6 @@ async function loadIndicators() {
 
     el.innerHTML = rows_html || '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
 
-    // created_at 컬럼이 있으면 그 값을, 없으면 페이지 로드 시각을 표시
     setLastUpdated('rate-updated', getMaxTimestamp(latestRows, ['created_at']));
   } catch (err) {
     console.error('주요금리', err);
@@ -191,7 +175,7 @@ async function loadIpoNews() {
       .order('article_published_at', { ascending: false })
       .limit(10);
     if (error) throw error;
-    renderNewsList(el, data);
+    renderNewsList(el, data, { timeOnly: true });
     setLastUpdated('ipo-news-updated', getMaxTimestamp(data, ['created_at']));
   } catch (err) {
     showError(el, '공모주 뉴스', err);
@@ -209,7 +193,6 @@ function formatRatio(n, suffix) {
 }
 function formatPercent(n) {
   if (n === null || n === undefined) return null;
-  // DB에 저장된 값 자체가 이미 %값 (예: 0.17 → 0.17%)
   return `${Number(n).toFixed(2)}%`;
 }
 
@@ -219,12 +202,10 @@ function buildIpoEvents(rows) {
   rows.forEach((r) => {
     const base = { stock: r.stock_name, amount: r.offering_amount_eok };
 
-    // 수요예측 시작만 표시
     if (r.demand_forecast_start_date && r.demand_forecast_start_date >= TODAY) {
       events.push({ ...base, date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측', note: '' });
     }
 
-    // 청약 시작만 표시 (기관경쟁률 · 확약률)
     if (r.subscription_start_date && r.subscription_start_date >= TODAY) {
       const subNoteParts = [];
       const inst = formatRatio(r.institutional_competition_rate, ':1');
@@ -234,7 +215,6 @@ function buildIpoEvents(rows) {
       events.push({ ...base, date: r.subscription_start_date, type: 'subscription', label: '청약', note: subNoteParts.join(' · ') });
     }
 
-    // 상장: 기관경쟁률 · 확약률 · 청약(개인)경쟁률
     if (r.listing_date && r.listing_date >= TODAY) {
       const listNoteParts = [];
       const inst2 = formatRatio(r.institutional_competition_rate, ':1');
@@ -298,9 +278,6 @@ function setupIpoFilter() {
 async function loadIpoSchedule() {
   const el = document.getElementById('ipo-schedule-list');
   try {
-    // ipo_history는 2006년부터 쌓이는 이력 테이블이라 전체를 다 가져오면 무거우므로,
-    // "아직 지나지 않은 일정을 하나라도 가진 행"만 서버에서 걸러서 가져온다.
-    // (실제 표시 여부는 이전과 동일하게 buildIpoEvents에서 date >= TODAY로 다시 필터링)
     const { data, error } = await db
       .from('ipo_history')
       .select('*')
@@ -310,7 +287,6 @@ async function loadIpoSchedule() {
     ALL_IPO_EVENTS = buildIpoEvents(data || []);
     applyIpoFilter();
 
-    // updated_at/created_at 컬럼이 존재하면 그 값을, 없으면 페이지 로드 시각을 표시
     setLastUpdated('ipo-schedule-updated', getMaxTimestamp(data, ['updated_at', 'created_at']));
   } catch (err) {
     console.error('공모주 일정', err);
@@ -366,22 +342,13 @@ async function loadResearchReports() {
 }
 
 // ---------- AI 인사이트 (매일 새벽 자동 생성된 AI 기사 2편) ----------
+// 항목이 항상 같은 시각(예: 매일 08:00)에 함께 갱신되므로, 시각은 패널 헤더에 한 번만
+// 표시하고 각 항목에서는 제거함 (모바일에서 제목이 3줄까지 늘어지는 문제 해결)
 const AI_INSIGHT_LABELS = { bond: '채권·금리', ipo: '공모주(IPO)' };
-
-function formatDateTimeShort(iso) {
-  // "2026-09-06T14:28:12+00:00" 같은 타임스탬프를 "09.06 14:28" (KST) 형태로
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return '';
-  const fmt = new Intl.DateTimeFormat('ko-KR', {
-    timeZone: 'Asia/Seoul',
-    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
-  }).formatToParts(d);
-  const get = (type) => fmt.find((p) => p.type === type)?.value ?? '';
-  return `${get('month')}.${get('day')} ${get('hour')}:${get('minute')}`;
-}
 
 async function loadAiInsights() {
   const el = document.getElementById('ai-insight-list');
+  const updatedEl = document.getElementById('ai-insight-updated');
   if (!el) return;
   try {
     const { data, error } = await db
@@ -392,7 +359,6 @@ async function loadAiInsights() {
       .limit(10);
     if (error) throw error;
 
-    // 타입별로 가장 최신 1건만 사용 (오늘자가 아직 없으면 가장 최근 날짜로 대체 표시)
     const latestByType = {};
     (data || []).forEach((row) => {
       if (!latestByType[row.type]) latestByType[row.type] = row;
@@ -402,6 +368,7 @@ async function loadAiInsights() {
 
     if (items.length === 0) {
       el.innerHTML = '<div class="list-empty">오늘의 AI 브리핑이 아직 준비되지 않았습니다.</div>';
+      if (updatedEl) updatedEl.textContent = '';
       return;
     }
 
@@ -411,10 +378,14 @@ async function loadAiInsights() {
         <div class="ai-insight-row">
           <span class="ai-insight-tag ${row.type}">${escapeHtml(AI_INSIGHT_LABELS[row.type] || row.type)}</span>
           <a class="ai-insight-title" href="#" data-type="${row.type}">${escapeHtml(row.title)}</a>
-          <span class="ai-insight-date">${formatDateTimeShort(row.updated_at)}</span>
         </div>`;
       })
       .join('');
+
+    if (updatedEl) {
+      const latestTs = getMaxTimestamp(items, ['updated_at']);
+      updatedEl.textContent = latestTs ? `${formatTimeOnly(latestTs)} 업데이트` : '';
+    }
 
     el.querySelectorAll('.ai-insight-title').forEach((link) => {
       link.addEventListener('click', (e) => {
@@ -476,14 +447,13 @@ async function loadWeather() {
     const code = data.current.weather_code;
     const [emoji, label] = weatherCodeInfo(code);
     const comment = weatherComment(temp, code);
-    // 1줄: 지역명 / 2줄: 아이콘+온도+날씨+코멘트
     el.innerHTML =
       `<div class="w-line1">여의도</div>` +
       `<div class="w-line2"><span class="w-emoji">${emoji}</span><span class="w-temp">${temp}°C</span> ${label}` +
       `<span class="w-comment"> · ${comment}</span></div>`;
   } catch (err) {
     console.error('날씨 정보를 불러오지 못했습니다', err);
-    el.textContent = ''; // 실패해도 조용히 숨김 (핵심 기능이 아니므로 에러 노출 안 함)
+    el.textContent = '';
   }
 }
 

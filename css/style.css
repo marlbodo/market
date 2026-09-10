@@ -349,7 +349,7 @@ img { max-width: 100%; display: block; }
 /* 경제지표 표의 [한]/[미] 배지 (기존 [한국]/[미국]보다 좁아 모바일에서 안 밀림) */
 .indicator-flag {
   display: inline-block;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 800;
   color: var(--text-faint);
   margin-right: 2px;

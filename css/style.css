@@ -285,10 +285,6 @@ img { max-width: 100%; display: block; }
 
 .list-empty, .list-loading { padding: 16px 0; font-size: 12.5px; color: var(--text-faint); }
 
-/* 메인 페이지 뉴스(시:분만 표시)는 날짜 칸이 훨씬 짧아지므로 폭을 줄여 제목에 공간을 더 줌.
-   news-all.html 등 날짜까지 표시하는 페이지는 이 클래스를 쓰지 않으므로 영향 없음. */
-.news-list .news-date { width: 40px; }
-
 /* ---------- 주요금리 (좌측, 격자형 표) ---------- */
 .rate-table {
   width: 100%;

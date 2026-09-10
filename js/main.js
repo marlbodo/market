@@ -47,8 +47,17 @@ function setLastUpdated(elementId, timestamp) {
   const el = document.getElementById(elementId);
   if (!el) return;
 
-  // formatTimeOnly는 helpers.js에 정의됨 (시:분만 표시, KST 고정)
-  const formatted = formatTimeOnly(timestamp || new Date().toISOString());
+  const d = timestamp ? new Date(timestamp) : new Date();
+  const formatted = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(d);
+
   const CLOCK_ICON = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6.5"/><path d="M9 5.5V9l3 1.7"/></svg>';
   el.innerHTML = `${CLOCK_ICON}마지막 업데이트: ${formatted}`;
 }

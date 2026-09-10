@@ -34,8 +34,8 @@
     border-bottom: 2px solid var(--ink);
     padding-bottom: 14px; margin-bottom: 14px;
   }
-  h1 { font-size: 19px; margin: 0; }
-  .sub { font-size: 12px; color: var(--ink-soft); margin: 3px 0 0; }
+  h1 { font-size: 21px; margin: 0; }
+  .sub { font-size: 12.5px; color: var(--ink-soft); margin: 3px 0 0; }
   .close-btn {
     border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
     padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; flex: none;
@@ -53,22 +53,22 @@
     background: #fff; color: var(--ink); font-size: 15px; cursor: pointer;
   }
   .month-nav button:disabled { opacity: 0.35; cursor: not-allowed; }
-  .month-label { font-size: 16px; font-weight: 800; min-width: 96px; text-align: center; }
+  .month-label { font-size: 18px; font-weight: 800; min-width: 104px; text-align: center; }
   .today-btn {
     border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
-    padding: 5px 11px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600;
+    padding: 6px 13px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;
   }
 
   .filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
   .chip {
     border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
-    padding: 5px 11px; border-radius: 999px; font-size: 12px; cursor: pointer; font-weight: 600;
+    padding: 6px 13px; border-radius: 999px; font-size: 13px; cursor: pointer; font-weight: 600;
   }
   .chip.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-  .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--ink-soft); margin-bottom: 12px; }
-  .legend-item { display: flex; align-items: center; gap: 4px; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--ink-soft); margin-bottom: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
   .dot.high { background: var(--up); }
   .dot.medium { background: var(--amber); }
   .dot.low { background: #9aa5b1; }
@@ -76,13 +76,13 @@
   /* ---------- 월간 그리드 ---------- */
   .grid-wrap { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
   .dow-row { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--ink); }
-  .dow-cell { text-align: center; font-size: 11.5px; font-weight: 700; color: #fff; padding: 7px 0; }
+  .dow-cell { text-align: center; font-size: 13px; font-weight: 700; color: #fff; padding: 9px 0; }
   .dow-cell.sun { color: #ffb4b4; }
   .dow-cell.sat { color: #a9c4ff; }
 
   .week-row { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid var(--line); }
   .day-cell {
-    min-height: 92px; padding: 5px 5px 6px; border-right: 1px solid var(--line);
+    min-height: 118px; padding: 7px 7px 8px; border-right: 1px solid var(--line);
     cursor: pointer; position: relative; background: #fff;
   }
   .day-cell:last-child { border-right: none; }
@@ -93,24 +93,24 @@
   .day-cell:hover { background: #f5f7fa; }
   .day-cell.is-today:hover { background: var(--accent-soft); }
 
-  .day-num { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+  .day-num { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 5px; }
   .day-num.sun { color: var(--up); }
   .day-num.sat { color: var(--down); }
-  .today-dot { display: inline-block; width: 16px; height: 16px; line-height: 16px; text-align: center; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; }
+  .today-dot { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 13px; }
 
   .pill {
-    display: flex; align-items: center; gap: 3px; font-size: 10px; padding: 1.5px 4px 1.5px 3px;
-    border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    background: #f1f3f6; color: var(--ink-soft);
+    display: flex; align-items: center; gap: 4px; font-size: 11.5px; padding: 3px 5px 3px 4px;
+    border-radius: 4px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    background: #f1f3f6; color: var(--ink-soft); font-weight: 600;
   }
-  .pill .pdot { width: 5px; height: 5px; border-radius: 50%; flex: none; }
+  .pill .pdot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
   .pill.pill-high { background: #fdeceb; color: #8a2c22; }
   .pill.pill-medium { background: #fbf0dd; color: #7a5613; }
-  .more-count { font-size: 10px; color: var(--ink-soft); font-weight: 700; padding-left: 3px; }
+  .more-count { font-size: 11px; color: var(--ink-soft); font-weight: 700; padding-left: 4px; }
 
   @media (max-width: 640px) {
-    .day-cell { min-height: 66px; padding: 4px 3px 5px; }
-    .pill { font-size: 9px; }
+    .day-cell { min-height: 80px; padding: 5px 4px 6px; }
+    .pill { font-size: 10px; }
     .month-label { font-size: 14px; min-width: 76px; }
     .filter-row { margin-left: 0; width: 100%; }
   }
@@ -123,31 +123,35 @@
   .view-toggle button.is-active { background: var(--accent); color: #fff; }
 
   /* ---------- 일정 리스트(날짜별) 뷰 ---------- */
-  .day-group { margin-bottom: 20px; }
+  .day-group { margin-bottom: 22px; }
   .day-head {
     display: flex; align-items: baseline; gap: 8px;
-    font-size: 13.5px; font-weight: 800; color: var(--ink);
-    padding-bottom: 6px; border-bottom: 1px solid var(--line); margin-bottom: 8px;
+    font-size: 15px; font-weight: 800; color: var(--ink);
+    padding-bottom: 7px; border-bottom: 1px solid var(--line); margin-bottom: 9px;
   }
-  .day-head .dow { font-weight: 500; color: var(--ink-soft); font-size: 12px; }
+  .day-head .dow { font-weight: 500; color: var(--ink-soft); font-size: 13px; }
   .day-head .today-badge {
-    font-size: 10.5px; font-weight: 700; color: #fff; background: var(--teal);
-    border-radius: 4px; padding: 1px 6px;
+    font-size: 11.5px; font-weight: 700; color: #fff; background: var(--teal);
+    border-radius: 4px; padding: 2px 8px;
   }
-  .detail-panel { margin-top: 20px; }
+  .detail-panel { margin-top: 22px; }
   .detail-head {
-    display: flex; align-items: baseline; gap: 8px; font-size: 14.5px; font-weight: 800;
-    padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 8px;
+    display: flex; align-items: baseline; gap: 8px; font-size: 16px; font-weight: 800;
+    padding-bottom: 9px; border-bottom: 1px solid var(--line); margin-bottom: 9px;
   }
-  .detail-head .dow-tag { font-size: 12px; font-weight: 500; color: var(--ink-soft); }
+  .detail-head .dow-tag { font-size: 13px; font-weight: 500; color: var(--ink-soft); }
+  .detail-head .today-inline-badge {
+    display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 700; color: #fff;
+    background: var(--teal); border-radius: 10px; padding: 2px 9px; vertical-align: middle;
+  }
 
-  .event-row { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
+  .event-row { display: flex; gap: 11px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
   .event-row:last-child { border-bottom: none; }
-  .event-dot-col { flex: none; width: 8px; padding-top: 6px; }
+  .event-dot-col { flex: none; width: 9px; padding-top: 7px; }
   .event-body { flex: 1; min-width: 0; }
-  .event-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 2px; }
-  .event-time { font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
-  .region-badge { font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 3px; flex: none; }
+  .event-top { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-bottom: 3px; }
+  .event-time { font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+  .region-badge { font-size: 11.5px; font-weight: 800; padding: 2px 7px; border-radius: 3px; flex: none; }
   .region-KR { background: var(--accent-soft); color: var(--accent); }
   .region-US { background: var(--amber-soft); color: var(--amber); }
   .region-EU { background: #eef0fb; color: #4b4fb0; }
@@ -155,13 +159,13 @@
   .region-JP { background: #fdeeee; color: #b0413f; }
   .region-AU { background: var(--teal-soft); color: var(--teal); }
   .region-IPO { background: #fbf0dd; color: var(--amber); }
-  .cat-badge { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 3px; flex: none; background: #eef1f4; color: var(--ink-soft); }
-  .event-title { font-size: 13.5px; font-weight: 700; color: var(--ink); line-height: 1.4; }
-  .event-sub { font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
+  .cat-badge { font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 3px; flex: none; background: #eef1f4; color: var(--ink-soft); }
+  .event-title { font-size: 14.5px; font-weight: 700; color: var(--ink); line-height: 1.45; }
+  .event-sub { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
   .event-sub .up { color: var(--up); font-weight: 700; }
   .event-sub .down { color: var(--down); font-weight: 700; }
-  .event-note { font-size: 11px; color: #9aa5b1; margin-top: 2px; }
-  .list-empty, .list-loading { padding: 20px 0; text-align: center; color: var(--ink-soft); font-size: 13px; }
+  .event-note { font-size: 12px; color: #9aa5b1; margin-top: 3px; }
+  .list-empty, .list-loading { padding: 22px 0; text-align: center; color: var(--ink-soft); font-size: 14px; }
 
   .disclaimer {
     margin-top: 24px; font-size: 11.5px; color: var(--ink-soft);
@@ -419,7 +423,7 @@
 
         const visiblePills = items.slice(0, 3).map((it) => {
           const pillCls = it.importance === 'high' ? 'pill-high' : it.importance === 'medium' ? 'pill-medium' : '';
-          const short = it.title.length > 11 ? it.title.slice(0, 11) + '…' : it.title;
+          const short = it.title.length > 13 ? it.title.slice(0, 13) + '…' : it.title;
           return `<div class="pill ${pillCls}"><span class="pdot region-${it.region}" style="background:currentColor;opacity:0.5;"></span>${escapeHtml(short)}</div>`;
         }).join('');
         const moreHtml = items.length > 3 ? `<div class="more-count">+${items.length - 3}개</div>` : '';
@@ -448,7 +452,7 @@
     const listEl = document.getElementById('detail-list');
     const d = new Date(`${dateStr}T00:00:00`);
     const isToday = dateStr === TODAY;
-    headEl.innerHTML = `${d.getMonth() + 1}월 ${d.getDate()}일 <span class="dow-tag">(${DOW[d.getDay()]})</span> ${isToday ? '<span class="today-dot" style="width:auto;padding:1px 8px;border-radius:10px;">오늘</span>' : ''}`;
+    headEl.innerHTML = `${d.getMonth() + 1}월 ${d.getDate()}일 <span class="dow-tag">(${DOW[d.getDay()]})</span> ${isToday ? '<span class="today-inline-badge">오늘</span>' : ''}`;
 
     const items = filteredItemsForDate(dateStr);
     if (items.length === 0) {

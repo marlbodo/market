@@ -27,7 +27,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
     line-height: 1.5;
   }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 22px 16px 50px; overflow-x: hidden; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 22px 24px 50px; overflow-x: hidden; }
 
   header {
     display: flex; align-items: center; justify-content: space-between;
@@ -56,8 +56,9 @@
   .month-label { font-size: 18px; font-weight: 800; min-width: 104px; text-align: center; }
   .today-btn {
     border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
-    padding: 6px 13px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;
-    white-space: nowrap; flex: none;
+    padding: 7px 20px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;
+    white-space: nowrap; flex: none; min-width: 64px;
+    display: inline-flex; align-items: center; justify-content: center;
   }
 
   .filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }

@@ -452,6 +452,28 @@
   };
   Chart.register(endLabelPlugin);
 
+  // 마우스를 올렸을 때 그 x 위치에 세로 점선을 그어주는 크로스헤어
+  const crosshairPlugin = {
+    id: 'crosshair',
+    afterDatasetsDraw(chart) {
+      const active = chart.getActiveElements();
+      if (!active || active.length === 0) return;
+      const { ctx, chartArea } = chart;
+      const x = active[0].element.x;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, chartArea.top);
+      ctx.lineTo(x, chartArea.bottom);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(55, 65, 81, 0.45)';
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+  Chart.register(crosshairPlugin);
+
   async function refreshChart() {
     const emptyEl = document.getElementById('chart-empty');
     const canvas = document.getElementById('main-chart');
@@ -533,15 +555,30 @@
           responsive: true,
           maintainAspectRatio: false,
           layout: { padding: { right: 58 } },
-          interaction: { mode: 'nearest', axis: 'x', intersect: false },
+          interaction: { mode: 'x', intersect: false },
           plugins: {
             legend: {
               display: true,
               position: 'top',
               labels: { usePointStyle: true, boxWidth: 26, boxHeight: 10 },
             },
-            // 차트를 가리는 팝업형 툴팁은 사용하지 않음 (끝값 라벨/우측 축으로 충분히 확인 가능)
-            tooltip: { enabled: false },
+            // 세로 크로스헤어 + 그 위치의 값들만 간단히 보여주는 툴팁
+            tooltip: {
+              enabled: true,
+              mode: 'x',
+              intersect: false,
+              backgroundColor: 'rgba(31, 36, 48, 0.92)',
+              titleFont: { size: 11 },
+              bodyFont: { size: 12 },
+              padding: 8,
+              boxPadding: 3,
+              callbacks: {
+                label: (ctx) => {
+                  const ds = ctx.dataset;
+                  return `${ds.label}: ${formatDatasetValue(ds, ctx.parsed.y)}`;
+                },
+              },
+            },
           },
           scales: {
             x: {

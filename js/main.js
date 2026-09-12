@@ -118,8 +118,11 @@ const HIDDEN_INDICATORS = new Set([]);
 // 두 그룹으로 나눠서 각각 계산한다 (setRateLastUpdated 참고).
 const US_RATE_INDICATORS = new Set(['미국 10Y', '미국 2Y', 'Fed 금리(상단)']);
 
-// 미국10Y·Fed금리(상단)는 엑셀 임포트가 FRED보다 먼저 그날 값을 써넣을 수 있는데, 그 값은
-// updated_at이 비어있는 엑셀발 미검증 값이다. FRED가 그 날짜를 확정(overwrite)하기 전까지는
+const TREASURY_SOURCED_INDICATORS = new Set(['미국 10Y', '미국 2Y']);
+const FRED_SOURCED_INDICATORS = new Set(['Fed 금리(상단)']);
+
+// 미국10Y·Fed금리(상단)는 엑셀 임포트가 재무부/FRED보다 먼저 그날 값을 써넣을 수 있는데, 그 값은
+// updated_at이 비어있는 엑셀발 미검증 값이다. 공식 소스가 그 날짜를 확정(overwrite)하기 전까지는
 // "최신값"으로 채택하지 않는다 (미국2Y는 엑셀에 없던 신규 지표라 해당 없음).
 const STALE_GUARDED_INDICATORS = new Set(['미국 10Y', 'Fed 금리(상단)']);
 
@@ -189,14 +192,21 @@ async function loadIndicators() {
 
     results.sort((a, b) => rateSortKey(a.name) - rateSortKey(b.name) || a.name.localeCompare(b.name, 'ko'));
 
-    const rows_html = results.map((r) => `
+    const rows_html = results.map((r) => {
+      const sourceBadge = TREASURY_SOURCED_INDICATORS.has(r.name)
+        ? ' <span class="rate-source-badge" title="미 재무부(Treasury.gov) 공식 종가 기준. 하루 한 번 발표되며 실시간 장중 시세와는 다를 수 있습니다.">美 재무부</span>'
+        : FRED_SOURCED_INDICATORS.has(r.name)
+        ? ' <span class="rate-source-badge" title="FRED(세인트루이스 연준) 기준. FOMC 회의가 있을 때만 실제로 바뀝니다.">FRED</span>'
+        : '';
+      return `
       <tr>
-        <td class="rate-td-name">${escapeHtml(r.name)}</td>
+        <td class="rate-td-name">${escapeHtml(r.name)}${sourceBadge}</td>
         <td class="rate-td-value">${Number(r.current.value).toFixed(3)}</td>
         ${deltaTd(r.current, r.dayRow)}
         ${deltaTd(r.current, r.monthRow)}
         ${deltaTd(r.current, r.yearRow)}
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
 
     const latestDate = indicatorList.reduce((max, [, row]) => (row.date > max ? row.date : max), indicatorList[0][1].date);
     if (dateThEl) dateThEl.textContent = formatDateShort(latestDate);

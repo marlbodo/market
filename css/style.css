@@ -406,10 +406,10 @@ img { max-width: 100%; display: block; }
 
 /* 시작/마감 구분: 배경은 그대로 두고 글씨 색과 굵기만 다르게 (JS에서 is-start / is-end 클래스 부여) */
 .tag-forecast.is-start { color: #8a5a15; font-weight: 800; }
-.tag-forecast.is-end   { color: #c9975a; font-weight: 600; }
+.tag-forecast.is-end   { color: #000000; font-weight: 600; }
 
 .tag-subscription.is-start { color: #0b5c50; font-weight: 800; }
-.tag-subscription.is-end   { color: #4ea99a; font-weight: 600; }
+.tag-subscription.is-end   { color: #000000; font-weight: 600; }
 
 .event-date-head {
   font-size: 12px;

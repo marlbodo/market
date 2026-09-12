@@ -389,6 +389,11 @@ img { max-width: 100%; display: block; }
   cursor: help;
 }
 
+.rate-source-note {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
 /* ---------- 공모주 일정 (중앙) ---------- */
 .tag-legend { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
 

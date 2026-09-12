@@ -62,6 +62,29 @@ function setLastUpdated(elementId, timestamp) {
   el.innerHTML = `${CLOCK_ICON}마지막 업데이트: ${formatted}`;
 }
 
+// 주요금리 패널 전용: 한국(엑셀)과 미국(FRED)의 원천/입수 시각이 서로 다르므로 두 줄로 나눠 표시.
+// 예) 한국: 09.11. 18:30 기준 / 미국: 09.12. 05:30 기준
+function fmtShortDateTime(timestamp) {
+  if (!timestamp) return '-';
+  const d = new Date(timestamp);
+  if (isNaN(d.getTime())) return '-';
+  const parts = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(d);
+  const get = (type) => (parts.find((p) => p.type === type) || {}).value || '';
+  return `${get('month')}.${get('day')}. ${get('hour')}:${get('minute')}`;
+}
+function setRateLastUpdated(krTimestamp, usTimestamp) {
+  const el = document.getElementById('rate-updated');
+  if (!el) return;
+  const CLOCK_ICON = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6.5"/><path d="M9 5.5V9l3 1.7"/></svg>';
+  el.classList.add('last-updated-dual');
+  el.innerHTML =
+    `<div class="last-updated-row">${CLOCK_ICON}한국: ${fmtShortDateTime(krTimestamp)} 기준</div>` +
+    `<div class="last-updated-row">${CLOCK_ICON}미국: ${fmtShortDateTime(usTimestamp)} 기준</div>`;
+}
+
 // ---------- 최신 채권·금리 뉴스 ----------
 async function loadFinancialNews() {
   const el = document.getElementById('news-list');
@@ -84,10 +107,17 @@ async function loadFinancialNews() {
 const RATE_ORDER = [
   '기준금리', 'CD', '산금6M', '산금1Y', '산금2Y', '은행AA+1Y',
   '국고3Y', '국고5Y', '국고10Y', '공사3Y', '공사5Y', '공사7Y',
-  'Fed금리',
+  'Fed금리', '미국2Y', '미국10Y',
 ];
 
-const HIDDEN_INDICATORS = new Set(['미국 10Y']);
+// 미국 국채금리(2Y·10Y)와 Fed금리는 2026-09-12부터 FRED API 자동 수집으로 전환되어 신뢰도 문제가
+// 해소되었으므로 더 이상 숨기지 않는다. (과거엔 엑셀 수기 입력값이라 '미국 10Y'를 숨겨왔음)
+const HIDDEN_INDICATORS = new Set([]);
+
+// 미국 국채금리/Fed금리는 FRED에서, 그 외는 엑셀에서 들어오므로 "마지막 업데이트" 시각을
+// 두 그룹으로 나눠서 각각 계산한다 (setRateLastUpdated 참고).
+const US_RATE_INDICATORS = new Set(['미국 10Y', '미국 2Y', 'Fed 금리(상단)']);
+
 function rateSortKey(name) {
   const norm = name.replace(/\s+/g, '');
   const idx = RATE_ORDER.findIndex((k) => norm.includes(k) || k.includes(norm));
@@ -109,7 +139,7 @@ async function loadIndicators() {
   try {
     const { data: latestRows, error: latestErr } = await db
       .from('interest_rates')
-      .select('indicator, date, value, created_at')
+      .select('indicator, date, value, created_at, updated_at')
       .order('date', { ascending: false })
       .limit(60);
     if (latestErr) throw latestErr;
@@ -117,7 +147,7 @@ async function loadIndicators() {
     if (!latestRows || latestRows.length === 0) {
       el.innerHTML = '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
       if (dateThEl) dateThEl.textContent = '금리';
-      setLastUpdated('rate-updated', null);
+      setRateLastUpdated(null, null);
       return;
     }
 
@@ -165,7 +195,17 @@ async function loadIndicators() {
 
     el.innerHTML = rows_html || '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
 
-    setLastUpdated('rate-updated', getMaxTimestamp(latestRows, ['created_at']));
+    // 한국(엑셀) 지표는 created_at, 미국(FRED) 지표는 updated_at 기준으로 각각 "마지막 업데이트" 계산
+    let krTs = null;
+    let usTs = null;
+    Object.entries(currentByIndicator).forEach(([name, row]) => {
+      if (US_RATE_INDICATORS.has(name)) {
+        if (row.updated_at && (!usTs || row.updated_at > usTs)) usTs = row.updated_at;
+      } else {
+        if (row.created_at && (!krTs || row.created_at > krTs)) krTs = row.created_at;
+      }
+    });
+    setRateLastUpdated(krTs, usTs);
   } catch (err) {
     console.error('주요금리', err);
     if (dateThEl) dateThEl.textContent = '오류';

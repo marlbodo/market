@@ -162,14 +162,17 @@
       el.innerHTML = '<tr><td colspan="5" class="list-empty">해당하는 일정이 없습니다.</td></tr>';
       return;
     }
-    el.innerHTML = events.map((ev) => `
+    el.innerHTML = events.map((ev) => {
+      const phase = ev.label.endsWith('시작') ? 'is-start' : ev.label.endsWith('마감') ? 'is-end' : '';
+      return `
       <tr>
         <td>${formatDateShort(ev.date)}</td>
         <td>${escapeHtml(ev.stock)}</td>
         <td style="text-align: center;">${formatEok(ev.amount)}</td>
-        <td style="text-align: center;"><span class="event-tag tag-${ev.type}">${ev.label}</span></td>
+        <td style="text-align: center;"><span class="event-tag tag-${ev.type} ${phase}">${ev.label}</span></td>
         <td>${ev.note ? escapeHtml(ev.note) : '-'}</td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   }
 
   function applyDetailFilter() {

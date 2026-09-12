@@ -118,6 +118,11 @@ const HIDDEN_INDICATORS = new Set([]);
 // 두 그룹으로 나눠서 각각 계산한다 (setRateLastUpdated 참고).
 const US_RATE_INDICATORS = new Set(['미국 10Y', '미국 2Y', 'Fed 금리(상단)']);
 
+// 미국10Y·Fed금리(상단)는 엑셀 임포트가 FRED보다 먼저 그날 값을 써넣을 수 있는데, 그 값은
+// updated_at이 비어있는 엑셀발 미검증 값이다. FRED가 그 날짜를 확정(overwrite)하기 전까지는
+// "최신값"으로 채택하지 않는다 (미국2Y는 엑셀에 없던 신규 지표라 해당 없음).
+const STALE_GUARDED_INDICATORS = new Set(['미국 10Y', 'Fed 금리(상단)']);
+
 function rateSortKey(name) {
   const norm = name.replace(/\s+/g, '');
   const idx = RATE_ORDER.findIndex((k) => norm.includes(k) || k.includes(norm));
@@ -153,7 +158,10 @@ async function loadIndicators() {
 
     const currentByIndicator = {};
     latestRows.forEach((row) => {
-      if (!currentByIndicator[row.indicator]) currentByIndicator[row.indicator] = row;
+      if (currentByIndicator[row.indicator]) return;
+      // 엑셀이 FRED보다 먼저 써넣은 미검증 값(updated_at 없음)은 최신값 후보에서 제외
+      if (STALE_GUARDED_INDICATORS.has(row.indicator) && !row.updated_at) return;
+      currentByIndicator[row.indicator] = row;
     });
     const indicatorList = Object.entries(currentByIndicator)
       .filter(([name]) => !HIDDEN_INDICATORS.has(name));

@@ -81,7 +81,7 @@ function setRateLastUpdated(krTimestamp, usTimestamp) {
   const CLOCK_ICON = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6.5"/><path d="M9 5.5V9l3 1.7"/></svg>';
   el.classList.add('last-updated-dual');
   el.innerHTML =
-    `<div class="last-updated-row">${CLOCK_ICON}한국: ${fmtShortDateTime(krTimestamp)} 기준 <span class="rate-source-note">· 엑셀</span></div>` +
+    `<div class="last-updated-row">${CLOCK_ICON}한국: ${fmtShortDateTime(krTimestamp)} 기준</div>` +
     `<div class="last-updated-row">${CLOCK_ICON}미국: ${fmtShortDateTime(usTimestamp)} 기준 <span class="rate-source-note">· 美 재무부·FRED</span></div>`;
 }
 

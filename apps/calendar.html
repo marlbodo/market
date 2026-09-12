@@ -27,7 +27,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
     line-height: 1.5;
   }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 22px 16px 50px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 22px 16px 50px; overflow-x: hidden; }
 
   header {
     display: flex; align-items: center; justify-content: space-between;
@@ -44,10 +44,10 @@
   .range-note { color: var(--amber); font-weight: 600; }
 
   .toolbar {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px; row-gap: 10px;
     margin-bottom: 12px;
   }
-  .month-nav { display: flex; align-items: center; gap: 10px; flex: none; flex-wrap: nowrap; }
+  .month-nav { display: flex; align-items: center; gap: 10px; flex: none; flex-wrap: wrap; row-gap: 6px; }
   .month-nav button {
     width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--line);
     background: #fff; color: var(--ink); font-size: 15px; cursor: pointer; flex: none;
@@ -76,15 +76,15 @@
 
   /* ---------- 월간 그리드 ---------- */
   .grid-wrap { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
-  .dow-row { display: grid; grid-template-columns: 0.6fr repeat(6, 1fr); background: var(--ink); }
+  .dow-row { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--ink); }
   .dow-cell { text-align: center; font-size: 13px; font-weight: 700; color: #fff; padding: 9px 0; }
   .dow-cell.sun { color: #ffb4b4; }
   .dow-cell.sat { color: #a9c4ff; }
 
-  .week-row { display: grid; grid-template-columns: 0.6fr repeat(6, 1fr); border-top: 1px solid var(--line); }
+  .week-row { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid var(--line); }
   .day-cell {
-    min-height: 118px; padding: 7px 7px 8px; border-right: 1px solid var(--line);
-    cursor: pointer; position: relative; background: #fff;
+    height: 132px; padding: 7px 7px 8px; border-right: 1px solid var(--line);
+    cursor: pointer; position: relative; background: #fff; overflow: hidden;
   }
   .day-cell:last-child { border-right: none; }
   .day-cell.other-month { background: #fafbfc; }
@@ -110,10 +110,11 @@
   .more-count { font-size: 11px; color: var(--ink-soft); font-weight: 700; padding-left: 4px; }
 
   @media (max-width: 640px) {
-    .day-cell { min-height: 80px; padding: 5px 4px 6px; }
+    .day-cell { height: 96px; padding: 5px 4px 6px; }
     .pill { font-size: 10px; }
     .month-label { font-size: 14px; min-width: 76px; }
     .filter-row { margin-left: 0; width: 100%; }
+    .month-nav { width: 100%; justify-content: space-between; }
   }
 
   .view-toggle { display: flex; gap: 4px; border: 1px solid var(--line); border-radius: 7px; padding: 2px; background: #fff; }
@@ -276,6 +277,15 @@
   function isoOf(y, mIndex0, d) { return `${y}-${pad2(mIndex0 + 1)}-${pad2(d)}`; }
   function monthKeyOf(y, mIndex0) { return `${y}-${pad2(mIndex0 + 1)}`; }
 
+  function formatRatio(n, suffix) {
+    if (n === null || n === undefined) return null;
+    return `${Number(n).toLocaleString('ko-KR')}${suffix}`;
+  }
+  function formatPercent(n) {
+    if (n === null || n === undefined) return null;
+    return `${Number(n).toFixed(2)}%`;
+  }
+
   async function fetchRpc(fnName, body) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
       method: 'POST',
@@ -327,18 +337,46 @@
     return '';
   }
 
+  // 공모주 항목은 지표 비교값이 아니라 문장 형태의 note를 그대로 보여준다
+  function eventSubHtml(item) {
+    if (item.category === 'ipo') {
+      return item.note ? escapeHtml(item.note) : '';
+    }
+    return fmtEventSub(item);
+  }
+
   function buildIpoCalendarItems(rows) {
     const items = [];
     rows.forEach((r) => {
       const stock = r.stock_name;
+
+      const instRate = formatRatio(r.institutional_competition_rate, ':1');
+      const lockup = formatPercent(r.lockup_commitment_ratio);
+      const subRate = formatRatio(r.subscription_competition_rate, ':1');
+
+      const subNoteParts = [];
+      if (instRate) subNoteParts.push(`기관경쟁률 ${instRate}`);
+      if (lockup) subNoteParts.push(`확약률 ${lockup}`);
+      const subNote = subNoteParts.join(' · ');
+
+      const listNoteParts = subNoteParts.slice();
+      if (subRate) listNoteParts.push(`청약(개인)경쟁률 ${subRate}`);
+      const listNote = listNoteParts.join(' · ');
+
       if (r.demand_forecast_start_date && r.demand_forecast_start_date >= DATA_MIN && r.demand_forecast_start_date <= DATA_MAX) {
-        items.push({ event_date: r.demand_forecast_start_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 수요예측 시작`, importance: 'low', display_mode: null, latest_value: null });
+        items.push({ event_date: r.demand_forecast_start_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 수요예측 시작`, importance: 'low', note: '' });
+      }
+      if (r.demand_forecast_end_date && r.demand_forecast_end_date >= DATA_MIN && r.demand_forecast_end_date <= DATA_MAX) {
+        items.push({ event_date: r.demand_forecast_end_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 수요예측 마감`, importance: 'low', note: '' });
       }
       if (r.subscription_start_date && r.subscription_start_date >= DATA_MIN && r.subscription_start_date <= DATA_MAX) {
-        items.push({ event_date: r.subscription_start_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 청약 시작`, importance: 'low', display_mode: null, latest_value: null });
+        items.push({ event_date: r.subscription_start_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 청약 시작`, importance: 'low', note: subNote });
+      }
+      if (r.subscription_end_date && r.subscription_end_date >= DATA_MIN && r.subscription_end_date <= DATA_MAX) {
+        items.push({ event_date: r.subscription_end_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 청약 마감`, importance: 'low', note: subNote });
       }
       if (r.listing_date && r.listing_date >= DATA_MIN && r.listing_date <= DATA_MAX) {
-        items.push({ event_date: r.listing_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 상장`, importance: 'medium', display_mode: null, latest_value: null });
+        items.push({ event_date: r.listing_date, event_time: null, category: 'ipo', region: 'IPO', title: `${stock} 상장`, importance: 'medium', note: listNote });
       }
     });
     return items;
@@ -348,7 +386,10 @@
     try {
       const [events, ipoRows, usComparisons] = await Promise.all([
         fetchRpc('get_calendar_events', { p_start: DATA_MIN, p_end: DATA_MAX }),
-        fetchTable(`ipo_history?select=stock_name,demand_forecast_start_date,subscription_start_date,listing_date&or=(listing_date.is.null,listing_date.gte.${DATA_MIN})`),
+        fetchTable(
+          'ipo_history?select=stock_name,demand_forecast_start_date,demand_forecast_end_date,subscription_start_date,subscription_end_date,listing_date,offering_amount_eok,institutional_competition_rate,lockup_commitment_ratio,subscription_competition_rate' +
+          `&or=(listing_date.is.null,listing_date.gte.${DATA_MIN})`
+        ),
         fetchRpc('get_us_indicator_comparisons'),
       ]);
 
@@ -462,7 +503,7 @@
     }
 
     listEl.innerHTML = items.map((it) => {
-      const sub = fmtEventSub(it);
+      const sub = eventSubHtml(it);
       const timeHtml = it.event_time ? `<span class="event-time">${escapeHtml(it.event_time)}</span>` : '';
       const catLabel = it.category === 'central_bank' ? '중앙은행' : it.category === 'indicator' ? '지표' : '공모주';
       return `
@@ -502,7 +543,7 @@
       const d = new Date(`${date}T00:00:00`);
       const isToday = date === TODAY;
       const rows = items.map((it) => {
-        const sub = fmtEventSub(it);
+        const sub = eventSubHtml(it);
         const timeHtml = it.event_time ? `<span class="event-time">${escapeHtml(it.event_time)}</span>` : '';
         const catLabel = it.category === 'central_bank' ? '중앙은행' : it.category === 'indicator' ? '지표' : '공모주';
         return `

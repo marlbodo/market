@@ -455,32 +455,13 @@
   };
   Chart.register(endLabelPlugin);
 
-  // 마우스를 올렸을 때 그 x 위치에 세로 점선을 그어주는 크로스헤어
-  const crosshairPlugin = {
-    id: 'crosshair',
-    afterDatasetsDraw(chart) {
-      const active = chart.getActiveElements();
-      if (!active || active.length === 0) return;
-      const { ctx, chartArea } = chart;
-      const x = active[0].element.x;
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(x, chartArea.top);
-      ctx.lineTo(x, chartArea.bottom);
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = 'rgba(55, 65, 81, 0.45)';
-      ctx.setLineDash([4, 4]);
-      ctx.stroke();
-      ctx.restore();
-    },
-  };
-  Chart.register(crosshairPlugin);
+  // [수정 7] 마우스오버 시 나타나던 세로 점선(크로스헤어)이 번거롭고 모바일에서도
+  // 불편하다는 피드백에 따라 플러그인 자체를 제거함.
 
   // [수정 6] 마우스오버 시 나타나던 툴팁(풍선말)이 선/포인트를 가리는 문제가 있어
   // 이 플러그인 자체를 비활성화한다. 각 선의 현재 값은 endLabel 플러그인이 선 끝에 항상
-  // 표시해주고, crosshair 플러그인이 마우스 위치를 점선으로 보여주므로 별도 툴팁 없이도
-  // 값 확인이 가능하다. 다시 켜고 싶다면 아래 tooltip 옵션에서 enabled: true로 바꾸면 된다.
+  // 표시해주므로 별도 툴팁이나 크로스헤어 없이도 값 확인이 가능하다.
+  // 다시 켜고 싶다면 아래 tooltip 옵션에서 enabled: true로 바꾸면 된다.
   const TOOLTIP_ENABLED = false;
 
   async function refreshChart() {

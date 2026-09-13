@@ -160,6 +160,7 @@
         <input type="date" id="in-start" value="2026-09-03">
       </div>
       <div>
+        <!-- [수정 2] 환매예정일 기본값은 JS에서 "오늘 기준 그 해 연말"로 자동 세팅 -->
         <div class="field-label">환매예정일(평가종료일)</div>
         <input type="date" id="in-end" value="2026-12-31">
       </div>
@@ -186,19 +187,25 @@
       <div class="derived-item"><div class="dl">채권 매수액</div><div class="dv" id="derived-bond-amt">-</div></div>
       <div class="derived-item"><div class="dl">CD 매수액</div><div class="dv" id="derived-cd-amt">-</div></div>
     </div>
-    <div class="field-hint" style="margin: -6px 0 14px;">레버리지 = 채권비율 + CD비율 − 100%</div>
+    <!-- [수정 6] 레버리지 설명 옆에 CD 최소 편입비율 안내 추가 -->
+    <div class="field-hint" style="margin: -6px 0 4px;">레버리지 = 채권비율 + CD비율 − 100% <span style="color: var(--text-faint);">(CD는 레버리지의 20% 이상 편입해야 합니다)</span></div>
+    <!-- [수정 6] CD/레버리지 비율이 20% 미만일 때만 빨간 경고 문구 표시 (recalc()에서 내용/표시여부 갱신) -->
+    <div class="field-hint" id="cd-leverage-warning" style="display:none; margin: 0 0 14px; color: var(--up); font-weight: 700;"></div>
 
     <div class="field field-row">
       <div>
+        <!-- [수정 1] 채권 현재금리는 산금채 1년물(interest_rates.산금 1Y) 최신값을 자동으로 가져와 채움 -->
         <div class="field-label">채권 현재금리 <span class="unit">%</span></div>
         <input type="number" id="in-bondyield" value="3.70" step="0.01">
       </div>
       <div>
+        <!-- [수정 1] CD 현재금리는 interest_rates.CD 91D 최신값을 자동으로 가져와 채움 -->
         <div class="field-label">CD 현재금리 <span class="unit">%</span></div>
         <input type="number" id="in-cdyield" value="3.20" step="0.01">
       </div>
     </div>
     <div class="field">
+      <!-- [수정 2] 채권 만기일 기본값은 JS에서 "오늘 기준 +1년" 날짜로 자동 세팅 -->
       <div class="field-label">채권 만기일</div>
       <input type="date" id="in-maturity" value="2027-07-31">
     </div>
@@ -213,6 +220,7 @@
   <div class="sec">
     <div class="sec-title"><span class="num">3</span>금통위 기준금리 일정</div>
     <div class="field">
+      <!-- [수정 1] 시작일 적용 기준금리는 interest_rates.기준금리 최신값을 자동으로 가져와 채움 -->
       <div class="field-label">시작일 적용 기준금리 <span class="unit">%</span></div>
       <input type="number" id="in-baserate0" value="3.00" step="0.25">
     </div>
@@ -280,16 +288,19 @@
         <p>채권 만기일과 기준일의 차이(잔존일수)를 365로 나눠 잔존채권 듀레이션을 계산합니다. 펀드 환매예정일(평가종료일)에 가까워질수록 듀레이션과 금리 변동 민감도(PVBP)가 함께 줄어듭니다. 편입채권 만기일로 갈 수록 0으로 수렴.</p>
       </li>
       <li>
+        <!-- [수정 3] CD 최소 편입 비율 요건으로 문구 교체 -->
         <h4>2. 레포 레버리지 편입규모 산식</h4>
-        <p>채권 편입비율과 CD 편입비율(둘 다 NAV 대비)의 합에서 원금 100%를 뺀 값이 레포조달(레버리지) 비율입니다. CD는 별도 만기 감쇄 없이 현재금리를 그대로 적용합니다.</p>
+        <p>채권 편입비율과 CD 편입비율(둘 다 NAV 대비)의 합에서 원금 100%를 뺀 값이 레포조달(레버리지) 비율입니다. CD는 레버리지 비율의 20% 이상 필요합니다.</p>
       </li>
       <li>
+        <!-- [수정 4] 잔존 수정듀레이션 대신 잔존일수/365로 계산한다는 단서 문장 추가 -->
         <h4>3. 환매예정일(평가종료시점) 시가평가손익</h4>
-        <p>운용기간 중에는 캐리수익만 매일 누적되고, 금리 변동에 따른 채권 평가손익은 종료일에 (초기금리−종료시점 시장금리)×잔존듀레이션×채권편입액으로 한번만 계산됩니다.</p>
+        <p>운용기간 중에는 캐리수익만 매일 누적되고, 금리 변동에 따른 채권 평가손익은 종료일에 (초기금리−종료시점 시장금리)×잔존듀레이션×채권편입액으로 한번만 계산됩니다. (잔존 수정듀레이션으로 계산해야하나, 만기가 짧고 계산 편의상 잔존일수/365로 계산)</p>
       </li>
       <li>
-        <h4>4. 금통위 연쇄 동기화</h4>
-        <p>회차별로 입력한 기준금리가 해당 날짜부터 적용되며, 레포금리는 그 시점 기준금리+스프레드로 즉시 갱신됩니다. 레포금리 및 편입채권 민평금리가 안 바뀌면 시뮬레이션 결과는 초기 예상 수익률과 일치합니다.</p>
+        <!-- [수정 5] 제목/문구 정리: "연쇄" 삭제, "즉시" 삭제, "민평금리" → "평가금리" -->
+        <h4>4. 금통위 동기화</h4>
+        <p>금통위 회차별로 입력한 기준금리가 해당 날짜부터 적용되며, 레포금리는 그 시점 기준금리+스프레드로 갱신됩니다. 레포금리 및 편입채권 평가금리가 안 바뀌면 시뮬레이션 결과는 초기 예상 수익률과 일치합니다.</p>
       </li>
     </ul>
   </div>
@@ -452,6 +463,22 @@
     document.getElementById('derived-bond-amt').textContent = `${Math.round(bondAmt).toLocaleString('ko-KR')}억`;
     document.getElementById('derived-cd-amt').textContent = `${Math.round(cdAmt).toLocaleString('ko-KR')}억`;
 
+    // [수정 6] CD가 레버리지의 20% 이상인지 확인해서, 미달이면 빨간 경고 문구를 표시
+    const warnEl = document.getElementById('cd-leverage-warning');
+    if (leverageRatioPct > 0) {
+      const cdOfLeveragePct = (cdRatioPct / leverageRatioPct) * 100;
+      if (cdOfLeveragePct < 20) {
+        warnEl.style.display = 'block';
+        warnEl.textContent = `⚠ 입력하신 CD/레버리지 비율은 ${cdOfLeveragePct.toFixed(0)}%입니다. (레버리지의 20% 이상 필요)`;
+      } else {
+        warnEl.style.display = 'none';
+        warnEl.textContent = '';
+      }
+    } else {
+      warnEl.style.display = 'none';
+      warnEl.textContent = '';
+    }
+
     const totalDays = daysBetween(start, end);
     document.getElementById('period-display').innerHTML =
       `📅 ${startStr} ~ ${endStr} <b>(총 ${totalDays}일간 시뮬레이션)</b>`;
@@ -575,15 +602,62 @@
     el.addEventListener('change', recalc);
   });
 
-  // ---------- 펀드 가입일 기본값 = 오늘(KST) ----------
+  // ---------- 펀드 가입일/만기일/환매예정일 기본값 ----------
   // (하드코딩된 날짜는 시간이 지나면 계속 과거에 머물러 있으므로, 페이지를 열 때마다 오늘 기준으로 갱신)
+  // [수정 2] 펀드가입일 = 오늘(KST), 환매예정일 = 오늘 기준 그 해 12월 31일, 채권 만기일 = 오늘 기준 +1년
   (function setDefaultDates() {
     const todayKST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
     document.getElementById('in-start').value = todayKST;
-    document.getElementById('in-end').value = '2026-12-31';
+
+    const todayDate = new Date(`${todayKST}T00:00:00`);
+
+    document.getElementById('in-end').value = `${todayDate.getFullYear()}-12-31`;
+
+    const maturityDate = new Date(todayDate);
+    maturityDate.setFullYear(maturityDate.getFullYear() + 1);
+    document.getElementById('in-maturity').value = addDaysISO(maturityDate);
   })();
 
-  recalc();
+  // ---------- [수정 1] 채권/CD 현재금리, 기준금리 자동 조회 ----------
+  // interest_rates 테이블의 최신값을 가져와 채운다:
+  //  - 채권 현재금리 <- 산금 1Y
+  //  - CD 현재금리   <- CD 91D
+  //  - 시작일 적용 기준금리 <- 기준금리
+  const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
+
+  async function fetchLatestRate(indicatorName) {
+    const url = `${SUPABASE_URL}/rest/v1/interest_rates?indicator=eq.${encodeURIComponent(indicatorName)}&select=value&order=date.desc&limit=1`;
+    const res = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} (${indicatorName})`);
+    const rows = await res.json();
+    return rows && rows[0] ? Number(rows[0].value) : null;
+  }
+
+  async function loadLiveRates() {
+    try {
+      const [bondYield, cdYield, baseRate] = await Promise.all([
+        fetchLatestRate('산금 1Y'),
+        fetchLatestRate('CD 91D'),
+        fetchLatestRate('기준금리'),
+      ]);
+      if (bondYield !== null && !Number.isNaN(bondYield)) document.getElementById('in-bondyield').value = bondYield.toFixed(2);
+      if (cdYield !== null && !Number.isNaN(cdYield)) document.getElementById('in-cdyield').value = cdYield.toFixed(2);
+      if (baseRate !== null && !Number.isNaN(baseRate)) document.getElementById('in-baserate0').value = baseRate.toFixed(2);
+    } catch (err) {
+      // 실시간 금리 조회에 실패하면 화면에 입력된 기본값을 그대로 사용한다.
+      console.error('실시간 금리 로딩 실패, 기본값 사용', err);
+    } finally {
+      recalc();
+    }
+  }
+
+  loadLiveRates();
 </script>
 </body>
 </html>

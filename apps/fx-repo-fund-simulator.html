@@ -142,7 +142,7 @@
     <h1>외화 레포펀드 시뮬레이터</h1>
     <button class="popup-close" onclick="window.close()">닫기</button>
   </div>
-  <div class="popup-sub">달러 Sell&amp;Buy FX스왑으로 원화를 조달해 레포펀드에 투자하는 구조의 예상 수익(률)을 계산해드려요</div>
+  <div class="popup-sub">달러 Sell&amp;Buy FX스왑으로 원화로 바꿔 레포펀드 컨셉으로 투자하는 구조의 예상 수익(률)을 계산해드려요</div>
 
   <div class="period-line" id="period-display">기간 계산 중…</div>
 
@@ -227,7 +227,10 @@
         <input type="number" id="in-cdratio" value="50" step="5">
       </div>
     </div>
-    <div class="field-hint" style="margin: -6px 0 12px;">원화 전환원금(스왑으로 조달한 원화) 대비 각각의 보유 비중 (채권 / CD)</div>
+    <div class="field-hint" style="margin: -6px 0 4px;">원화 전환원금(스왑으로 조달한 원화) 대비 각각의 보유 비중 (채권 / CD)</div>
+    <!-- [수정 15] 채권 편입비율을 바꾸면 "레버리지의 20%" 국룰을 채우는 CD 편입비율을 자동 제안(참고용).
+         CD 입력란을 직접 수정한 뒤에는 더 이상 자동으로 덮어쓰지 않는다. -->
+    <div class="field-hint" id="cd-suggest-hint" style="margin: -2px 0 12px; color: var(--text-faint);"></div>
 
     <div class="derived-box">
       <div class="derived-item"><div class="dl">레버리지</div><div class="dv" id="derived-leverage">-</div></div>
@@ -318,7 +321,7 @@
         <tbody id="report-body"></tbody>
       </table>
     </div>
-    <div class="table-caption">※ 표의 금액·수익률은 모두 원화(KRW) 기준입니다. USD 환산 수익률은 위 KPI 카드를 참고하세요.</div>
+    <div class="table-caption">※ 표의 금액은 원화(KRW) 기준 억원 단위(소수점 3자리), 수익률은 연율 기준입니다. USD 환산 수익률은 위 KPI 카드를 참고하세요.</div>
 
   </div>
 
@@ -332,7 +335,7 @@
       </li>
       <li>
         <h4>2. 스왑 평가손익 (스왑 만기 ≠ 환매예정일인 경우)</h4>
-        <p>스왑 만기가 환매예정일보다 뒤라면, 환매시점에는 스왑을 최종 정산하지 않고 잔여기간에 대해 시장에서 반대 스왑으로 청산(unwind)한다고 가정합니다. 이때 잔여기간의 시장 스왑레이트가 처음 계약값과 다르면, (초기 스왑레이트−환매시점 예상 스왑레이트)×잔여기간(잔여일수/365)×원화 전환원금 만큼 평가손익이 발생합니다. 채권 MTM과 완전히 동일한 계산 방식입니다.</p>
+        <p>스왑 만기가 환매예정일보다 뒤라면, 환매시점에는 스왑을 최종 정산하지 않고 잔여기간에 대해 시장에서 반대 스왑으로 청산(unwind)한다고 가정합니다. 이때 잔여기간의 시장 스왑레이트가 처음 계약값보다 더 아래(더 마이너스)로 내려가면, 지금 새로 스왑하는 사람이 나보다 더 유리한 조건을 받는 셈이라 내 기존 포지션은 시가 기준 평가손실이 됩니다. 반대로 시장 스왑레이트가 계약값보다 위로(덜 마이너스로) 올라가면 평가이익이 됩니다: (환매시점 예상 스왑레이트−초기 스왑레이트)×잔여기간(잔여일수/365)×원화 전환원금. 스왑 만기에 가까워질수록 잔여기간이 0에 수렴해 이 평가손익도 사라지고, 처음 예상했던 캐리 수익만 그대로 남습니다.</p>
       </li>
       <li>
         <h4>3. 채권·CD 캐리 및 레포 레버리지</h4>
@@ -372,6 +375,14 @@
   }
   function monthKey(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
   function monthLabelShort(key) { const [y, m] = key.split('-'); return `${y.slice(2)}.${m}`; }
+
+  // [수정 15] CD 편입비율 자동 제안: 레버리지(=채권비율+CD비율-100)의 20%를 CD로 채우려면
+  // CD = 0.25 × (채권비율 - 100) 이어야 한다 (연립: CD = 0.2×(채권비율+CD-100) 풀면 나옴).
+  // 사용자가 CD 필드를 직접 건드리기 전까지는 채권비율을 바꿀 때마다 이 값으로 자동 채워준다.
+  let cdManuallyEdited = false;
+  function suggestedCdRatio(bondRatioVal) {
+    return Math.max(0, Math.round(0.25 * (bondRatioVal - 100)));
+  }
 
   // ---------- 금통위 회차 행 관리 (원화 레포펀드 시뮬레이터와 동일) ----------
   const DEFAULT_MEETINGS = [
@@ -512,11 +523,14 @@
     const fullSwapDays = Math.max(daysBetween(start, swapMaturity), 0);
     document.getElementById('derived-swap-carry').textContent = fmtEok(dailySwapCarryWon * fullSwapDays);
 
-    // 스왑 평가손익: 스왑 만기가 환매예정일 이후라면, 잔여기간(환매예정일~스왑만기)에 대해
-    // (초기 스왑레이트 - 환매시점 예상 스왑레이트) × 잔여기간 × 원화 전환원금 만큼 평가손익 발생 (채권 MTM과 동일 방식)
+    // 스왑 평가손익: 스왑 만기가 환매예정일 이후라면, 잔여기간(환매예정일~스왑만기)에 대해 발생
     const remainingSwapDays = Math.max(daysBetween(end, swapMaturity), 0);
     const remainingSwapDuration = remainingSwapDays / 365;
-    const swapMtmWon = notionalWon0 * (swapRate0 - swapRateEnd) / 100 * remainingSwapDuration;
+    // [수정 14] 부호 수정: 스왑레이트가 초기 계약값보다 "더 아래(더 마이너스)"로 가면 평가손실이 발생한다.
+    // (신규로 같은 잔여기간 스왑을 하는 사람이 더 유리한 조건을 받게 되므로, 기존에 덜 유리한 조건으로
+    // 잠긴 내 포지션은 시가 기준으로 손실이 된다.) 스왑 만기에 가까워질수록(remainingSwapDuration -> 0)
+    // 이 평가손익은 자연히 0으로 수렴해 처음 예상한 캐리만 남는다.
+    const swapMtmWon = notionalWon0 * (swapRateEnd - swapRate0) / 100 * remainingSwapDuration;
 
     function durationOn(dateObj) {
       return Math.max(daysBetween(dateObj, maturity) / 365, 0);
@@ -529,6 +543,13 @@
     document.getElementById('derived-leverage').textContent = `${leverageRatioPct.toFixed(0)}%`;
     document.getElementById('derived-bond-amt').textContent = fmtEok(bondAmt);
     document.getElementById('derived-cd-amt').textContent = fmtEok(cdAmt);
+
+    // [수정 15] 채권비율 기준 "레버리지 20%" CD 제안값을 항상 최신 상태로 표시
+    const suggestHintEl = document.getElementById('cd-suggest-hint');
+    const suggestedCd = suggestedCdRatio(bondRatioPct);
+    suggestHintEl.textContent = cdManuallyEdited
+      ? `참고: 레버리지의 20%를 채우려면 CD 편입비율 ≈ ${suggestedCd}% (현재 값은 직접 입력하신 값입니다)`
+      : `채권 편입비율 기준, 레버리지의 20%를 채우는 CD 편입비율 ${suggestedCd}%를 자동으로 채워드렸어요. 직접 값을 입력하면 이후로는 자동 갱신하지 않습니다.`;
 
     const warnEl = document.getElementById('cd-leverage-warning');
     if (leverageRatioPct > 0) {
@@ -631,6 +652,9 @@
     const monthKeysSorted = [...monthMap.keys()].sort();
 
     // ---------- 월별 명세표 (원화 기준) ----------
+    // [수정 16] 표의 모든 금액은 억원 단위, 소수점 3자리로 통일 (원 단위 그대로 찍으면 자릿수가 너무 길어짐)
+    const bondAmtEok = bondAmt / 100000000;
+    const cdAmtEok = cdAmt / 100000000;
     const tbody = document.getElementById('report-body');
     let totalInterest = 0, totalRepoCost = 0, totalFee = 0, totalSwapCarry = 0;
     const rowsHtml = monthKeysSorted.map((k) => {
@@ -640,17 +664,22 @@
       totalFee += b.fee;
       totalSwapCarry += b.swapCarry;
       const monthlyAnnualYield = notionalWon0 ? (b.carry / notionalWon0) * (365 / b.days) * 100 : 0;
+      const interestEok = b.interest / 100000000;
+      const repoCostEok = b.repoCost / 100000000;
+      const feeEok = b.fee / 100000000;
+      const swapCarryEok = b.swapCarry / 100000000;
+      const carryEok = b.carry / 100000000;
       return `
         <tr>
           <td>${monthLabelShort(k)}</td>
           <td>${b.days}</td>
-          <td>${numComma(bondAmt, 0)}</td>
-          <td>${numComma(cdAmt, 0)}</td>
-          <td class="pos">+${numComma(b.interest, 3)}</td>
-          <td class="neg">-${numComma(b.repoCost, 3)}</td>
-          <td class="neg">-${numComma(b.fee, 3)}</td>
-          <td class="${b.swapCarry >= 0 ? 'pos' : 'neg'}">${b.swapCarry >= 0 ? '+' : ''}${numComma(b.swapCarry, 3)}</td>
-          <td class="${b.carry >= 0 ? 'pos' : 'neg'}">${b.carry >= 0 ? '+' : ''}${numComma(b.carry, 3)}</td>
+          <td>${numComma(bondAmtEok, 3)}</td>
+          <td>${numComma(cdAmtEok, 3)}</td>
+          <td class="pos">+${numComma(interestEok, 3)}</td>
+          <td class="neg">-${numComma(repoCostEok, 3)}</td>
+          <td class="neg">-${numComma(feeEok, 3)}</td>
+          <td class="${swapCarryEok >= 0 ? 'pos' : 'neg'}">${swapCarryEok >= 0 ? '+' : ''}${numComma(swapCarryEok, 3)}</td>
+          <td class="${carryEok >= 0 ? 'pos' : 'neg'}">${carryEok >= 0 ? '+' : ''}${numComma(carryEok, 3)}</td>
           <td>${b.durationEnd.toFixed(2)}</td>
           <td><span class="ybadge">${monthlyAnnualYield.toFixed(3)}%</span></td>
           <td>-</td>
@@ -666,13 +695,13 @@
       <tr class="total-row">
         <td>합계</td>
         <td>${finalElapsed}</td>
-        <td>${numComma(bondAmt, 0)}</td>
-        <td>${numComma(cdAmt, 0)}</td>
-        <td class="pos">+${numComma(totalInterest, 3)}</td>
-        <td class="neg">-${numComma(totalRepoCost, 3)}</td>
-        <td class="neg">-${numComma(totalFee, 3)}</td>
-        <td class="${totalSwapCarry >= 0 ? 'pos' : 'neg'}">${totalSwapCarry >= 0 ? '+' : ''}${numComma(totalSwapCarry, 3)}</td>
-        <td class="${wonCarryTotal >= 0 ? 'pos' : 'neg'}">${wonCarryTotal >= 0 ? '+' : ''}${numComma(wonCarryTotal, 3)}</td>
+        <td>${numComma(bondAmtEok, 3)}</td>
+        <td>${numComma(cdAmtEok, 3)}</td>
+        <td class="pos">+${numComma(totalInterest / 100000000, 3)}</td>
+        <td class="neg">-${numComma(totalRepoCost / 100000000, 3)}</td>
+        <td class="neg">-${numComma(totalFee / 100000000, 3)}</td>
+        <td class="${totalSwapCarry >= 0 ? 'pos' : 'neg'}">${totalSwapCarry >= 0 ? '+' : ''}${numComma(totalSwapCarry / 100000000, 3)}</td>
+        <td class="${wonCarryTotal >= 0 ? 'pos' : 'neg'}">${wonCarryTotal >= 0 ? '+' : ''}${numComma(wonCarryTotal / 100000000, 3)}</td>
         <td>${finalDuration.toFixed(2)}</td>
         <td><span class="ybadge ybadge-carry">${fmtPct2(wonCarryAnnualYield)}</span></td>
         <td><span class="ybadge ${wonMtmAnnualYield > 0 ? 'ybadge-pos' : wonMtmAnnualYield < 0 ? 'ybadge-neg' : ''}">${fmtPct2(wonMtmAnnualYield)}</span></td>
@@ -687,6 +716,14 @@
     if (el.closest('#meet-rows')) return;
     el.addEventListener('input', recalc);
     el.addEventListener('change', recalc);
+  });
+
+  // [수정 15] CD를 직접 수정하면 더 이상 자동 제안으로 덮어쓰지 않음
+  document.getElementById('in-cdratio').addEventListener('input', () => { cdManuallyEdited = true; });
+  document.getElementById('in-bondratio').addEventListener('input', () => {
+    if (cdManuallyEdited) return;
+    const bondRatioVal = Number(document.getElementById('in-bondratio').value) || 0;
+    document.getElementById('in-cdratio').value = suggestedCdRatio(bondRatioVal);
   });
 
   // ---------- 기본 날짜값 ----------

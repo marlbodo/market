@@ -73,10 +73,19 @@
       <div id="ai-insight-list" class="ai-insight-list">
         <div class="list-loading">오늘의 AI 브리핑을 불러오는 중…</div>
       </div>
-      <a class="ai-insight-ask-box" href="ai.html" id="ai-ask-btn">
-        <span class="ai-insight-ask-label">AI에게 물어보기</span>
-        <span class="ai-insight-ask-arrow" aria-hidden="true">→</span>
-      </a>
+      <!-- [수정 11] "AI에게 물어보기" 버튼 위에 지난 브리핑 모아보기 버튼 추가 (새 팝업창으로 열림) -->
+      <div style="display:flex; flex-direction:column; gap:8px; align-items:stretch;">
+        <a href="pages/ai-insight-history.html" id="ai-history-btn"
+           style="display:block; text-align:center; font-size:12px; font-weight:700; color: var(--text-muted);
+                  border:1px solid var(--border-strong); border-radius: var(--radius-s); padding:8px 10px;
+                  text-decoration:none; background: var(--bg);">
+          지난 브리핑 보기
+        </a>
+        <a class="ai-insight-ask-box" href="ai.html" id="ai-ask-btn">
+          <span class="ai-insight-ask-label">AI에게 물어보기</span>
+          <span class="ai-insight-ask-arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -479,6 +488,11 @@
   document.getElementById('research-more-link').addEventListener('click', function (e) {
     e.preventDefault();
     openCentered(this.href, 'researchAll', 760, 900);
+  });
+  // [수정 11] 지난 브리핑 보기 버튼도 다른 "더보기" 링크들과 동일하게 새 팝업창으로 연다.
+  document.getElementById('ai-history-btn').addEventListener('click', function (e) {
+    e.preventDefault();
+    openCentered(this.href, 'aiHistory', 760, 900);
   });
   document.getElementById('rate-chart-link').addEventListener('click', function (e) {
     e.preventDefault();

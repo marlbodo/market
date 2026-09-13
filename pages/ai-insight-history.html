@@ -31,12 +31,34 @@
   .hist-title { font-size: 13px; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hist-caret { font-size: 10px; color: var(--text-faint); flex: none; transition: transform 0.15s ease; }
   .hist-row.is-open .hist-caret { transform: rotate(90deg); }
-  .hist-body { display: none; padding: 4px 16px 16px 72px; font-size: 13px; line-height: 1.7; color: var(--text-muted); }
+  .hist-body { display: none; padding: 4px 16px 20px 16px; }
   .hist-row.is-open .hist-body { display: block; }
-  .hist-body img { max-width: 100%; }
   .hist-body-loading { color: var(--text-faint); font-size: 12px; }
   .list-empty { padding: 30px 0; text-align: center; color: var(--text-faint); font-size: 13px; }
   .list-loading { padding: 30px 0; text-align: center; color: var(--text-faint); font-size: 13px; }
+
+  /* [수정 13] 아코디언을 펼쳤을 때 ai-article.html과 동일한 느낌으로 보이도록
+     kicker/제목/작성일/본문 스타일을 그대로 가져옴. 모바일에서 목록의 제목이 말줄임표로
+     잘려 보이는 문제도 이 안에서 제목 전체(article-title)를 다시 보여줘서 해결한다. */
+  .article-kicker { display:inline-block; font-size:12px; font-weight:700; padding:4px 10px; border-radius:4px; margin-bottom:10px; }
+  .article-kicker.bond { color: var(--accent); background: var(--accent-soft); }
+  .article-kicker.ipo { color: var(--amber); background: var(--amber-soft); }
+  .article-title { font-size: 17px; font-weight: 800; line-height: 1.45; margin: 0 0 6px; letter-spacing: -0.01em; color: var(--text); }
+  .article-byline { font-size: 12px; color: var(--text-faint); margin: 0 0 18px; }
+  .article-body h2 { font-size: 14.5px; font-weight: 700; margin: 22px 0 8px; padding-left: 10px; border-left: 3px solid var(--border-strong); }
+  .article-body.bond h2 { border-left-color: var(--accent); color: var(--accent); }
+  .article-body.ipo h2 { border-left-color: var(--amber); color: var(--amber); }
+  .article-body p { font-size: 14px; line-height: 1.7; margin: 0 0 12px; color: var(--text); }
+  .article-body ul { margin: 0 0 12px; padding-left: 18px; }
+  .article-body li { font-size: 14px; margin-bottom: 5px; line-height: 1.55; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 12.5px; }
+  .article-body th, .article-body td { border: 1px solid var(--border); padding: 6px 7px; text-align: center; }
+  .article-body th { background: var(--bg-subtle); font-weight: 700; }
+  .article-body img { max-width: 100%; }
+  /* body_html 안에 이미 "기준일: ..." 형식의 byline이 첫 줄로 들어있는데,
+     위에서 "작성일: YYYY. MM. DD. HH:MM" 형식으로 따로 렌더링하므로 중복 숨김 (ai-article.html과 동일 처리) */
+  .article-body > .byline:first-child { display: none; }
+  .article-ai-badge { font-size: 10.5px; color: var(--text-faint); text-align: right; margin-top: 20px; }
 
   /* ---------- 페이지네이션 ---------- */
   .pagination { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 18px; flex-wrap: wrap; }
@@ -112,7 +134,7 @@
     const pageItems = items.slice(startIdx, startIdx + PAGE_SIZE);
 
     listEl.innerHTML = pageItems.map((it) => `
-      <div class="hist-row" data-id="${it.id}">
+      <div class="hist-row" data-id="${it.id}" data-type="${it.type}" data-title="${escapeHtml(it.title)}">
         <div class="hist-row-head">
           <span class="hist-date">${formatDateDot(it.article_date)}</span>
           <span class="ai-insight-tag ${it.type}">${AI_INSIGHT_LABELS[it.type] || it.type}</span>
@@ -129,6 +151,19 @@
     renderPagination(totalPages);
   }
 
+  function fmtDateTimeFull(iso) {
+    // ai-article.html과 동일한 형식: "2026. 09. 13. 08:00"
+    if (!iso) return '-';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '-';
+    const parts = new Intl.DateTimeFormat('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(d);
+    const get = (t) => (parts.find((p) => p.type === t) || {}).value || '';
+    return `${get('year')}. ${get('month')}. ${get('day')}. ${get('hour')}:${get('minute')}`;
+  }
+
   async function toggleRow(row) {
     const isOpen = row.classList.contains('is-open');
     if (isOpen) {
@@ -138,6 +173,8 @@
     row.classList.add('is-open');
 
     const id = row.getAttribute('data-id');
+    const type = row.getAttribute('data-type');
+    const title = row.getAttribute('data-title');
     const bodyEl = row.querySelector('.hist-body');
     if (bodyCache.has(id)) {
       bodyEl.innerHTML = bodyCache.get(id);
@@ -148,11 +185,20 @@
     try {
       const { data, error } = await db
         .from('ai_news_articles')
-        .select('body_html')
+        .select('body_html, updated_at')
         .eq('id', id)
         .single();
       if (error) throw error;
-      const html = (data && data.body_html) ? data.body_html : '<div class="hist-body-loading">본문이 없습니다.</div>';
+
+      // [수정 13] "기준일: ..." (body_html 내부 문구)이 아니라 "작성일: YYYY. MM. DD. HH:MM" 형식으로
+      // ai-article.html과 동일하게 표시. body_html 첫 줄의 기존 byline은 CSS로 숨김 처리됨.
+      const html = `
+        <span class="article-kicker ${type}">${AI_INSIGHT_LABELS[type] || type}</span>
+        <h2 class="article-title">${escapeHtml(title)}</h2>
+        <div class="article-byline">작성일: ${fmtDateTimeFull(data.updated_at)}</div>
+        <div class="article-body ${type}">${(data && data.body_html) || '<p>본문이 없습니다.</p>'}</div>
+        <div class="article-ai-badge">이 기사는 Claude AI가 자동 생성했습니다.</div>
+      `;
       bodyCache.set(id, html);
       bodyEl.innerHTML = html;
     } catch (err) {

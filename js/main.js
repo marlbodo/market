@@ -82,8 +82,7 @@ function setRateLastUpdated(krTimestamp, usTimestamp) {
   el.classList.add('last-updated-dual');
   el.innerHTML =
     `<div class="last-updated-row">${CLOCK_ICON}한국: ${fmtShortDateTime(krTimestamp)} 기준</div>` +
-    `<div class="last-updated-row">${CLOCK_ICON}미국: ${fmtShortDateTime(usTimestamp)} 기준 <span class="rate-source-note">· 美 재무부·FRED</span></div>`;
-}
+    `<div class="last-updated-row">${CLOCK_ICON}미국: ${fmtShortDateTime(usTimestamp)} 기준 <span class="rate-source-note">· 美 재무부 · FRED</span></div>`;}
 
 // ---------- 최신 채권·금리 뉴스 ----------
 async function loadFinancialNews() {

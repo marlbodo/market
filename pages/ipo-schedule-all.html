@@ -48,13 +48,11 @@
 
   .detail-table tbody tr:hover td { background: var(--bg-hover); }
 
-  /* [수정 5] "마감" 이벤트(수요예측 마감/청약 마감)는 검은색 배경으로 표시해서
-     "시작" 이벤트(tag-forecast/tag-subscription/tag-listing의 기본 색)와 뚜렷하게 구분한다.
-     기존 style.css의 tag-* 색상보다 우선 적용되도록 !important를 사용. */
+  /* [수정 5] "마감" 이벤트(수요예측 마감/청약 마감)는 배경색은 "시작"과 동일하게 두고
+     글자색만 검정으로 바꿔서 시작과 마감을 구분한다.
+     기존 style.css의 tag-* 글자색보다 우선 적용되도록 !important를 사용. */
   .event-tag.is-end {
-    background: #1f2430 !important;
-    border-color: #1f2430 !important;
-    color: #ffffff !important;
+    color: #000000 !important;
   }
 </style>
 </head>

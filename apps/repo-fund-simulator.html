@@ -180,7 +180,9 @@
         <input type="number" id="in-cdratio" value="50" step="5">
       </div>
     </div>
-    <div class="field-hint" style="margin: -6px 0 12px;">NAV 대비 각각의 보유 비중 (채권 / CD)</div>
+    <div class="field-hint" style="margin: -6px 0 4px;">NAV 대비 각각의 보유 비중 (채권 / CD)</div>
+    <!-- [수정 15] 채권 편입비율을 바꾸면 "레버리지의 20%" 국룰을 채우는 CD 편입비율을 자동 제안(참고용) -->
+    <div class="field-hint" id="cd-suggest-hint" style="margin: -2px 0 12px; color: var(--text-faint);"></div>
 
     <div class="derived-box">
       <div class="derived-item"><div class="dl">레버리지</div><div class="dv" id="derived-leverage">-</div></div>
@@ -290,12 +292,12 @@
       <li>
         <!-- [수정 3] CD 최소 편입 비율 요건으로 문구 교체 -->
         <h4>2. 레포 레버리지 편입규모 산식</h4>
-        <p>채권 편입비율과 CD 편입비율(둘 다 NAV 대비)의 합에서 원금 100%를 뺀 값이 레포조달(레버리지) 비율입니다. CD는 레버리지 비율의 20% 이상이 필요합니다.</p>
+        <p>채권 편입비율과 CD 편입비율(둘 다 NAV 대비)의 합에서 원금 100%를 뺀 값이 레포조달(레버리지) 비율입니다. CD는 레버리지 비율의 20% 이상 필요합니다.</p>
       </li>
       <li>
         <!-- [수정 4] 잔존 수정듀레이션 대신 잔존일수/365로 계산한다는 단서 문장 추가 -->
         <h4>3. 환매예정일(평가종료시점) 시가평가손익</h4>
-        <p>운용기간 중에는 캐리수익만 매일 누적되고, 금리 변동에 따른 채권 평가손익은 종료일에 (초기금리−종료시점 시장금리)×잔존듀레이션×채권편입액으로 한번만 계산됩니다. (잔존 수정듀레이션으로 계산해야 하나, 만기가 짧고, 계산 편의상 잔존일수/365로 계산)</p>
+        <p>운용기간 중에는 캐리수익만 매일 누적되고, 금리 변동에 따른 채권 평가손익은 종료일에 (초기금리−종료시점 시장금리)×잔존듀레이션×채권편입액으로 한번만 계산됩니다. (잔존 수정듀레이션으로 계산해야하나, 만기가 짧고 계산 편의상 잔존일수/365로 계산)</p>
       </li>
       <li>
         <!-- [수정 5] 제목/문구 정리: "연쇄" 삭제, "즉시" 삭제, "민평금리" → "평가금리" -->
@@ -324,6 +326,13 @@
   }
   function monthKey(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
   function monthLabelShort(key) { const [y, m] = key.split('-'); return `${y.slice(2)}.${m}`; } // '2026-09' -> '26.09'
+
+  // [수정 15] CD 편입비율 자동 제안: 레버리지(=채권비율+CD비율-100)의 20%를 CD로 채우려면
+  // CD = 0.25 × (채권비율 - 100) 이어야 한다.
+  let cdManuallyEdited = false;
+  function suggestedCdRatio(bondRatioVal) {
+    return Math.max(0, Math.round(0.25 * (bondRatioVal - 100)));
+  }
 
   // ---------- 금통위 회차 행 관리 ----------
   const DEFAULT_MEETINGS = [
@@ -471,6 +480,13 @@
     document.getElementById('derived-bond-amt').textContent = `${Math.round(bondAmt).toLocaleString('ko-KR')}억`;
     document.getElementById('derived-cd-amt').textContent = `${Math.round(cdAmt).toLocaleString('ko-KR')}억`;
 
+    // [수정 15] 채권비율 기준 "레버리지 20%" CD 제안값을 항상 최신 상태로 표시
+    const suggestHintEl = document.getElementById('cd-suggest-hint');
+    const suggestedCd = suggestedCdRatio(bondRatioPct);
+    suggestHintEl.textContent = cdManuallyEdited
+      ? `참고: 레버리지의 20%를 채우려면 CD 편입비율 ≈ ${suggestedCd}% (현재 값은 직접 입력하신 값입니다)`
+      : `채권 편입비율 기준, 레버리지의 20%를 채우는 CD 편입비율 ${suggestedCd}%를 자동으로 채워드렸어요. 직접 값을 입력하면 이후로는 자동 갱신하지 않습니다.`;
+
     // [수정 6] CD가 레버리지의 20% 이상인지 확인해서, 미달이면 빨간 경고 문구를 표시
     const warnEl = document.getElementById('cd-leverage-warning');
     if (leverageRatioPct > 0) {
@@ -608,6 +624,14 @@
     if (el.closest('#meet-rows')) return;
     el.addEventListener('input', recalc);
     el.addEventListener('change', recalc);
+  });
+
+  // [수정 15] CD를 직접 수정하면 더 이상 자동 제안으로 덮어쓰지 않음
+  document.getElementById('in-cdratio').addEventListener('input', () => { cdManuallyEdited = true; });
+  document.getElementById('in-bondratio').addEventListener('input', () => {
+    if (cdManuallyEdited) return;
+    const bondRatioVal = Number(document.getElementById('in-bondratio').value) || 0;
+    document.getElementById('in-cdratio').value = suggestedCdRatio(bondRatioVal);
   });
 
   // ---------- 펀드 가입일/만기일/환매예정일 기본값 ----------

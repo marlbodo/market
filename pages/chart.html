@@ -84,6 +84,9 @@
   .chart-canvas-box { position: relative; height: 640px; }
   .chart-empty { color: #9ca3af; font-size: 13px; text-align: center; padding: 60px 0; }
   .chart-loading { color: #9ca3af; font-size: 13px; text-align: center; padding: 60px 0; }
+
+  /* [수정 6] 값은 이미 우측 끝(endLabel 플러그인)과 크로스헤어로 충분히 보여주고 있어서,
+     차트를 가리던 마우스오버 툴팁 풍선은 아래에서 완전히 꺼둔다 (options.plugins.tooltip.enabled = false). */
 </style>
 </head>
 <body>
@@ -474,6 +477,12 @@
   };
   Chart.register(crosshairPlugin);
 
+  // [수정 6] 마우스오버 시 나타나던 툴팁(풍선말)이 선/포인트를 가리는 문제가 있어
+  // 이 플러그인 자체를 비활성화한다. 각 선의 현재 값은 endLabel 플러그인이 선 끝에 항상
+  // 표시해주고, crosshair 플러그인이 마우스 위치를 점선으로 보여주므로 별도 툴팁 없이도
+  // 값 확인이 가능하다. 다시 켜고 싶다면 아래 tooltip 옵션에서 enabled: true로 바꾸면 된다.
+  const TOOLTIP_ENABLED = false;
+
   async function refreshChart() {
     const emptyEl = document.getElementById('chart-empty');
     const canvas = document.getElementById('main-chart');
@@ -562,9 +571,9 @@
               position: 'top',
               labels: { usePointStyle: true, boxWidth: 26, boxHeight: 10 },
             },
-            // 세로 크로스헤어 + 그 위치의 값들만 간단히 보여주는 툴팁
+            // [수정 6] 툴팁이 차트를 가리는 문제로 비활성화. 값은 endLabel + crosshair로 확인.
             tooltip: {
-              enabled: true,
+              enabled: TOOLTIP_ENABLED,
               mode: 'x',
               intersect: false,
               backgroundColor: 'rgba(31, 36, 48, 0.92)',

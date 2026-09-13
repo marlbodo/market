@@ -8,6 +8,31 @@
 <meta name="description" content="채권·금리·공모주·리서치를 한 번에 보는 AI 마켓 브리핑">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='8' width='8' height='22' rx='2' fill='%2316305c'/%3E%3Crect x='12' y='2' width='8' height='28' rx='2' fill='%23b7791f'/%3E%3Crect x='22' y='12' width='8' height='18' rx='2' fill='%230f7a6b'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
+<!-- [수정 12] AI 인사이트 패널의 두 액션 버튼(지난 브리핑 보기 / AI에게 물어보기)을
+     같은 높이로 맞추고, 데스크톱에서는 위아래, 모바일(≤640px)에서는 좌우로 배치 -->
+<style>
+  .ai-insight-actions { display: flex; flex-direction: column; gap: 8px; }
+  .ai-insight-actions > a {
+    box-sizing: border-box;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-s);
+    text-decoration: none;
+  }
+  .ai-history-link {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+  }
+  @media (max-width: 640px) {
+    .ai-insight-actions { flex-direction: row; }
+    .ai-insight-actions > a { flex: 1; }
+  }
+</style>
 </head>
 <body>
 
@@ -73,14 +98,10 @@
       <div id="ai-insight-list" class="ai-insight-list">
         <div class="list-loading">오늘의 AI 브리핑을 불러오는 중…</div>
       </div>
-      <!-- [수정 11] "AI에게 물어보기" 버튼 위에 지난 브리핑 모아보기 버튼 추가 (새 팝업창으로 열림) -->
-      <div style="display:flex; flex-direction:column; gap:8px; align-items:stretch;">
-        <a href="pages/ai-insight-history.html" id="ai-history-btn"
-           style="display:block; text-align:center; font-size:12px; font-weight:700; color: var(--text-muted);
-                  border:1px solid var(--border-strong); border-radius: var(--radius-s); padding:8px 10px;
-                  text-decoration:none; background: var(--bg);">
-          지난 브리핑 보기
-        </a>
+      <!-- [수정 11/12] "AI에게 물어보기" 버튼 위에 지난 브리핑 모아보기 버튼 추가 (새 팝업창으로 열림).
+           두 버튼은 .ai-insight-actions 안에서 같은 높이로 정렬되고, 모바일에서는 좌우로 배치된다. -->
+      <div class="ai-insight-actions">
+        <a class="ai-history-link" href="pages/ai-insight-history.html" id="ai-history-btn">지난 브리핑 보기</a>
         <a class="ai-insight-ask-box" href="ai.html" id="ai-ask-btn">
           <span class="ai-insight-ask-label">AI에게 물어보기</span>
           <span class="ai-insight-ask-arrow" aria-hidden="true">→</span>

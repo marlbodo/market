@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-10-r (모바일 날짜/시간 표시 정리)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-13-r (한/미 날짜 기준 수정, 점 간격 수정)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 
@@ -63,7 +63,7 @@ function setLastUpdated(elementId, timestamp) {
 }
 
 // 주요금리 패널 전용: 한국(엑셀)과 미국(FRED)의 원천/입수 시각이 서로 다르므로 두 줄로 나눠 표시.
-// 예) 한국: 09.11. 18:30 기준 / 미국: 09.12. 05:30 기준
+// 예) 한국: 09.11. 18:30 기준 / 미국: 09.11. 05:30 기준
 function fmtShortDateTime(timestamp) {
   if (!timestamp) return '-';
   const d = new Date(timestamp);
@@ -82,7 +82,9 @@ function setRateLastUpdated(krTimestamp, usTimestamp) {
   el.classList.add('last-updated-dual');
   el.innerHTML =
     `<div class="last-updated-row">${CLOCK_ICON}한국: ${fmtShortDateTime(krTimestamp)} 기준</div>` +
-    `<div class="last-updated-row">${CLOCK_ICON}미국: ${fmtShortDateTime(usTimestamp)} 기준 <span class="rate-source-note">· 美 재무부 · FRED</span></div>`;}
+    // [수정 1] "·" 앞뒤 공백을 동일하게 맞춰서 점 간격이 좁아 보이던 문제 해결
+    `<div class="last-updated-row">${CLOCK_ICON}미국: ${fmtShortDateTime(usTimestamp)} 기준 <span class="rate-source-note">· 美 재무부 · FRED</span></div>`;
+}
 
 // ---------- 최신 채권·금리 뉴스 ----------
 async function loadFinancialNews() {
@@ -197,17 +199,31 @@ async function loadIndicators() {
         ${deltaTd(r.current, r.yearRow)}
       </tr>`).join('');
 
-    const latestDate = indicatorList.reduce((max, [, row]) => (row.date > max ? row.date : max), indicatorList[0][1].date);
+    // [수정 2] 헤더 날짜("09.12" 등)는 한국(민평) 지표의 최신 영업일만 기준으로 계산한다.
+    // 기존에는 미국 지표(FRED)의 date까지 섞여서 최댓값을 구했는데, FRED가 같은 값을
+    // 재확인(re-upsert)하며 date를 갱신하면 헤더 날짜가 실제 민평 발표일보다 앞서 보이는
+    // 문제가 있었다.
+    const krIndicatorList = indicatorList.filter(([name]) => !US_RATE_INDICATORS.has(name));
+    const dateSourceList = krIndicatorList.length ? krIndicatorList : indicatorList;
+    const latestDate = dateSourceList.reduce(
+      (max, [, row]) => (max === null || row.date > max ? row.date : max),
+      null
+    );
     if (dateThEl) dateThEl.textContent = formatDateShort(latestDate);
 
     el.innerHTML = rows_html || '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
 
-    // 한국(엑셀) 지표는 created_at, 미국(FRED) 지표는 updated_at 기준으로 각각 "마지막 업데이트" 계산
+    // [수정 2] "마지막 업데이트" 시각도 마찬가지로 재계산 기준을 바꾼다.
+    // - 한국(엑셀) 지표: created_at 기준 (기존과 동일)
+    // - 미국(FRED) 지표: updated_at이 아니라 created_at 기준으로 사용.
+    //   FRED가 10분 단위로 같은 날짜의 값을 재확인만 하고 실제 값은 바뀌지 않는데,
+    //   updated_at을 쓰면 마치 미국 장이 계속 움직이는 것처럼 시각이 계속 갱신되어 보였다.
+    //   실제로는 그 값이 "그날 최초로 입수된 시점(created_at)" 기준 종가이므로 created_at을 쓴다.
     let krTs = null;
     let usTs = null;
     Object.entries(currentByIndicator).forEach(([name, row]) => {
       if (US_RATE_INDICATORS.has(name)) {
-        if (row.updated_at && (!usTs || row.updated_at > usTs)) usTs = row.updated_at;
+        if (row.created_at && (!usTs || row.created_at > usTs)) usTs = row.created_at;
       } else {
         if (row.created_at && (!krTs || row.created_at > krTs)) krTs = row.created_at;
       }

@@ -431,6 +431,13 @@
             <div class="app-desc">투자 기간·금리 조건을 입력하면 예상 수익(률)을 계산해드려요</div>
           </div>
         </a>
+        <a class="app-card" href="apps/fx-repo-fund-simulator.html" id="fx-repo-fund-link">
+          <span class="app-icon app-icon-accent">💱</span>
+          <div>
+            <div class="app-name">외화 레포펀드 시뮬레이터</div>
+            <div class="app-desc">FX 스왑(Sell&amp;Buy)으로 조달한 원화를 레포펀드에 투자했을 때의 달러 환산 수익(률)을 계산해드려요</div>
+          </div>
+        </a>
         <a class="app-card" href="apps/deposit.html" id="deposit-link">
           <span class="app-icon app-icon-teal">🏦</span>
           <div>
@@ -493,6 +500,10 @@
   document.getElementById('repo-fund-link').addEventListener('click', function (e) {
     e.preventDefault();
     openCentered(this.href, 'repoFundSimulator', 760, 900);
+  });
+  document.getElementById('fx-repo-fund-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    openCentered(this.href, 'fxRepoFundSimulator', 760, 900);
   });
   document.getElementById('deposit-link').addEventListener('click', function (e) {
     e.preventDefault();

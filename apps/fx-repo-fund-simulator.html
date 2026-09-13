@@ -49,6 +49,8 @@
   .derived-item .dl { font-size: 10.5px; color: var(--text-faint); }
   .derived-item .dv { font-size: 14.5px; font-weight: 800; color: var(--accent); margin-top: 2px; }
   .derived-item .dv.fx { color: var(--amber); }
+  .derived-item .dv.pos { color: var(--up); }
+  .derived-item .dv.neg { color: var(--down); }
 
   /* ---------- 금통위 회차 행 ---------- */
   .meet-header-row { display: grid; grid-template-columns: 1fr 62px 62px 26px; gap: 5px; font-size: 11px; color: var(--text-faint); font-weight: 700; margin-bottom: 5px; text-align: center; }
@@ -306,7 +308,17 @@
       </div>
     </div>
     <div class="field-hint" style="margin: -12px 0 6px;">초기 예상 수익률(레포금리·스왑레이트·환율 모두 유지 가정): <b id="kpi-initial" style="color:var(--text);">-</b></div>
-    <div class="field-hint" style="margin: 0 0 18px;">원화 기준 손익 합계(채권·CD 캐리 + 스왑캐리 + 평가손익): <b id="kpi-won-total" style="color:var(--text);">-</b> → 환매시점 환율로 환산해 위 USD 수익률을 계산합니다.</div>
+    <div class="field-hint" style="margin: 0 0 6px;">원화 기준 손익 합계(채권·CD 캐리 + 스왑캐리 + 평가손익): <b id="kpi-won-total" style="color:var(--text);">-</b> → 환매시점 환율로 환산해 위 USD 수익률을 계산합니다.</div>
+
+    <!-- [수정 18] 원화 손익을 환매시점 환율로 환산할 때, 환율이 스왑 시점과 달라져서 생기는 효과만 따로 분리해서 보여줌 -->
+    <div class="derived-box two-col" style="margin: 0 0 6px;">
+      <div class="derived-item"><div class="dl">환율효과 (연환산 기여)</div><div class="dv" id="derived-fx-effect-pct">-</div></div>
+      <div class="derived-item"><div class="dl">환율효과 (금액, USD)</div><div class="dv" id="derived-fx-effect-usd">-</div></div>
+    </div>
+    <div class="field-hint" style="margin: 0 0 18px;">
+      위 예상 수익률·캐리수익률·평가손익은 이미 환매시점 환율로 환산된 값입니다. "환율효과"는 그중에서 환율이 스왑 시점(<span id="fx-effect-spot-ref">-</span>)과 달라졌기 때문에 추가로 생긴 부분만 따로 떼어 보여줍니다.
+      환매시점 환율이 스왑 시점보다 오르면(원화 약세) 원화 손익의 달러 환산가치가 줄어 마이너스로, 내리면(원화 강세) 플러스로 표시됩니다.
+    </div>
 
     <div class="chart-head" style="margin-bottom: 8px;"><h3>월별 운용 예상표 (원화 기준)</h3><span>단위: 억원</span></div>
     <div class="table-scroll">
@@ -638,6 +650,22 @@
 
     document.getElementById('kpi-initial').textContent = fmtPct2(initialAnnualYield);
     document.getElementById('kpi-won-total').textContent = fmtEok(wonPnlTotal);
+
+    // [수정 18] 환율효과: 같은 원화 손익(wonPnlTotal)을 "환율이 안 변했다면(S0 기준)"과
+    // "환매시점 예상 환율(fxEnd) 기준"으로 각각 환산했을 때의 차이만 분리해서 보여준다.
+    const usdPnlAtSpot = fxSpot ? (wonPnlTotal / fxSpot) : 0;
+    const usdFxEffect = usdTotalPnl - usdPnlAtSpot;
+    const fxEffectAnnualYield = navUsd ? (usdFxEffect / navUsd) * (365 / totalDaysAll) * 100 : 0;
+
+    const fxEffectPctEl = document.getElementById('derived-fx-effect-pct');
+    fxEffectPctEl.textContent = `${fxEffectAnnualYield >= 0 ? '+' : ''}${fxEffectAnnualYield.toFixed(3)}%`;
+    fxEffectPctEl.className = 'dv ' + (fxEffectAnnualYield > 0 ? 'pos' : fxEffectAnnualYield < 0 ? 'neg' : '');
+
+    const fxEffectUsdEl = document.getElementById('derived-fx-effect-usd');
+    fxEffectUsdEl.textContent = `${usdFxEffect >= 0 ? '+' : ''}${fmtUsd(usdFxEffect)}`;
+    fxEffectUsdEl.className = 'dv ' + (usdFxEffect > 0 ? 'pos' : usdFxEffect < 0 ? 'neg' : '');
+
+    document.getElementById('fx-effect-spot-ref').textContent = numComma(fxSpot, 0) + '원';
 
     document.getElementById('kpi-scenario').textContent = fmtPct2(scenarioAnnualYield);
     document.getElementById('kpi-scenario').className = 'kpi-value total';

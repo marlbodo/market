@@ -469,7 +469,8 @@ async function loadAiInsights() {
 
     if (updatedEl) {
       const latestTs = getMaxTimestamp(items, ['updated_at']);
-      updatedEl.textContent = latestTs ? `${formatDateTimeDot(latestTs)} 업데이트` : '';
+      // [수정 8] "업데이트" -> "AI 자동 생성"으로 문구 변경
+      updatedEl.textContent = latestTs ? `${formatDateTimeDot(latestTs)} AI 자동 생성` : '';
     }
 
     el.querySelectorAll('.ai-insight-title').forEach((link) => {

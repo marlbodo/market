@@ -156,7 +156,7 @@
       </div>
       <div>
         <div class="field-label">펀드 총보수 <span class="unit">bp</span></div>
-        <input type="number" id="in-fee" value="8" step="0.5">
+        <input type="number" id="in-fee" value="6" step="0.5">
       </div>
     </div>
     <div class="field field-row">
@@ -220,11 +220,11 @@
     <div class="field field-row">
       <div>
         <div class="field-label">채권 편입비율 <span class="unit">%</span></div>
-        <input type="number" id="in-bondratio" value="300" step="10">
+        <input type="number" id="in-bondratio" value="180" step="10">
       </div>
       <div>
         <div class="field-label">CD 편입비율 <span class="unit">%</span></div>
-        <input type="number" id="in-cdratio" value="50" step="5">
+        <input type="number" id="in-cdratio" value="20" step="5">
       </div>
     </div>
     <div class="field-hint" style="margin: -6px 0 4px;">원화 전환원금(스왑으로 조달한 원화) 대비 각각의 보유 비중 (채권 / CD)</div>
@@ -308,7 +308,7 @@
     <div class="field-hint" style="margin: -12px 0 6px;">초기 예상 수익률(레포금리·스왑레이트·환율 모두 유지 가정): <b id="kpi-initial" style="color:var(--text);">-</b></div>
     <div class="field-hint" style="margin: 0 0 18px;">원화 기준 손익 합계(채권·CD 캐리 + 스왑캐리 + 평가손익): <b id="kpi-won-total" style="color:var(--text);">-</b> → 환매시점 환율로 환산해 위 USD 수익률을 계산합니다.</div>
 
-    <div class="chart-head" style="margin-bottom: 8px;"><h3>월별 운용 예상표 (원화 기준)</h3></div>
+    <div class="chart-head" style="margin-bottom: 8px;"><h3>월별 운용 예상표 (원화 기준)</h3><span>단위: 억원</span></div>
     <div class="table-scroll">
       <table class="rpt">
         <thead>
@@ -321,7 +321,7 @@
         <tbody id="report-body"></tbody>
       </table>
     </div>
-    <div class="table-caption">※ 표의 금액은 원화(KRW) 기준 억원 단위(소수점 3자리), 수익률은 연율 기준입니다. USD 환산 수익률은 위 KPI 카드를 참고하세요.</div>
+    <div class="table-caption">※ 표의 금액은 원화(KRW) 기준 억원 단위입니다. 채권·CD 투자원금은 소수점 없이, 이자수익·비용·캐리 등은 소수점 3자리로 표시합니다. USD 환산 수익률은 위 KPI 카드를 참고하세요.</div>
 
   </div>
 
@@ -362,6 +362,8 @@
   // ---------- 유틸 ----------
   function numComma(n, decimals) { return n.toLocaleString('ko-KR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }); }
   function fmtEok(n) { return `${numComma(n / 100000000, 3)}억원`; }
+  // [수정 17] 채권/CD 매수액, 원화 전환원금 같은 "투자원금"은 소수점 없이, 캐리·손익 같은 흐름 금액은 기존대로 소수점 3자리 표시
+  function fmtEok0(n) { return `${numComma(n / 100000000, 0)}억원`; }
   function fmtUsd(n) { return `$${numComma(n, 0)}`; }
   function fmtPct2(n) { return `${n.toFixed(3)}%`; }
   function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
@@ -516,7 +518,7 @@
 
     // ---------- 원화 전환원금 & 스왑 캐리/평가손익 ----------
     const notionalWon0 = navUsd * fxSpot;
-    document.getElementById('derived-notional-won').textContent = fmtEok(notionalWon0);
+    document.getElementById('derived-notional-won').textContent = fmtEok0(notionalWon0);
 
     // 스왑 확정캐리: NAV × (-스왑레이트) × (스왑 만기까지 일수/365). 하루치를 매일 누적한다.
     const dailySwapCarryWon = notionalWon0 * (-swapRate0 / 100) / 365;
@@ -541,8 +543,8 @@
     const bondAmt = notionalWon0 * bondRatioPct / 100;
 
     document.getElementById('derived-leverage').textContent = `${leverageRatioPct.toFixed(0)}%`;
-    document.getElementById('derived-bond-amt').textContent = fmtEok(bondAmt);
-    document.getElementById('derived-cd-amt').textContent = fmtEok(cdAmt);
+    document.getElementById('derived-bond-amt').textContent = fmtEok0(bondAmt);
+    document.getElementById('derived-cd-amt').textContent = fmtEok0(cdAmt);
 
     // [수정 15] 채권비율 기준 "레버리지 20%" CD 제안값을 항상 최신 상태로 표시
     const suggestHintEl = document.getElementById('cd-suggest-hint');
@@ -673,8 +675,8 @@
         <tr>
           <td>${monthLabelShort(k)}</td>
           <td>${b.days}</td>
-          <td>${numComma(bondAmtEok, 3)}</td>
-          <td>${numComma(cdAmtEok, 3)}</td>
+          <td>${numComma(bondAmtEok, 0)}</td>
+          <td>${numComma(cdAmtEok, 0)}</td>
           <td class="pos">+${numComma(interestEok, 3)}</td>
           <td class="neg">-${numComma(repoCostEok, 3)}</td>
           <td class="neg">-${numComma(feeEok, 3)}</td>
@@ -695,8 +697,8 @@
       <tr class="total-row">
         <td>합계</td>
         <td>${finalElapsed}</td>
-        <td>${numComma(bondAmtEok, 3)}</td>
-        <td>${numComma(cdAmtEok, 3)}</td>
+        <td>${numComma(bondAmtEok, 0)}</td>
+        <td>${numComma(cdAmtEok, 0)}</td>
         <td class="pos">+${numComma(totalInterest / 100000000, 3)}</td>
         <td class="neg">-${numComma(totalRepoCost / 100000000, 3)}</td>
         <td class="neg">-${numComma(totalFee / 100000000, 3)}</td>

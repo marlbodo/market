@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-13-r (한/미 날짜 기준 수정, 점 간격 수정)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-14-r (AI 인사이트 날짜 연도 생략)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 
@@ -419,16 +419,17 @@ async function loadResearchReports() {
 const AI_INSIGHT_LABELS = { bond: '채권·금리', ipo: '공모주(IPO)' };
 
 function formatDateTimeDot(iso) {
-  // "2026-09-10T08:00:00+00:00" -> "2026.09.10. 08:00" (KST 고정)
+  // "2026-09-10T08:00:00+00:00" -> "09.10. 08:00" (KST 고정)
+  // 연도는 표시하지 않음: 항상 올해 기사라 의미가 없고, 길게 표시되면 모바일에서 보기 안 좋음.
   if (!iso) return '';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '';
   const parts = new Intl.DateTimeFormat('ko-KR', {
     timeZone: 'Asia/Seoul',
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
   }).formatToParts(d);
   const get = (type) => (parts.find((p) => p.type === type) || {}).value || '';
-  return `${get('year')}.${get('month')}.${get('day')}. ${get('hour')}:${get('minute')}`;
+  return `${get('month')}.${get('day')}. ${get('hour')}:${get('minute')}`;
 }
 
 async function loadAiInsights() {

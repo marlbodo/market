@@ -64,6 +64,7 @@
   .toggle-btn.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
   .derived-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+  .derived-box.cols-2 { grid-template-columns: repeat(2, 1fr); }
   .derived-item { background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-s); padding: 7px 8px; text-align: center; }
   .derived-item .dl { font-size: 10.5px; color: var(--text-faint); }
   .derived-item .dv { font-size: 14px; font-weight: 800; color: var(--accent); margin-top: 2px; }
@@ -283,13 +284,27 @@
       <div class="field-hint">매수 시 수익률 대비 매도 시점 금리가 이만큼 움직인다고 가정합니다. 기본값은 0bp(금리 변동 없음)입니다.</div>
     </div>
 
+    <div class="derived-box cols-2">
+      <div class="derived-item">
+        <div class="dl">금리변동 없음(0bp) 매도가</div>
+        <div class="dv" id="sale-flat-price">-</div>
+        <div class="kpi-note" id="sale-flat-gain">-</div>
+      </div>
+      <div class="derived-item">
+        <div class="dl">현재 시나리오 매도가</div>
+        <div class="dv" id="sale-scenario-price">-</div>
+        <div class="kpi-note" id="sale-scenario-gain">-</div>
+      </div>
+    </div>
+
     <div class="kpi-row">
       <div class="kpi-card">
         <div class="kpi-label">매도 적용수익률</div>
         <div class="kpi-value" id="kpi-saleyield">-</div>
+        <div class="kpi-note" id="kpi-saleyield-price">적용단가 -</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">매도금액</div>
+        <div class="kpi-label">매도금액(세전 단가 기준)</div>
         <div class="kpi-value" id="kpi-saleprice">-</div>
         <div class="kpi-note" id="kpi-salepricenote">-</div>
       </div>
@@ -685,31 +700,64 @@
     const bpShift = Number(document.getElementById('in-bpnum').value) || 0;
 
     if (saleDate && !isNaN(saleDate) && saleDate > settleDate && saleDate < maturityDate) {
-      const ySale = y + bpShift / 10000;
-      const saleDirtyRaw = dirtyPrice(ySale, periods, freq, saleDate);
-      const saleDirtyDisplay = floor2(saleDirtyRaw);
-      const saleProceeds = (saleDirtyDisplay / 10000) * investFace;
+      // 매도 시점 가격(세전, dirty) 계산 헬퍼 — 특정 수익률(yAt)로 매도했을 때 값
+      function saleAt(yAt) {
+        const dirtyRaw = dirtyPrice(yAt, periods, freq, saleDate);
+        const dirtyDisplay = floor2(dirtyRaw);
+        const proceeds = (dirtyDisplay / 10000) * investFace; // 세전 매도금액
+        const capitalGain = proceeds - actualPayment; // 세전 매매손익(가격 변동분만)
+        return { dirtyDisplay, proceeds, capitalGain };
+      }
 
+      const flat = saleAt(y); // 금리변동 없음(0bp) 시나리오
+      const yScenario = y + bpShift / 10000;
+      const scenario = saleAt(yScenario); // 사용자가 설정한 bp 시나리오
+
+      document.getElementById('sale-flat-price').textContent = fmtWon(flat.proceeds);
+      document.getElementById('sale-flat-gain').textContent = `매매손익(세전) ${fmtSigned(flat.capitalGain)}`;
+      document.getElementById('sale-scenario-price').textContent = fmtWon(scenario.proceeds);
+      document.getElementById('sale-scenario-gain').textContent = `매매손익(세전) ${fmtSigned(scenario.capitalGain)} (${bpShift >= 0 ? '+' : ''}${bpShift}bp)`;
+
+      // 보유기간 중 실제로 받은 현금(이표채 쿠폰; 할인채/복리채는 0)
       let interimGrossCash = 0;
       periods.forEach((p) => {
         if (p.date > settleDate && p.date <= saleDate) interimGrossCash += p.amount * scaleFactor;
       });
 
+      // 전체 보유기간에 대한 보유기간 이자상당액 세금 (총수익률 계산용)
       const totalTaxableSale = taxableAccruedInterest(periods, settleDate, saleDate) * scaleFactor;
       const totalTaxSale = totalTaxableSale * 0.154;
 
+      // 매도금액 자체에서 원천징수되는 세금 (이표채는 아직 지급되지 않은 진행중 구간분만, 할인채/복리채는 보유기간 전체)
+      let taxAtSaleForDisplay;
+      if (bondType === 'coupon') {
+        const saleStub = currentPeriodInfo(periods, saleDate);
+        let stubTaxable = 0;
+        if (saleStub) {
+          const overlapStart = saleStub.period.periodStart > settleDate ? saleStub.period.periodStart : settleDate;
+          const daysHeldInStub = daysBetween(overlapStart, saleDate);
+          stubTaxable = saleStub.period.taxBase * (daysHeldInStub / saleStub.R);
+        }
+        taxAtSaleForDisplay = stubTaxable * scaleFactor * 0.154;
+      } else {
+        taxAtSaleForDisplay = totalTaxSale;
+      }
+      const netProceedsAfterTax = scenario.proceeds - taxAtSaleForDisplay; // 매도로 실제 받는 세후 실수령액
+
       const holdDays = daysBetween(settleDate, saleDate);
-      const totalGainSale = (interimGrossCash + saleProceeds - totalTaxSale) - actualPayment;
+      const totalGainSale = (interimGrossCash + scenario.proceeds - totalTaxSale) - actualPayment;
       const annualizedSale = (totalGainSale / actualPayment) * (365 / holdDays) * 100;
 
-      document.getElementById('kpi-saleyield').textContent = fmtPct(ySale * 100);
-      document.getElementById('kpi-saleprice').textContent = fmtWon(saleProceeds);
-      document.getElementById('kpi-salepricenote').textContent = `보유기간 이자상당액 세금 ${Math.round(totalTaxSale).toLocaleString('ko-KR')}원 반영`;
+      document.getElementById('kpi-saleyield').textContent = fmtPct(yScenario * 100);
+      document.getElementById('kpi-saleyield-price').textContent = `적용단가 ${fmtPrice(scenario.dirtyDisplay)}`;
+
+      document.getElementById('kpi-saleprice').textContent = fmtWon(scenario.proceeds);
+      document.getElementById('kpi-salepricenote').textContent = `세전 금액입니다 (매도 시 원천징수 세금 별도 ${Math.round(taxAtSaleForDisplay).toLocaleString('ko-KR')}원)`;
 
       const saleReturnEl = document.getElementById('kpi-salereturn');
       saleReturnEl.textContent = fmtPct(annualizedSale);
       saleReturnEl.className = 'kpi-value ' + (annualizedSale >= annualizedPct ? 'up' : 'down');
-      document.getElementById('kpi-salereturnnote').textContent = `보유 ${holdDays}일 · 세후 총손익 ${fmtSigned(totalGainSale)}`;
+      document.getElementById('kpi-salereturnnote').textContent = `세후 실수령액 ${fmtWon(netProceedsAfterTax)} · 보유 ${holdDays}일 · 세후 총손익 ${fmtSigned(totalGainSale)}`;
 
       const diff = annualizedSale - annualizedPct;
       const diffHtml = diff >= 0
@@ -722,7 +770,12 @@
       document.getElementById('sale-bankeq').innerHTML =
         `🏦 이 중도매도 시나리오는 은행 정기예금 세전 금리 <span class="bank-eq-pct">${fmtPct(bankEqSale)}</span>짜리에 넣어 세후로 받는 것과 비슷한 효과입니다.`;
     } else {
+      document.getElementById('sale-flat-price').textContent = '-';
+      document.getElementById('sale-flat-gain').textContent = '-';
+      document.getElementById('sale-scenario-price').textContent = '-';
+      document.getElementById('sale-scenario-gain').textContent = '-';
       document.getElementById('kpi-saleyield').textContent = '-';
+      document.getElementById('kpi-saleyield-price').textContent = '적용단가 -';
       document.getElementById('kpi-saleprice').textContent = '-';
       document.getElementById('kpi-salepricenote').textContent = '-';
       document.getElementById('kpi-salereturn').textContent = '-';

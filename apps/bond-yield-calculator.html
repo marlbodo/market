@@ -288,10 +288,9 @@
       <div class="derived-item">
         <div class="dl">금리변동 없음(0bp) 매도가</div>
         <div class="dv" id="sale-flat-price">-</div>
-        <div class="kpi-note" id="sale-flat-gain">-</div>
       </div>
       <div class="derived-item">
-        <div class="dl">현재 시나리오 매도가</div>
+        <div class="dl">현재 시나리오 매도가 · 매매손익(평가손익)</div>
         <div class="dv" id="sale-scenario-price">-</div>
         <div class="kpi-note" id="sale-scenario-gain">-</div>
       </div>
@@ -341,6 +340,10 @@
       <li>
         <h4>5. 중도매도 손익과 은행예금 비교는 어떻게 보나요?</h4>
         <p>만기 전에 팔면 그 시점의 시장금리로 남은 현금흐름을 다시 할인해서 매도가격(역시 dirty price)을 계산합니다. 보유기간 동안 실제로 받은 이자와, 아직 받지 않았지만 매도가격에 녹아있는 경과 이자상당액을 모두 더한 뒤 보유기간과세(15.4%)를 적용해 세후 손익을 계산합니다(재투자 수익은 고려하지 않습니다). 계산된 세후 연환산수익률을 은행 정기예금과 비교하려면, '세전 예금금리×(1-15.4%) = 세후수익률' 식을 거꾸로 풀어 '세후수익률÷(1-15.4%)'로 환산합니다. 즉 이 채권의 세후수익률이 은행 정기예금 세전금리 몇 %와 실수령액이 같은지를 보여줍니다(예금 이자에도 동일하게 15.4%가 과세된다고 가정).</p>
+      </li>
+      <li>
+        <h4>6. 매매손익(평가손익)은 왜 '현재가격 − 매수가격'이 아닌가요?</h4>
+        <p>미국식 클린프라이스라면 '현재가격 − 매수가격'이 곧 평가손익이라고 봐도 크게 틀리지 않습니다. 하지만 한국 채권시장의 단가는 경과이자가 포함된 dirty price라서, 매수일 이후 시간이 지나기만 해도(금리가 전혀 안 움직여도) 단가 자체는 경과이자와 만기 접근 효과(캐리, carry)로 자연스럽게 계속 변합니다. 이 자연스러운 변화분까지 '매매손익'이라고 부르면 안 됩니다 — 이건 그냥 매수 당시 수익률(YTM)대로 이자가 착실히 쌓이고 있다는 뜻일 뿐, 시장에서 이득을 본 게 아니기 때문입니다. 그래서 이 계산기는 두 단계로 나눠 계산합니다. ① 캐리: 매수수익률이 전혀 바뀌지 않았다고 가정하고 매도예정일 기준으로 가격을 다시 계산한 값에서 매수금액을 뺀 것(=시간이 지나며 자연스럽게 쌓인 부분). ② 매매손익(평가손익): 같은 매도예정일 기준으로, ①의 '금리 안 변한 가격'과 '실제(또는 가정한) 시나리오 금리로 계산한 가격'의 차이만 뽑아낸 것 — 이게 진짜로 시장금리가 움직여서 생긴 손익입니다. 두 값을 더하면(캐리+매매손익) 매수가격 대비 전체 가격 변동액이 됩니다.</p>
       </li>
     </ul>
   </div>
@@ -700,23 +703,23 @@
     const bpShift = Number(document.getElementById('in-bpnum').value) || 0;
 
     if (saleDate && !isNaN(saleDate) && saleDate > settleDate && saleDate < maturityDate) {
-      // 매도 시점 가격(세전, dirty) 계산 헬퍼 — 특정 수익률(yAt)로 매도했을 때 값
       function saleAt(yAt) {
         const dirtyRaw = dirtyPrice(yAt, periods, freq, saleDate);
         const dirtyDisplay = floor2(dirtyRaw);
-        const proceeds = (dirtyDisplay / 10000) * investFace; // 세전 매도금액
-        const capitalGain = proceeds - actualPayment; // 세전 매매손익(가격 변동분만)
-        return { dirtyDisplay, proceeds, capitalGain };
+        const proceeds = (dirtyDisplay / 10000) * investFace; // 세전 매도금액(더티프라이스 기준)
+        return { dirtyDisplay, proceeds };
       }
 
-      const flat = saleAt(y); // 금리변동 없음(0bp) 시나리오
+      const flat = saleAt(y); // 금리변동 없음(0bp) 시나리오 — 매수수익률 그대로 유지됐을 때, 매도예정일 기준 가격
       const yScenario = y + bpShift / 10000;
       const scenario = saleAt(yScenario); // 사용자가 설정한 bp 시나리오
 
+      // 매매손익(평가손익): 같은 매도예정일 기준으로, 매수수익률 그대로였을 경우(flat) 대비 실제(시나리오) 가격 차이 — 순수하게 시장금리 변동 효과만
+      const capitalGain = scenario.proceeds - flat.proceeds;
+
       document.getElementById('sale-flat-price').textContent = fmtWon(flat.proceeds);
-      document.getElementById('sale-flat-gain').textContent = `매매손익(세전) ${fmtSigned(flat.capitalGain)}`;
       document.getElementById('sale-scenario-price').textContent = fmtWon(scenario.proceeds);
-      document.getElementById('sale-scenario-gain').textContent = `매매손익(세전) ${fmtSigned(scenario.capitalGain)} (${bpShift >= 0 ? '+' : ''}${bpShift}bp)`;
+      document.getElementById('sale-scenario-gain').textContent = `매매손익(평가손익) ${fmtSigned(capitalGain)} (${bpShift >= 0 ? '+' : ''}${bpShift}bp)`;
 
       // 보유기간 중 실제로 받은 현금(이표채 쿠폰; 할인채/복리채는 0)
       let interimGrossCash = 0;
@@ -771,7 +774,6 @@
         `🏦 이 중도매도 시나리오는 은행 정기예금 세전 금리 <span class="bank-eq-pct">${fmtPct(bankEqSale)}</span>짜리에 넣어 세후로 받는 것과 비슷한 효과입니다.`;
     } else {
       document.getElementById('sale-flat-price').textContent = '-';
-      document.getElementById('sale-flat-gain').textContent = '-';
       document.getElementById('sale-scenario-price').textContent = '-';
       document.getElementById('sale-scenario-gain').textContent = '-';
       document.getElementById('kpi-saleyield').textContent = '-';

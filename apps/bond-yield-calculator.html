@@ -43,12 +43,10 @@
     box-sizing: border-box;
   }
   .field input:focus, .field select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  .field input:disabled, .field select:disabled { opacity: 0.5; background: var(--bg-subtle); cursor: not-allowed; }
   .field-hint { font-size: 11.5px; color: var(--text-faint); margin-top: 4px; line-height: 1.5; }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .field-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
-  /* 토글 버튼 그룹 (채권종류 / 입력방식) */
   .toggle-group { display: grid; gap: 8px; margin-bottom: 12px; }
   .toggle-group.cols-3 { grid-template-columns: repeat(3, 1fr); }
   .toggle-group.cols-2 { grid-template-columns: repeat(2, 1fr); }
@@ -68,6 +66,7 @@
   .period-line b { color: var(--text); }
 
   .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .kpi-row.cols-2 { grid-template-columns: repeat(2, 1fr); }
   .kpi-card { background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius-s); padding: 12px 8px; text-align: center; }
   .kpi-label { font-size: 10.5px; color: var(--text-faint); }
   .kpi-value { font-size: 17px; font-weight: 800; color: var(--accent); margin-top: 3px; }
@@ -103,7 +102,7 @@
     .popup-wrap { padding-left: 10px; padding-right: 10px; }
     .derived-box { grid-template-columns: 1fr 1fr; }
     .derived-item:last-child { grid-column: span 2; }
-    .kpi-row { grid-template-columns: 1fr; }
+    .kpi-row, .kpi-row.cols-2 { grid-template-columns: 1fr; }
     .field-row3 { grid-template-columns: 1fr; }
   }
 
@@ -164,6 +163,7 @@
       <div>
         <div class="field-label" id="freq-label">이자지급주기 <span class="unit">개월</span></div>
         <select id="in-freq">
+          <option value="1">1개월</option>
           <option value="3" selected>3개월</option>
           <option value="6">6개월</option>
           <option value="12">12개월</option>
@@ -187,15 +187,15 @@
       <input type="number" id="in-yield" value="3.70" step="0.01">
     </div>
     <div class="field" id="price-field" style="display:none;">
-      <div class="field-label">매수 단가 <span class="unit">액면 10,000원 기준</span></div>
-      <input type="number" id="in-price" value="9950" step="1">
-      <div class="field-hint">입력한 단가를 바탕으로 시장수익률(YTM)을 거꾸로 계산합니다.</div>
+      <div class="field-label">매수 단가 <span class="unit">액면 10,000원 기준, dirty price</span></div>
+      <input type="number" id="in-price" value="9950" step="0.01">
+      <div class="field-hint">한국 채권시장 관행대로 이 계산기의 단가는 경과이자가 포함된 dirty price입니다(클린프라이스로 별도 분리하지 않음). 입력한 단가를 바탕으로 수익률(YTM)을 거꾸로 계산합니다.</div>
     </div>
 
     <div class="field">
       <div class="field-label">투자금액(액면 기준) <span class="unit">원</span></div>
       <input type="text" inputmode="numeric" id="in-invest" value="100,000,000">
-      <div class="field-hint">액면 총액 기준 금액입니다. 실제로 지급하는 금액은 여기에 단가(경과이자 포함)를 곱해 아래 '실제 매수금액'에 별도로 표시됩니다.</div>
+      <div class="field-hint">액면 총액 기준 금액입니다. 실제 매수금액은 단가(소수점 둘째자리 아래 절사)에 액면을 곱해 아래 '실제 매수금액'에 표시됩니다.</div>
     </div>
   </div>
 
@@ -204,20 +204,15 @@
     <div class="sec-title"><span class="num">3</span>계산결과 요약</div>
 
     <div class="derived-box">
-      <div class="derived-item"><div class="dl">매수 단가</div><div class="dv" id="res-price">-</div></div>
+      <div class="derived-item"><div class="dl">매수 단가(dirty)</div><div class="dv" id="res-price">-</div></div>
       <div class="derived-item"><div class="dl">경과이자</div><div class="dv" id="res-accrued">-</div></div>
       <div class="derived-item"><div class="dl">실제 매수금액</div><div class="dv" id="res-actualpay">-</div></div>
     </div>
 
-    <div class="kpi-row">
+    <div class="kpi-row cols-2">
       <div class="kpi-card">
         <div class="kpi-label">매수수익률(세전, YTM)</div>
         <div class="kpi-value" id="kpi-ytm">-</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">맥컬레이 듀레이션</div>
-        <div class="kpi-value" id="kpi-macd">-</div>
-        <div class="kpi-note">가중평균 회수기간</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">수정 듀레이션</div>
@@ -279,6 +274,7 @@
       </div>
     </div>
     <div class="field-hint" id="sale-compare" style="margin: -4px 0 4px;">-</div>
+    <div class="field-hint" id="sale-bankeq" style="margin: 4px 0 4px;">-</div>
   </div>
 
   <!-- ===== 설명 ===== -->
@@ -287,23 +283,23 @@
     <ul class="guide-list">
       <li>
         <h4>1. 단가는 왜 이렇게 나왔나요?</h4>
-        <p>채권 단가는 앞으로 받을 이자와 원금(미래 현금흐름)을 오늘 시점의 시장금리로 할인해서 현재가치로 환산한 값입니다. 시장금리가 표면이자율보다 높으면 단가는 액면(10,000원)보다 낮게(할인) 형성되고, 시장금리가 표면이자율보다 낮으면 액면보다 높게(할증) 형성됩니다. 이 계산기는 실제 경과일수를 365일로 나눈 연단위 복리 방식으로 할인합니다.</p>
+        <p>한국 채권시장의 실무 관행대로, 이 계산기의 단가는 경과이자가 포함된 dirty price입니다(클린프라이스로 따로 빼지 않습니다). 계산 순서는 두 단계입니다. ① 매수일 다음에 오는 이자지급일을 기준으로, 그 뒤에 남은 모든 현금흐름(이자·원금)을 이자지급주기별 수익률(연수익률÷지급횟수)로 복리 할인해 '다음 이자지급일 시점의 가치'를 구합니다. ② 그 가치를 매수일까지 다시 한 번 할인하는데, 이 마지막 자투리 구간(예: 다음 이자지급일까지 25일 남았고 한 구간이 92일이라면)은 복리가 아니라 단리로, 1/(1+수익률÷지급횟수×25/92) 방식으로 할인합니다. 표면이자율이 시장수익률보다 높으면 단가는 액면(10,000원)보다 높게, 낮으면 액면보다 낮게 형성됩니다. 단가는 소수점 둘째 자리 아래는 절사(버림)해서 표시하며, 실제 매수금액도 이 절사된 단가를 기준으로 계산합니다.</p>
       </li>
       <li>
         <h4>2. 듀레이션이란?</h4>
-        <p>듀레이션은 투자원금을 이자와 원금으로 회수하는 데 걸리는 가중평균 기간(년)입니다. 표면이자가 낮고 만기가 길수록 듀레이션이 커지고, 듀레이션이 클수록 금리 변동에 따른 가격 민감도도 커집니다. 수정듀레이션이 3년이면 금리가 100bp(1%p) 오를 때 가격은 대략 3% 하락한다고 이해하면 됩니다. 할인채·복리채처럼 중간 이자지급 없이 만기에 한번에 받는 채권은 듀레이션이 잔존만기와 거의 같습니다.</p>
+        <p>수정듀레이션은 시장금리가 조금 움직일 때 채권가격이 몇 % 변하는지를 나타냅니다. 표면이자가 낮고 만기가 길수록 듀레이션이 커지고, 듀레이션이 클수록 금리 변동에 따른 가격 민감도도 커집니다. 수정듀레이션이 3이면 금리가 100bp(1%p) 오를 때 가격은 대략 3% 하락한다고 이해하면 됩니다. 함께 표시되는 '1bp당' 금액은 금리가 0.01%p 움직일 때 실제로 얼마가 오르내리는지를 원화로 보여줍니다.</p>
       </li>
       <li>
-        <h4>3. 경과이자란?</h4>
-        <p>이표채는 매수일이 직전 이자지급일과 다음 이자지급일 사이 어딘가에 걸치는 경우가 많습니다. 이때 매수일까지 이미 쌓인 이자(경과이자)를 매수 시 매도자에게 별도로 지급합니다. 다음 이자지급일에는 표면이자 전액을 받지만, 세금은 내가 실제로 보유한 기간에 해당하는 부분에만 부과되도록 계산했습니다. 현금흐름표에서 '경과이자구간' 표시가 붙은 회차가 여기에 해당합니다.</p>
+        <h4>3. 경과이자란? (이표채)</h4>
+        <p>이표채는 매수일이 직전 이자지급일과 다음 이자지급일 사이 어딘가에 걸치는 경우가 많습니다. 매수일까지 이미 쌓인 이자(경과이자)는 단가(dirty price) 안에 이미 포함되어 있어 매수 시 실제로 그만큼을 더 지불한 셈입니다. 다음 이자지급일에는 표면이자 전액을 받지만, 세금은 내가 실제로 보유한 기간에 해당하는 부분에만 부과됩니다. 예를 들어 지급주기가 3개월(92일)이고 매수 후 다음 이자지급일까지 남은 기간이 92일이라면, 그 회차의 과세대상 이자는 표면금리÷4×(92/92)가 되고, 만약 매수일이 이자기간 중간(예: 62일 경과 시점)이었다면 남은 30일만큼(표면금리÷4×30/92)만 과세대상이 됩니다. 이 회차는 현금흐름표에서 '경과이자구간'으로 표시됩니다.</p>
       </li>
       <li>
-        <h4>4. 세금은 어떻게 계산되나요?</h4>
-        <p>개인 이자소득세 15.4%(소득세 14% + 지방소득세 1.4%)를 정기적으로 지급되는 표면이자(쿠폰)에만 적용했습니다. 할인채·복리채처럼 중간 지급 없이 만기에 한번에 받는 금액은 이 계산기에서는 편의상 비과세(매매차익 개념)로 가정했습니다. 실제로는 보유기간 이자상당액에 대해 별도로 원천징수될 수 있으니 참고용으로만 활용하세요. 연간 이자·배당 합계가 2천만원을 넘으면 금융소득종합과세 대상이 될 수도 있습니다.</p>
+        <h4>4. 세금은 어떻게 계산되나요? (할인채·복리채 포함)</h4>
+        <p>개인 이자소득세 15.4%(소득세 14% + 지방세 1.4%)를 보유기간 동안 발생한 이자상당액에 적용하는 '보유기간과세' 방식입니다. 이표채는 각 이자지급 회차마다 세금이 원천징수됩니다. 할인채·복리채는 중간에 현금을 받지 않지만, 표면이자율을 기준으로 이자계산주기별로 이자가 쌓인다고 보고(복리채는 실제 만기지급액이 이렇게 계산되고, 할인채는 항상 액면 10,000원을 그대로 상환하되 세금 계산을 위한 이론적 이자 스케줄만 표면이자율로 산정합니다) 보유기간에 해당하는 이자상당액 합계에 세금을 매겨 만기(또는 매도) 시 한번에 원천징수합니다. 참고로 한국 채권시장에서는 할인채 발행가격은 단리(액면×(1-할인율×연수)) 방식으로 정해지고, 유통시장에서 매매될 때는 이 계산기처럼 복리(1/(1+수익률)ⁿ) 방식으로 가격이 재평가됩니다. 연간 이자·배당 합계가 2천만원을 넘으면 금융소득종합과세 대상이 될 수도 있습니다.</p>
       </li>
       <li>
-        <h4>5. 중도매도 손익은 어떻게 보나요?</h4>
-        <p>만기 전에 팔면 그 시점의 시장금리로 남은 현금흐름을 다시 할인해서 매도가격을 계산합니다. 금리가 매수 시점보다 내려가면(마이너스 bp) 매도가격이 오르고, 금리가 오르면(플러스 bp) 매도가격이 내려갑니다. 이 매매차익은 개인에게 비과세로 가정했고, 보유기간 중 실제로 받은 이자만 세후로 반영했습니다. 재투자 수익은 고려하지 않았습니다(받은 이자를 다시 굴린다고 가정하지 않고 단순 합산).</p>
+        <h4>5. 중도매도 손익과 은행예금 비교는 어떻게 보나요?</h4>
+        <p>만기 전에 팔면 그 시점의 시장금리로 남은 현금흐름을 다시 할인해서 매도가격(역시 dirty price)을 계산합니다. 보유기간 동안 실제로 받은 이자와, 아직 받지 않았지만 매도가격에 녹아있는 경과 이자상당액을 모두 더한 뒤 보유기간과세(15.4%)를 적용해 세후 손익을 계산합니다(재투자 수익은 고려하지 않습니다). 계산된 세후 연환산수익률을 은행 정기예금과 비교하려면, '세전 예금금리×(1-15.4%) = 세후수익률' 식을 거꾸로 풀어 '세후수익률÷(1-15.4%)'로 환산합니다. 즉 이 채권의 세후수익률이 은행 정기예금 세전금리 몇 %와 실수령액이 같은지를 보여줍니다(예금 이자에도 동일하게 15.4%가 과세된다고 가정).</p>
       </li>
     </ul>
   </div>
@@ -327,14 +323,12 @@
   }
 
   // ================== 포맷 유틸 ==================
+  function floor2(n) { return Math.floor(n * 100 + 1e-9) / 100; } // 단가 절사(소수점 둘째 자리 아래 버림)
   function fmtWon(n) { return `${Math.round(n).toLocaleString('ko-KR')}원`; }
-  function fmtEok(n) { return `${(n / 100000000).toLocaleString('ko-KR', { maximumFractionDigits: 3 })}억원`; }
   function fmtPrice(n) { return n.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function fmtPct(n) { return `${n.toFixed(3)}%`; }
-  function fmtYears(n) { return `${n.toFixed(2)}년`; }
   function fmtSigned(n) { return `${n >= 0 ? '+' : ''}${Math.round(n).toLocaleString('ko-KR')}원`; }
 
-  // 잔존기간을 연/개월/일 단위로 함께 표시 (예: 잔존 3.0년 · 36개월 · 1,095일)
   function monthsBetweenCal(a, b) {
     let months = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
     if (b.getDate() < a.getDate()) months -= 1;
@@ -347,125 +341,148 @@
     return `잔존 ${years.toFixed(1)}년 · ${months}개월 · ${days.toLocaleString('ko-KR')}일`;
   }
 
-  // ================== 현금흐름 생성 ==================
-  // 이표채 이자지급일 목록: 발행일부터 이자지급주기(개월)씩 더해 만기일까지 생성 (마지막은 만기일로 고정)
-  function generateCouponDates(issueDate, maturityDate, periodMonths) {
-    const dates = [];
+  // ================== 이자계산기간(periods) 생성 ==================
+  // 발행일부터 이자지급(계산)주기(개월)씩 더해 만기일까지 구간 경계를 만든다. 마지막 구간의 끝은 항상 만기일.
+  function generatePeriods(issueDate, maturityDate, periodMonths) {
+    const boundaries = [];
     let cursor = new Date(issueDate);
     let guard = 0;
-    while (guard < 400) {
+    while (guard < 1000) {
       cursor = addMonths(cursor, periodMonths);
       guard++;
-      if (cursor >= maturityDate) { dates.push(new Date(maturityDate)); break; }
-      dates.push(new Date(cursor));
+      if (cursor >= maturityDate) { boundaries.push(new Date(maturityDate)); break; }
+      boundaries.push(new Date(cursor));
     }
-    return dates;
-  }
-
-  // 액면 10,000원 기준 현금흐름표 생성
-  function buildCashFlows(bondType, issueDate, maturityDate, periodMonths, couponRatePct) {
-    if (bondType === 'discount') {
-      // 할인채: 중간 지급 없음, 만기에 액면(10,000원) 상환
-      return { cfList: [{ date: new Date(maturityDate), amount: 10000, isLast: true }] };
-    }
-    if (bondType === 'compound') {
-      // 복리채: 표면이자율로 복리 계산해 만기에 원금+이자를 한번에 지급
-      const totalYears = daysBetween(issueDate, maturityDate) / 365;
-      const freq = 12 / periodMonths;
-      const maturityValue = 10000 * Math.pow(1 + (couponRatePct / 100) / freq, freq * totalYears);
-      return { cfList: [{ date: new Date(maturityDate), amount: maturityValue, isLast: true }] };
-    }
-    // 이표채
-    const dates = generateCouponDates(issueDate, maturityDate, periodMonths);
-    const cfList = [];
+    const periods = [];
     let prev = new Date(issueDate);
-    dates.forEach((d, i) => {
-      const periodDays = daysBetween(prev, d);
-      const isLast = i === dates.length - 1;
-      const couponAmt = 10000 * (couponRatePct / 100) * (periodDays / 365);
-      const amount = isLast ? couponAmt + 10000 : couponAmt;
-      cfList.push({ date: new Date(d), amount, couponAmt, periodStart: new Date(prev), periodDays, isLast });
+    boundaries.forEach((d, i) => {
+      periods.push({
+        periodStart: new Date(prev),
+        date: new Date(d),
+        periodDays: daysBetween(prev, d),
+        isLast: i === boundaries.length - 1,
+      });
       prev = new Date(d);
     });
-    return { cfList };
+    return periods;
   }
 
-  // 기준일(refDate) 시점의 경과이자 계산 (이표채 전용) — refDate가 속한 이자기간과, 그 안에서 이미 지난 일수 비율로 계산
-  function computeAccrued(cfList, refDate) {
-    const period = cfList.find((cf) => cf.date > refDate);
-    if (!period || period.couponAmt === undefined) return { accrued: 0, period: null };
-    const daysHeldBefore = daysBetween(period.periodStart, refDate);
-    const accrued = period.couponAmt * (daysHeldBefore / period.periodDays);
-    return { accrued, period };
-  }
+  // 채권종류별 현금흐름 및 과세기준(taxBase) 계산 (액면 10,000원 기준)
+  function buildCashFlows(bondType, issueDate, maturityDate, periodMonths, couponRatePct) {
+    const periods = generatePeriods(issueDate, maturityDate, periodMonths);
+    const freq = 12 / periodMonths;
+    const n = periods.length;
 
-  // 연단위 복리(실제일수/365) 방식으로 할인한 더티가격(액면 10,000원 기준)
-  function dirtyPricePer10000(y, cfList, refDate) {
-    let sum = 0;
-    cfList.forEach((cf) => {
-      if (cf.date <= refDate) return;
-      const t = daysBetween(refDate, cf.date) / 365;
-      sum += cf.amount / Math.pow(1 + y, t);
+    if (bondType === 'coupon') {
+      // 이표채: 지급주기마다 표면이자율÷지급횟수를 실제 현금으로 그대로 지급(실제 일수와 무관)
+      const couponPerPeriod = 10000 * (couponRatePct / 100) / freq;
+      periods.forEach((p) => {
+        p.taxBase = couponPerPeriod; // 그 회차의 과세 대상 이자(원금 제외)
+        p.amount = p.isLast ? couponPerPeriod + 10000 : couponPerPeriod; // 실제 현금흐름
+      });
+      return { periods, freq, maturityCash: periods[n - 1].amount, n };
+    }
+
+    // 할인채/복리채: 중간 현금흐름 없음, 만기에 한번에 지급
+    let maturityCash;
+    if (bondType === 'compound') {
+      maturityCash = 10000 * Math.pow(1 + (couponRatePct / 100) / freq, n); // 복리채: 실제 만기지급액
+    } else {
+      maturityCash = 10000; // 할인채: 항상 액면 그대로 상환
+    }
+    // 과세용 이론적 이자 스케줄: baseValue*(1+rate/freq)^t 가 만기(t=n)에 정확히 maturityCash가 되도록 baseValue 역산
+    const rateFactor = 1 + (couponRatePct / 100) / freq;
+    const baseValue = maturityCash / Math.pow(rateFactor, n);
+    periods.forEach((p, idx) => {
+      const t = idx + 1;
+      const valueAtEnd = baseValue * Math.pow(rateFactor, t);
+      const valueAtStart = baseValue * Math.pow(rateFactor, t - 1);
+      p.taxBase = valueAtEnd - valueAtStart; // 그 기간에 발생한 이자상당액(실제 현금지급 아님, 과세 계산용)
+      p.amount = p.isLast ? maturityCash : 0; // 실제 현금흐름은 만기에만 발생
     });
-    return sum;
+    return { periods, freq, maturityCash, n };
   }
 
-  // 단가(더티가격)로부터 역으로 시장수익률(YTM)을 구함 (이분법)
-  function solveYield(targetPrice, cfList, refDate) {
+  // 기준일 시점에 아직 끝나지 않은 '진행 중인 구간' 정보 (경과이자/스텁 할인에 공용으로 사용)
+  function currentPeriodInfo(periods, refDate) {
+    const period = periods.find((p) => p.date > refDate);
+    if (!period) return null;
+    const R = period.periodDays;
+    const r = daysBetween(refDate, period.date); // 기준일부터 그 구간 끝까지 남은 일수
+    return { period, R, r };
+  }
+
+  // ================== 단가(dirty price) 계산 — 한국 채권시장 관행(스텁 구간 단리 + 이후 복리) ==================
+  function dirtyPrice(y, periods, freq, refDate) {
+    const future = periods.filter((p) => p.date > refDate);
+    const n = future.length;
+    if (n === 0) return 0;
+    let valueAtNext = 0;
+    future.forEach((p, idx) => {
+      valueAtNext += p.amount / Math.pow(1 + y / freq, idx);
+    });
+    const nextDate = future[0].date;
+    const prevBoundary = future[0].periodStart;
+    const R = daysBetween(prevBoundary, nextDate);
+    const r = daysBetween(refDate, nextDate);
+    const stubFactor = 1 + (y / freq) * (r / R);
+    return valueAtNext / stubFactor;
+  }
+
+  function solveYield(targetPrice, periods, freq, refDate) {
     let lo = -0.5, hi = 3.0;
     for (let i = 0; i < 100; i++) {
       const mid = (lo + hi) / 2;
-      const p = dirtyPricePer10000(mid, cfList, refDate);
+      const p = dirtyPrice(mid, periods, freq, refDate);
       if (p > targetPrice) lo = mid; else hi = mid;
     }
     return (lo + hi) / 2;
   }
 
-  function macaulayDuration(y, cfList, refDate, dirtyPrice) {
-    let weighted = 0;
-    cfList.forEach((cf) => {
-      if (cf.date <= refDate) return;
-      const t = daysBetween(refDate, cf.date) / 365;
-      const pv = cf.amount / Math.pow(1 + y, t);
-      weighted += t * pv;
-    });
-    return dirtyPrice > 0 ? weighted / dirtyPrice : 0;
+  // 수정듀레이션 & PVBP: 가격을 y±1bp로 다시 계산해서 구함 (맥컬레이 듀레이션 없이 바로 산출)
+  function modDurationAndPvbp(y, periods, freq, refDate) {
+    const dy = 0.0001;
+    const p0 = dirtyPrice(y, periods, freq, refDate);
+    const pUp = dirtyPrice(y + dy, periods, freq, refDate);
+    const pDown = dirtyPrice(y - dy, periods, freq, refDate);
+    const pvbp = (pDown - pUp) / 2; // per 10,000, 1bp당 가격 변화
+    const modD = p0 > 0 ? pvbp / (dy * p0) : 0;
+    return { modD, pvbp, p0 };
   }
 
-  function pvbpPer10000(y, cfList, refDate) {
-    const up = dirtyPricePer10000(y + 0.0001, cfList, refDate);
-    const down = dirtyPricePer10000(y - 0.0001, cfList, refDate);
-    return (down - up) / 2;
+  // 특정 구간(from~to) 동안 발생한 과세대상 이자상당액 합계 (구간이 겹치는 만큼만 일할 비례)
+  function taxableAccruedInterest(periods, fromDate, toDate) {
+    let total = 0;
+    periods.forEach((p) => {
+      if (p.date <= fromDate) return;
+      if (p.periodStart >= toDate) return;
+      const overlapStart = p.periodStart > fromDate ? p.periodStart : fromDate;
+      const overlapEnd = p.date < toDate ? p.date : toDate;
+      const overlapDays = daysBetween(overlapStart, overlapEnd);
+      if (overlapDays <= 0) return;
+      total += p.taxBase * (overlapDays / p.periodDays);
+    });
+    return total;
   }
+
+  function bankEquivalentPct(afterTaxPct) { return afterTaxPct / (1 - 0.154); }
 
   // ================== 상태 ==================
   let bondType = 'coupon'; // 'coupon' | 'discount' | 'compound'
   let inputMode = 'yield'; // 'yield' | 'price'
-  let savedCouponRate = 3.5;
 
   function updateBondTypeUI() {
-    const couponInput = document.getElementById('in-coupon');
-    const freqSelect = document.getElementById('in-freq');
     const freqLabel = document.getElementById('freq-label');
     const hint = document.getElementById('bondtype-hint');
-
     if (bondType === 'discount') {
-      if (Number(couponInput.value) !== 0) savedCouponRate = Number(couponInput.value) || savedCouponRate;
-      couponInput.value = 0;
-      couponInput.disabled = true;
-      freqSelect.disabled = true;
-      hint.textContent = '할인채는 표면이자가 없습니다. 액면가보다 싸게 사서 만기에 액면가(10,000원 기준)를 그대로 받는 방식입니다.';
+      freqLabel.innerHTML = '이자계산주기 <span class="unit">개월</span>';
+      hint.textContent = '할인채는 만기에 액면(10,000원)을 그대로 상환합니다. 표면이자율은 실제로 지급되진 않지만, 보유기간 이자상당액(세금 계산 기준)을 정하는 데 쓰입니다.';
+    } else if (bondType === 'compound') {
+      freqLabel.innerHTML = '이자계산주기 <span class="unit">개월</span>';
+      hint.textContent = '복리채는 이자를 중간에 지급하지 않고, 표면이자율로 복리 계산해 원금과 함께 만기에 한번에 지급합니다.';
     } else {
-      couponInput.disabled = false;
-      freqSelect.disabled = false;
-      if (Number(couponInput.value) === 0) couponInput.value = savedCouponRate;
-      if (bondType === 'compound') {
-        freqLabel.innerHTML = '복리계산주기 <span class="unit">개월</span>';
-        hint.textContent = '복리채는 이자를 중간에 지급하지 않고, 표면이자율로 복리 계산해 원금과 함께 만기에 한번에 지급합니다.';
-      } else {
-        freqLabel.innerHTML = '이자지급주기 <span class="unit">개월</span>';
-        hint.textContent = '이표채는 정해진 주기마다 표면이자(쿠폰)를 지급하고, 만기에 원금(액면)을 상환합니다.';
-      }
+      freqLabel.innerHTML = '이자지급주기 <span class="unit">개월</span>';
+      hint.textContent = '이표채는 정해진 주기마다 표면이자(쿠폰)를 지급하고, 만기에 원금(액면)을 상환합니다. 각 회차 이자는 실제 일수와 무관하게 표면이자율÷지급횟수로 동일하게 지급됩니다.';
     }
   }
 
@@ -505,7 +522,6 @@
     el.addEventListener('change', recalc);
   });
 
-  // 투자금액: 숫자만 남기고 3자리마다 콤마를 넣어 표시 (예: 100,000,000)
   function parseInvestFace() {
     return Number(document.getElementById('in-invest').value.replace(/[^0-9]/g, '')) || 0;
   }
@@ -521,8 +537,8 @@
     const settleDate = parseDate(document.getElementById('in-settle').value);
     const maturityDate = parseDate(document.getElementById('in-maturity').value);
     const periodMonths = Number(document.getElementById('in-freq').value);
-    const couponRatePct = bondType === 'discount' ? 0 : (Number(document.getElementById('in-coupon').value) || 0);
-    const investFace = parseInvestFace(); // 액면 총액 기준 투자금액
+    const couponRatePct = Number(document.getElementById('in-coupon').value) || 0;
+    const investFace = parseInvestFace();
 
     if (!issueDate || !settleDate || !maturityDate) return;
     if (isNaN(issueDate) || isNaN(settleDate) || isNaN(maturityDate)) return;
@@ -531,50 +547,42 @@
     document.getElementById('period-display').innerHTML =
       `📅 매수일 <b>${document.getElementById('in-settle').value}</b> ~ 만기일 <b>${document.getElementById('in-maturity').value}</b> (${remainLabel(settleDate, maturityDate)})`;
 
-    const { cfList } = buildCashFlows(bondType, issueDate, maturityDate, periodMonths, couponRatePct);
+    const { periods, freq, maturityCash } = buildCashFlows(bondType, issueDate, maturityDate, periodMonths, couponRatePct);
+    const stub = currentPeriodInfo(periods, settleDate);
+    if (!stub) return;
 
-    // 경과이자 (이표채만 해당)
-    let accrued = 0, currentPeriod = null;
-    if (bondType === 'coupon') {
-      const info = computeAccrued(cfList, settleDate);
-      accrued = info.accrued;
-      currentPeriod = info.period;
-    }
-
-    // 수익률(YTM) 또는 단가 입력 처리
+    // 수익률(YTM) 또는 단가 입력 처리 (단가는 dirty price 그 자체, 별도 경과이자 가산 없음)
     let y;
     if (inputMode === 'yield') {
       y = (Number(document.getElementById('in-yield').value) || 0) / 100;
     } else {
       const inputPricePer10000 = Number(document.getElementById('in-price').value) || 0;
-      const targetDirty = bondType === 'coupon' ? inputPricePer10000 + accrued : inputPricePer10000;
-      y = solveYield(targetDirty, cfList, settleDate);
+      y = solveYield(inputPricePer10000, periods, freq, settleDate);
       document.getElementById('in-yield').value = (y * 100).toFixed(3);
     }
 
-    const dirtyPer10000 = dirtyPricePer10000(y, cfList, settleDate);
-    const cleanPricePer10000 = dirtyPer10000 - accrued;
-    if (dirtyPer10000 <= 0) return;
+    const rawDirty = dirtyPrice(y, periods, freq, settleDate);
+    if (rawDirty <= 0) return;
+    const displayPrice = floor2(rawDirty); // 단가는 소수점 둘째 자리 아래 절사
 
     if (inputMode === 'yield') {
-      document.getElementById('in-price').value = cleanPricePer10000.toFixed(2);
+      document.getElementById('in-price').value = displayPrice.toFixed(2);
     }
 
-    const scaleFactor = investFace / 10000; // 액면 10,000원 기준 금액을 실제 액면 총액 기준으로 환산
-    const actualPayment = dirtyPer10000 * scaleFactor; // 실제 매수금액 = 단가(경과이자 포함) × 액면/10,000
+    const scaleFactor = investFace / 10000;
+    const actualPayment = (displayPrice / 10000) * investFace; // 실제 매수금액 = 절사된 단가 × 액면
 
-    // 듀레이션 / PVBP
-    const macD = macaulayDuration(y, cfList, settleDate, dirtyPer10000);
-    const modD = macD / (1 + y);
-    const pvbpActual = pvbpPer10000(y, cfList, settleDate) * scaleFactor;
+    const { modD, pvbp } = modDurationAndPvbp(y, periods, freq, settleDate);
+    const pvbpActual = pvbp * scaleFactor;
 
     // ---- 3. 결과 요약 ----
-    document.getElementById('res-price').textContent = fmtPrice(cleanPricePer10000);
-    document.getElementById('res-accrued').textContent = (bondType === 'coupon' && accrued > 0) ? fmtWon(accrued * scaleFactor) : '해당없음';
+    document.getElementById('res-price').textContent = fmtPrice(displayPrice);
+    const daysElapsedInPeriod = stub.R - stub.r;
+    const accruedPer10000 = bondType === 'coupon' ? stub.period.taxBase * (daysElapsedInPeriod / stub.R) : 0;
+    document.getElementById('res-accrued').textContent = (bondType === 'coupon' && accruedPer10000 > 0) ? fmtWon(accruedPer10000 * scaleFactor) : '해당없음';
     document.getElementById('res-actualpay').textContent = fmtWon(actualPayment);
     document.getElementById('kpi-ytm').textContent = fmtPct(y * 100);
-    document.getElementById('kpi-macd').textContent = fmtYears(macD);
-    document.getElementById('kpi-modd').textContent = fmtYears(modD);
+    document.getElementById('kpi-modd').textContent = modD.toFixed(2);
     document.getElementById('kpi-pvbp').textContent = `1bp당 ${fmtWon(Math.abs(pvbpActual))}`;
 
     // ---- 4. 미래 현금흐름표 (만기까지 보유) ----
@@ -585,24 +593,18 @@
     let totalTax = 0;
 
     if (bondType === 'coupon') {
-      cfList.filter((cf) => cf.date > settleDate).forEach((cf) => {
-        const amt = cf.amount * scaleFactor;
-        const couponPortion = cf.isLast ? (cf.amount - 10000) * scaleFactor : amt;
-        const isSplit = currentPeriod === cf;
-        let taxable;
-        if (isSplit) {
-          const daysHeld = daysBetween(settleDate, cf.date);
-          taxable = couponPortion * (daysHeld / cf.periodDays);
-        } else {
-          taxable = couponPortion;
-        }
+      periods.filter((p) => p.date > settleDate).forEach((p) => {
+        const amt = p.amount * scaleFactor;
+        const isSplit = stub.period === p;
+        const base = p.taxBase * scaleFactor;
+        const taxable = isSplit ? base * (stub.r / stub.R) : base;
         const tax = taxable * 0.154;
         totalTax += tax;
         const postTax = amt - tax;
         cum += postTax;
         rowsHtml += `<tr class="${isSplit ? 'split-row' : ''}">
-          <td>${toISO(cf.date)}</td>
-          <td>${cf.isLast ? '이자+원금' : '이자지급'}${isSplit ? '<span class="split-tag">경과이자구간</span>' : ''}</td>
+          <td>${toISO(p.date)}</td>
+          <td>${p.isLast ? '이자+원금' : '이자지급'}${isSplit ? '<span class="split-tag">경과이자구간</span>' : ''}</td>
           <td class="pos">+${Math.round(amt).toLocaleString('ko-KR')}</td>
           <td>${Math.round(taxable).toLocaleString('ko-KR')}</td>
           <td class="neg">-${Math.round(tax).toLocaleString('ko-KR')}</td>
@@ -611,22 +613,30 @@
         </tr>`;
       });
       document.getElementById('cf-note').textContent =
-        '‘경과이자구간’ 표시가 붙은 회차는 매수 전 이미 발생한 이자(매수 시 경과이자로 이미 지급함)를 제외하고, 실제 보유기간분에 대해서만 세금을 계산했습니다.';
+        '‘경과이자구간’ 표시가 붙은 회차는 실제 보유기간분(다음 이자지급일까지 남은 일수 ÷ 그 구간 전체 일수)에 대해서만 세금을 계산했습니다.';
     } else {
-      const cf = cfList[0];
-      const amt = cf.amount * scaleFactor;
-      cum += amt;
+      let totalTaxable = 0;
+      periods.filter((p) => p.date > settleDate).forEach((p) => {
+        const isSplit = stub.period === p;
+        const base = p.taxBase * scaleFactor;
+        totalTaxable += isSplit ? base * (stub.r / stub.R) : base;
+      });
+      const amt = maturityCash * scaleFactor;
+      const tax = totalTaxable * 0.154;
+      totalTax += tax;
+      const postTax = amt - tax;
+      cum += postTax;
       rowsHtml += `<tr>
-        <td>${toISO(cf.date)}</td>
+        <td>${toISO(maturityDate)}</td>
         <td>만기상환(이자+원금)</td>
         <td class="pos">+${Math.round(amt).toLocaleString('ko-KR')}</td>
-        <td>비과세가정</td>
-        <td>0</td>
-        <td class="pos">+${Math.round(amt).toLocaleString('ko-KR')}</td>
+        <td>${Math.round(totalTaxable).toLocaleString('ko-KR')}</td>
+        <td class="neg">-${Math.round(tax).toLocaleString('ko-KR')}</td>
+        <td class="pos">+${Math.round(postTax).toLocaleString('ko-KR')}</td>
         <td class="${cum >= 0 ? 'pos' : 'neg'}">${cum >= 0 ? '+' : ''}${Math.round(cum).toLocaleString('ko-KR')}</td>
       </tr>`;
       document.getElementById('cf-note').textContent =
-        '할인채·복리채는 중간 지급 없이 만기에 한번에 상환되며, 이 계산기에서는 편의상 비과세(매매차익 개념)로 가정했습니다. 실제로는 보유기간 이자상당액에 대해 별도 과세될 수 있습니다.';
+        '할인채·복리채는 중간 지급 없이 만기에 한번에 상환되지만, 표면이자율로 계산한 보유기간 전체 이자상당액에 세금(15.4%)이 만기 시 한번에 원천징수됩니다.';
     }
     cfBody.innerHTML = rowsHtml;
 
@@ -635,11 +645,13 @@
     const annualizedPct = (netGain / actualPayment) * (365 / totalDays) * 100;
     const netGainPretax = netGain + totalTax;
     const annualizedPretaxPct = (netGainPretax / actualPayment) * (365 / totalDays) * 100;
+    const bankEqHold = bankEquivalentPct(annualizedPct);
 
     document.getElementById('hold-summary').innerHTML =
       `💰 만기까지 보유 시 (재투자 없이 단순 합산 기준)<br>` +
       `세전 총손익 <b>${fmtSigned(netGainPretax)}</b> · 세전 연환산수익률 <b>${fmtPct(annualizedPretaxPct)}</b><br>` +
-      `세후 총손익 <b>${fmtSigned(netGain)}</b> · 세후 연환산수익률 <b>${fmtPct(annualizedPct)}</b> · 누적 세금 ${Math.round(totalTax).toLocaleString('ko-KR')}원`;
+      `세후 총손익 <b>${fmtSigned(netGain)}</b> · 세후 연환산수익률 <b>${fmtPct(annualizedPct)}</b> · 누적 세금 ${Math.round(totalTax).toLocaleString('ko-KR')}원<br>` +
+      `🏦 은행 정기예금과 비교하면, 세전 금리 <b>${fmtPct(bankEqHold)}</b>짜리 예금에 넣어 세후로 받는 것과 비슷한 효과입니다.`;
 
     // ---- 5. 중도매도 시뮬레이션 ----
     const saleDateStr = document.getElementById('in-saledate').value;
@@ -648,35 +660,25 @@
 
     if (saleDate && !isNaN(saleDate) && saleDate > settleDate && saleDate < maturityDate) {
       const ySale = y + bpShift / 10000;
-      const dirtyAtSalePer10000 = dirtyPricePer10000(ySale, cfList, saleDate);
-      let accruedAtSale = 0;
-      if (bondType === 'coupon') {
-        accruedAtSale = computeAccrued(cfList, saleDate).accrued;
-      }
-      const saleProceeds = dirtyAtSalePer10000 * scaleFactor;
+      const saleDirtyRaw = dirtyPrice(ySale, periods, freq, saleDate);
+      const saleDirtyDisplay = floor2(saleDirtyRaw);
+      const saleProceeds = (saleDirtyDisplay / 10000) * investFace;
 
-      // 보유기간(매수~매도) 중 실제로 받은 세후 이자
-      let interimPostTax = 0;
-      if (bondType === 'coupon') {
-        cfList.forEach((cf) => {
-          if (cf.date > settleDate && cf.date <= saleDate) {
-            const amt = cf.amount * scaleFactor;
-            const couponPortion = cf.isLast ? (cf.amount - 10000) * scaleFactor : amt;
-            const isSplit = currentPeriod === cf;
-            const taxable = isSplit ? couponPortion * (daysBetween(settleDate, cf.date) / cf.periodDays) : couponPortion;
-            const tax = taxable * 0.154;
-            interimPostTax += (amt - tax);
-          }
-        });
-      }
+      let interimGrossCash = 0;
+      periods.forEach((p) => {
+        if (p.date > settleDate && p.date <= saleDate) interimGrossCash += p.amount * scaleFactor;
+      });
+
+      const totalTaxableSale = taxableAccruedInterest(periods, settleDate, saleDate) * scaleFactor;
+      const totalTaxSale = totalTaxableSale * 0.154;
 
       const holdDays = daysBetween(settleDate, saleDate);
-      const totalGainSale = saleProceeds + interimPostTax - actualPayment;
+      const totalGainSale = (interimGrossCash + saleProceeds - totalTaxSale) - actualPayment;
       const annualizedSale = (totalGainSale / actualPayment) * (365 / holdDays) * 100;
 
       document.getElementById('kpi-saleyield').textContent = fmtPct(ySale * 100);
       document.getElementById('kpi-saleprice').textContent = fmtWon(saleProceeds);
-      document.getElementById('kpi-salepricenote').textContent = bondType === 'coupon' ? `경과이자 ${fmtWon(accruedAtSale * scaleFactor)} 포함` : '경과이자 없음';
+      document.getElementById('kpi-salepricenote').textContent = `보유기간 이자상당액 세금 ${Math.round(totalTaxSale).toLocaleString('ko-KR')}원 반영`;
 
       const saleReturnEl = document.getElementById('kpi-salereturn');
       saleReturnEl.textContent = fmtPct(annualizedSale);
@@ -689,6 +691,10 @@
         : `<span style="color:var(--down);font-weight:700;">${diff.toFixed(3)}%p 불리</span>`;
       document.getElementById('sale-compare').innerHTML =
         `만기까지 보유했을 때 세후 연환산수익률(${fmtPct(annualizedPct)}) 대비 ${diffHtml}합니다. (금리가 매수 시점보다 ${bpShift >= 0 ? '+' : ''}${bpShift}bp 움직였다고 가정)`;
+
+      const bankEqSale = bankEquivalentPct(annualizedSale);
+      document.getElementById('sale-bankeq').innerHTML =
+        `🏦 이 중도매도 시나리오는 은행 정기예금 세전 금리 <b>${fmtPct(bankEqSale)}</b>짜리에 넣어 세후로 받는 것과 비슷한 효과입니다.`;
     } else {
       document.getElementById('kpi-saleyield').textContent = '-';
       document.getElementById('kpi-saleprice').textContent = '-';
@@ -697,6 +703,7 @@
       document.getElementById('kpi-salereturn').className = 'kpi-value';
       document.getElementById('kpi-salereturnnote').textContent = '-';
       document.getElementById('sale-compare').textContent = '매도예정일은 매수일과 만기일 사이여야 합니다.';
+      document.getElementById('sale-bankeq').textContent = '-';
     }
   }
 

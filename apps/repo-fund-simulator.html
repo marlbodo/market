@@ -234,6 +234,7 @@
 
     <div class="field-label" style="margin-top: 14px;">금통위 회차별 기준금리 변경</div>
     <div class="field-hint" style="margin: -2px 0 10px;">
+      회차별 기준금리는 기본적으로 현재 기준금리와 동일하게(변동 없음으로 가정) 자동으로 채워집니다.
       2027년 일정은 미발표 상태라 2026년 패턴(연 8회, 2·4주차 목요일)으로 추정했습니다. 공식 발표 후 직접 수정하세요.
       레포금리는 자동 계산되며, 직접 입력하면 그 값으로 고정됩니다 (더블클릭 시 자동계산 복귀).
     </div>
@@ -335,6 +336,10 @@
   }
 
   // ---------- 금통위 회차 행 관리 ----------
+  // [수정 16] 2027년 말까지 전체 8회(연 8회, 2·4주차 목요일 패턴) 추정치로 확장.
+  // 회차별 "기준금리"의 초기값은 loadLiveRates()에서 실시간으로 가져온 현재 기준금리로
+  // 자동 덮어써진다(사용자가 직접 회차 금리를 수정하기 전까지). 아래 3.00은 그 전까지 쓰이는
+  // 표시용 임시값일 뿐이다.
   const DEFAULT_MEETINGS = [
     { date: '2026-10-22', rate: 3.00, repoOverride: null },
     { date: '2026-11-26', rate: 3.00, repoOverride: null },
@@ -342,8 +347,15 @@
     { date: '2027-02-25', rate: 3.00, repoOverride: null }, // 〃
     { date: '2027-04-08', rate: 3.00, repoOverride: null }, // 〃
     { date: '2027-05-27', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-07-08', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-08-26', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-10-14', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-11-25', rate: 3.00, repoOverride: null }, // 〃 (2027년 마지막 추정 회차)
   ];
   let meetings = DEFAULT_MEETINGS.map((m) => ({ ...m }));
+  // [수정 16] 사용자가 회차별 기준금리를 한 번이라도 직접 수정하면, 이후 실시간 기준금리
+  // 조회 결과로 회차 금리를 자동 덮어쓰지 않는다 (CD 편입비율의 cdManuallyEdited와 동일한 패턴).
+  let meetingRatesManuallyEdited = false;
 
   const meetRowsEl = document.getElementById('meet-rows');
   function currentSpreadBp() {
@@ -375,6 +387,7 @@
       });
 
       row.querySelector('.meet-rate').addEventListener('input', (e) => {
+        meetingRatesManuallyEdited = true;
         const newRate = Number(e.target.value);
         meetings[idx].rate = newRate;
         for (let j = idx + 1; j < meetings.length; j++) meetings[j].rate = newRate;
@@ -651,11 +664,20 @@
     document.getElementById('in-maturity').value = addDaysISO(maturityDate);
   })();
 
+  // 페이지 최초 진입 시 CD 편입비율도 채권 편입비율 기준 자동 제안값으로 맞춰 시작한다
+  // (기본값끼리 우연히 일치하던 것을, 실제로 계산해서 채우도록 명시적으로 처리)
+  if (!cdManuallyEdited) {
+    const initialBondRatio = Number(document.getElementById('in-bondratio').value) || 0;
+    document.getElementById('in-cdratio').value = suggestedCdRatio(initialBondRatio);
+  }
+
   // ---------- [수정 1] 채권/CD 현재금리, 기준금리 자동 조회 ----------
   // interest_rates 테이블의 최신값을 가져와 채운다:
   //  - 채권 현재금리 <- 산금 1Y
   //  - CD 현재금리   <- CD 91D
   //  - 시작일 적용 기준금리 <- 기준금리
+  //  - [수정 16] 금통위 회차별 기준금리 초기값도 같은 최신 기준금리로 맞춘다 (사용자가
+  //    직접 회차 금리를 수정하기 전까지는, "당분간 동결"을 기본 가정으로 삼는다).
   const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
 
@@ -687,7 +709,15 @@
         document.getElementById('in-endyield').value = bondYield.toFixed(3);
       }
       if (cdYield !== null && !Number.isNaN(cdYield)) document.getElementById('in-cdyield').value = cdYield.toFixed(3);
-      if (baseRate !== null && !Number.isNaN(baseRate)) document.getElementById('in-baserate0').value = baseRate.toFixed(2);
+      if (baseRate !== null && !Number.isNaN(baseRate)) {
+        document.getElementById('in-baserate0').value = baseRate.toFixed(2);
+        // [수정 16] 회차별 기준금리를 아직 직접 수정한 적이 없다면, 모든 회차 기본값을
+        // 방금 가져온 최신 기준금리로 맞춰서(=금리 동결 가정) 다시 그린다.
+        if (!meetingRatesManuallyEdited) {
+          meetings.forEach((m) => { m.rate = baseRate; });
+          renderMeetRows();
+        }
+      }
     } catch (err) {
       // 실시간 금리 조회에 실패하면 화면에 입력된 기본값을 그대로 사용한다.
       console.error('실시간 금리 로딩 실패, 기본값 사용', err);

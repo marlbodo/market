@@ -89,10 +89,6 @@
   .kpi-value.down { color: var(--down); }
   .kpi-note { font-size: 10px; color: var(--text-faint); margin-top: 4px; line-height: 1.4; }
 
-  .slider-row { display: flex; align-items: center; gap: 10px; }
-  .slider-row input[type=range] { flex: 1; accent-color: var(--accent); }
-  .slider-row input[type=number] { width: 84px; flex: none; }
-
   table.rpt { width: 100%; border-collapse: collapse; border: 1px solid var(--border-strong); font-size: 11px; margin-bottom: 10px; }
   table.rpt th, table.rpt td { padding: 5px 5px; text-align: right; border: 1px solid var(--border); white-space: nowrap; }
   table.rpt thead th { background: var(--bg-subtle); color: var(--text-muted); font-weight: 700; font-size: 10.5px; text-align: center; line-height: 1.4; }
@@ -116,7 +112,6 @@
   @media (max-width: 480px) {
     .popup-wrap { padding-left: 10px; padding-right: 10px; }
     .derived-box { grid-template-columns: 1fr 1fr; }
-    .derived-item:last-child { grid-column: span 2; }
     .kpi-row, .kpi-row.cols-2 { grid-template-columns: 1fr; }
     .field-row3 { grid-template-columns: 1fr; }
     .field-inline { flex-wrap: wrap; }
@@ -152,7 +147,7 @@
     </h1>
     <button class="popup-close" onclick="window.close()">닫기</button>
   </div>
-  <div class="popup-sub">발행조건과 매수조건을 입력하면 단가·듀레이션·이자수익·세금·중도매도 손익까지 한번에 계산해드려요</div>
+  <div class="popup-sub">발행조건과 매수조건을 입력하면 단가·듀레이션·이자수익·세금까지 한번에 계산해드려요</div>
 
   <div class="period-line" id="period-display">기간 계산 중…</div>
 
@@ -206,22 +201,22 @@
 
     <div class="field field-row">
       <div>
-        <div class="field-label">매수 시 수익률(YTM) <span class="unit">연,%</span></div>
+        <div class="field-label">매수 수익률(YTM) <span class="unit">연,%</span></div>
         <input type="number" id="in-yield" value="3.70" step="0.01">
       </div>
       <div>
-        <div class="field-label">매수 단가 <span class="unit">dirty price</span></div>
+        <div class="field-label">매수 단가</div>
         <input type="number" id="in-price" value="9950" step="0.01">
       </div>
     </div>
-    <div class="field-hint" style="margin: -6px 0 14px;">두 값은 서로 연동됩니다 — 어느 쪽을 입력하든 나머지 값이 자동으로 계산됩니다. 한국 채권시장 관행대로 단가는 경과이자가 포함된 dirty price입니다(클린프라이스로 별도 분리하지 않음).</div>
+    <div class="field-hint" style="margin: -6px 0 14px;">두 값은 서로 연동됩니다 — 어느 쪽을 입력하든 나머지 값이 자동으로 계산됩니다. 한국 채권시장 관행대로 단가에는 경과이자가 포함되어 있습니다.</div>
 
     <div class="field">
       <div class="field-inline">
         <span class="field-inline-label">투자금액(액면 기준)<span class="unit">원</span></span>
         <input type="text" inputmode="numeric" id="in-invest" value="100,000,000">
       </div>
-      <div class="field-hint">액면 총액 기준 금액입니다. 실제 매수금액은 단가(소수점 둘째자리 아래 절사)에 액면을 곱해 아래 '실제 매수금액'에 표시됩니다.</div>
+      <div class="field-hint">액면 총액 기준 금액입니다. 매수금액은 단가(소수점 둘째자리 아래 절사)에 액면을 곱해 아래 '매수금액'에 표시됩니다.</div>
     </div>
   </div>
 
@@ -229,15 +224,14 @@
   <div class="sec">
     <div class="sec-title"><span class="num">3</span>계산결과 요약</div>
 
-    <div class="derived-box">
-      <div class="derived-item"><div class="dl">매수 단가(dirty)</div><div class="dv" id="res-price">-</div></div>
-      <div class="derived-item"><div class="dl">경과이자</div><div class="dv" id="res-accrued">-</div></div>
-      <div class="derived-item"><div class="dl">실제 매수금액</div><div class="dv" id="res-actualpay">-</div></div>
+    <div class="derived-box cols-2">
+      <div class="derived-item"><div class="dl">매수 단가</div><div class="dv" id="res-price">-</div></div>
+      <div class="derived-item"><div class="dl">매수금액</div><div class="dv" id="res-actualpay">-</div></div>
     </div>
 
     <div class="kpi-row cols-2">
       <div class="kpi-card">
-        <div class="kpi-label">매수수익률(세전, YTM)</div>
+        <div class="kpi-label">매수수익률(YTM)</div>
         <div class="kpi-value" id="kpi-ytm">-</div>
       </div>
       <div class="kpi-card">
@@ -267,63 +261,13 @@
     <div class="table-note" id="cf-note"></div>
   </div>
 
-  <!-- ===== 5. 중도매도 시뮬레이션 ===== -->
-  <div class="sec">
-    <div class="sec-title"><span class="num">5</span>중도매도(환매) 시뮬레이션</div>
-
-    <div class="field">
-      <div class="field-label">매도예정일</div>
-      <input type="date" id="in-saledate">
-    </div>
-    <div class="field">
-      <div class="field-label">매도 시점 금리 변동 <span class="unit">bp (하락 −, 상승 +)</span></div>
-      <div class="slider-row">
-        <input type="range" id="in-bpslider" min="-300" max="300" step="5" value="0">
-        <input type="number" id="in-bpnum" value="0" step="1">
-      </div>
-      <div class="field-hint">매수 시 수익률 대비 매도 시점 금리가 이만큼 움직인다고 가정합니다. 기본값은 0bp(금리 변동 없음)입니다.</div>
-    </div>
-
-    <div class="derived-box cols-2">
-      <div class="derived-item">
-        <div class="dl">금리변동 없음(0bp) 매도가</div>
-        <div class="dv" id="sale-flat-price">-</div>
-      </div>
-      <div class="derived-item">
-        <div class="dl">현재 시나리오 매도가 · 매매손익(평가손익)</div>
-        <div class="dv" id="sale-scenario-price">-</div>
-        <div class="kpi-note" id="sale-scenario-gain">-</div>
-      </div>
-    </div>
-
-    <div class="kpi-row">
-      <div class="kpi-card">
-        <div class="kpi-label">매도 적용수익률</div>
-        <div class="kpi-value" id="kpi-saleyield">-</div>
-        <div class="kpi-note" id="kpi-saleyield-price">적용단가 -</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">매도금액(세전 단가 기준)</div>
-        <div class="kpi-value" id="kpi-saleprice">-</div>
-        <div class="kpi-note" id="kpi-salepricenote">-</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">보유기간 세후 연환산수익률</div>
-        <div class="kpi-value" id="kpi-salereturn">-</div>
-        <div class="kpi-note" id="kpi-salereturnnote">-</div>
-      </div>
-    </div>
-    <div class="field-hint" id="sale-compare" style="margin: -4px 0 10px;">-</div>
-    <div class="bank-eq-line" id="sale-bankeq">-</div>
-  </div>
-
   <!-- ===== 설명 ===== -->
   <div class="sec">
     <div class="sec-title"><span class="num">?</span>계산 원리 쉽게 설명</div>
     <ul class="guide-list">
       <li>
         <h4>1. 단가는 왜 이렇게 나왔나요?</h4>
-        <p>한국 채권시장의 실무 관행대로, 이 계산기의 단가는 경과이자가 포함된 dirty price입니다(클린프라이스로 따로 빼지 않습니다). 계산 순서는 두 단계입니다. ① 매수일 다음에 오는 이자지급일을 기준으로, 그 뒤에 남은 모든 현금흐름(이자·원금)을 이자지급주기별 수익률(연수익률÷지급횟수)로 복리 할인해 '다음 이자지급일 시점의 가치'를 구합니다. ② 그 가치를 매수일까지 다시 한 번 할인하는데, 이 마지막 자투리 구간(예: 다음 이자지급일까지 25일 남았고 한 구간이 92일이라면)은 복리가 아니라 단리로, 1/(1+수익률÷지급횟수×25/92) 방식으로 할인합니다. 표면이자율이 시장수익률보다 높으면 단가는 액면(10,000원)보다 높게, 낮으면 액면보다 낮게 형성됩니다. 단가는 소수점 둘째 자리 아래는 절사(버림)해서 표시하며, 실제 매수금액도 이 절사된 단가를 기준으로 계산합니다.</p>
+        <p>한국 채권시장의 실무 관행대로, 이 계산기의 단가에는 경과이자가 포함되어 있습니다. 계산 순서는 두 단계입니다. ① 매수일 다음에 오는 이자지급일을 기준으로, 그 뒤에 남은 모든 현금흐름(이자·원금)을 이자지급주기별 수익률(연수익률÷지급횟수)로 복리 할인해 '다음 이자지급일 시점의 가치'를 구합니다. ② 그 가치를 매수일까지 다시 한 번 할인하는데, 이 마지막 자투리 구간(예: 다음 이자지급일까지 25일 남았고 한 구간이 92일이라면)은 복리가 아니라 단리로, 1/(1+수익률÷지급횟수×25/92) 방식으로 할인합니다. 표면이자율이 시장수익률보다 높으면 단가는 액면(10,000원)보다 높게, 낮으면 액면보다 낮게 형성됩니다. 단가는 소수점 둘째 자리 아래는 절사(버림)해서 표시하며, 매수금액도 이 절사된 단가를 기준으로 계산합니다.</p>
       </li>
       <li>
         <h4>2. 듀레이션이란?</h4>
@@ -331,19 +275,11 @@
       </li>
       <li>
         <h4>3. 경과이자란? (이표채)</h4>
-        <p>이표채는 매수일이 직전 이자지급일과 다음 이자지급일 사이 어딘가에 걸치는 경우가 많습니다. 매수일까지 이미 쌓인 이자(경과이자)는 단가(dirty price) 안에 이미 포함되어 있어 매수 시 실제로 그만큼을 더 지불한 셈입니다. 다음 이자지급일에는 표면이자 전액을 받지만, 세금은 내가 실제로 보유한 기간에 해당하는 부분에만 부과됩니다. 예를 들어 지급주기가 3개월(92일)이고 매수 후 다음 이자지급일까지 남은 기간이 92일이라면, 그 회차의 과세대상 이자는 표면금리÷4×(92/92)가 되고, 만약 매수일이 이자기간 중간(예: 62일 경과 시점)이었다면 남은 30일만큼(표면금리÷4×30/92)만 과세대상이 됩니다. 이 회차는 현금흐름표에서 '경과이자구간'으로 표시됩니다.</p>
+        <p>이표채는 매수일이 직전 이자지급일과 다음 이자지급일 사이 어딘가에 걸치는 경우가 많습니다. 매수일까지 이미 쌓인 이자(경과이자)는 단가 안에 이미 포함되어 있어 매수 시 실제로 그만큼을 더 지불한 셈입니다. 다음 이자지급일에는 표면이자 전액을 받지만, 세금은 내가 실제로 보유한 기간에 해당하는 부분에만 부과됩니다. 예를 들어 지급주기가 3개월(92일)이고 매수 후 다음 이자지급일까지 남은 기간이 92일이라면, 그 회차의 과세대상 이자는 표면금리÷4×(92/92)가 되고, 만약 매수일이 이자기간 중간(예: 62일 경과 시점)이었다면 남은 30일만큼(표면금리÷4×30/92)만 과세대상이 됩니다. 이 회차는 현금흐름표에서 '경과이자구간'으로 표시됩니다.</p>
       </li>
       <li>
         <h4>4. 세금은 어떻게 계산되나요? (할인채·복리채는 단리·복리가 서로 다릅니다)</h4>
-        <p>개인 이자소득세 15.4%(소득세 14% + 지방세 1.4%)를 보유기간 동안 발생한 이자상당액에 적용하는 '보유기간과세' 방식입니다. 이표채는 각 이자지급 회차마다 세금이 원천징수됩니다. 실제 국세청 유권해석(서면1팀-1132, 2006)을 확인해보면, 할인채의 할인액(이자상당액)은 매수자의 실제 매매수익률이 아니라 '발행 시 할인율'을 기준으로 계산되고, 이때 할인채는 단리 방식입니다: 액면 1,000원짜리 채권을 발행 시 할인율 10%로 발행했다면 과세 기준이 되는 전체 할인액은 액면×할인율×연수(예: 1년이면 1,000×10%=100원)이며, 이를 909.09원(=1,000/1.1) 같은 복리 역산 기준가에서 계산하지 않습니다. 이 100원을 보유일수 비례로 단순 안분해 그 몫에만 세금을 매깁니다. 반면 복리채는 실제 계약상 표면이자율로 복리 성장하는 구조 자체가 곧 과세 기준이므로 복리로 계산합니다. 두 채권 모두 세금은 만기(또는 매도) 시 누적된 이자상당액에 대해 한번에 원천징수됩니다. 참고로 한국 채권시장에서는 할인채 발행가격도 단리(액면×(1-할인율×연수)) 방식으로 정해지고, 유통시장에서 매매될 때는 이 계산기처럼 복리(1/(1+수익률)ⁿ) 방식으로 가격이 재평가됩니다 — 가격 계산과 세금 계산의 기준 방식이 다르다는 점에 유의하세요. 연간 이자·배당 합계가 2천만원을 넘으면 금융소득종합과세 대상이 될 수도 있습니다.</p>
-      </li>
-      <li>
-        <h4>5. 중도매도 손익과 은행예금 비교는 어떻게 보나요?</h4>
-        <p>만기 전에 팔면 그 시점의 시장금리로 남은 현금흐름을 다시 할인해서 매도가격(역시 dirty price)을 계산합니다. 보유기간 동안 실제로 받은 이자와, 아직 받지 않았지만 매도가격에 녹아있는 경과 이자상당액을 모두 더한 뒤 보유기간과세(15.4%)를 적용해 세후 손익을 계산합니다(재투자 수익은 고려하지 않습니다). 계산된 세후 연환산수익률을 은행 정기예금과 비교하려면, '세전 예금금리×(1-15.4%) = 세후수익률' 식을 거꾸로 풀어 '세후수익률÷(1-15.4%)'로 환산합니다. 즉 이 채권의 세후수익률이 은행 정기예금 세전금리 몇 %와 실수령액이 같은지를 보여줍니다(예금 이자에도 동일하게 15.4%가 과세된다고 가정).</p>
-      </li>
-      <li>
-        <h4>6. 매매손익(평가손익)은 왜 '현재가격 − 매수가격'이 아닌가요?</h4>
-        <p>미국식 클린프라이스라면 '현재가격 − 매수가격'이 곧 평가손익이라고 봐도 크게 틀리지 않습니다. 하지만 한국 채권시장의 단가는 경과이자가 포함된 dirty price라서, 매수일 이후 시간이 지나기만 해도(금리가 전혀 안 움직여도) 단가 자체는 경과이자와 만기 접근 효과(캐리, carry)로 자연스럽게 계속 변합니다. 이 자연스러운 변화분까지 '매매손익'이라고 부르면 안 됩니다 — 이건 그냥 매수 당시 수익률(YTM)대로 이자가 착실히 쌓이고 있다는 뜻일 뿐, 시장에서 이득을 본 게 아니기 때문입니다. 그래서 이 계산기는 두 단계로 나눠 계산합니다. ① 캐리: 매수수익률이 전혀 바뀌지 않았다고 가정하고 매도예정일 기준으로 가격을 다시 계산한 값에서 매수금액을 뺀 것(=시간이 지나며 자연스럽게 쌓인 부분). ② 매매손익(평가손익): 같은 매도예정일 기준으로, ①의 '금리 안 변한 가격'과 '실제(또는 가정한) 시나리오 금리로 계산한 가격'의 차이만 뽑아낸 것 — 이게 진짜로 시장금리가 움직여서 생긴 손익입니다. 두 값을 더하면(캐리+매매손익) 매수가격 대비 전체 가격 변동액이 됩니다.</p>
+        <p>개인 이자소득세 15.4%(소득세 14% + 지방세 1.4%)를 보유기간 동안 발생한 이자상당액에 적용하는 '보유기간과세' 방식입니다. 이표채는 각 이자지급 회차마다 세금이 원천징수됩니다. 실제 국세청 유권해석(서면1팀-1132, 2006)을 확인해보면, 할인채의 할인액(이자상당액)은 매수자의 실제 매매수익률이 아니라 '발행 시 할인율'을 기준으로 계산되고, 이때 할인채는 단리 방식입니다: 액면 10,000원짜리 채권을 발행 시 할인율 10%로 발행했다면 과세 기준이 되는 전체 할인액은 액면×할인율×연수(예: 1년이면 10,000×10%=1,000원)이며, 이를 9,090.91원(=10,000/1.1) 같은 복리 역산 기준가에서 계산하지 않습니다. 이 1,000원을 보유일수 비례로 단순 안분해 그 몫에만 세금을 매깁니다. 반면 복리채는 실제 계약상 표면이자율로 복리 성장하는 구조 자체가 곧 과세 기준이므로 복리로 계산합니다. 두 채권 모두 세금은 만기(또는 매도) 시 누적된 이자상당액에 대해 한번에 원천징수됩니다. 참고로 한국 채권시장에서는 할인채 발행가격도 단리(액면×(1-할인율×연수)) 방식으로 정해지고, 유통시장에서 매매될 때는 이 계산기처럼 복리(1/(1+수익률)ⁿ) 방식으로 가격이 재평가됩니다 — 가격 계산과 세금 계산의 기준 방식이 다르다는 점에 유의하세요. 연간 이자·배당 합계가 2천만원을 넘으면 금융소득종합과세 대상이 될 수도 있습니다.</p>
       </li>
     </ul>
   </div>
@@ -464,7 +400,7 @@
     return { period, R, r };
   }
 
-  // ================== 단가(dirty price) 계산 — 한국 채권시장 관행(스텁 구간 단리 + 이후 복리) ==================
+  // ================== 단가 계산 — 한국 채권시장 관행(스텁 구간 단리 + 이후 복리) ==================
   function dirtyPrice(y, periods, freq, refDate) {
     const future = periods.filter((p) => p.date > refDate);
     const n = future.length;
@@ -501,20 +437,6 @@
     return { modD, pvbp, p0 };
   }
 
-  function taxableAccruedInterest(periods, fromDate, toDate) {
-    let total = 0;
-    periods.forEach((p) => {
-      if (p.date <= fromDate) return;
-      if (p.periodStart >= toDate) return;
-      const overlapStart = p.periodStart > fromDate ? p.periodStart : fromDate;
-      const overlapEnd = p.date < toDate ? p.date : toDate;
-      const overlapDays = daysBetween(overlapStart, overlapEnd);
-      if (overlapDays <= 0) return;
-      total += p.taxBase * (overlapDays / p.periodDays);
-    });
-    return total;
-  }
-
   function bankEquivalentPct(afterTaxPct) { return afterTaxPct / (1 - 0.154); }
 
   // ================== 상태 ==================
@@ -549,16 +471,7 @@
   document.getElementById('in-yield').addEventListener('input', () => { lastEdited = 'yield'; recalc(); });
   document.getElementById('in-price').addEventListener('input', () => { lastEdited = 'price'; recalc(); });
 
-  document.getElementById('in-bpslider').addEventListener('input', (e) => {
-    document.getElementById('in-bpnum').value = e.target.value;
-    recalc();
-  });
-  document.getElementById('in-bpnum').addEventListener('input', (e) => {
-    document.getElementById('in-bpslider').value = e.target.value;
-    recalc();
-  });
-
-  ['in-issue', 'in-settle', 'in-maturity', 'in-coupon', 'in-freq', 'in-saledate'].forEach((id) => {
+  ['in-issue', 'in-settle', 'in-maturity', 'in-coupon', 'in-freq'].forEach((id) => {
     const el = document.getElementById(id);
     el.addEventListener('input', recalc);
     el.addEventListener('change', recalc);
@@ -619,9 +532,6 @@
 
     // ---- 3. 결과 요약 ----
     document.getElementById('res-price').textContent = fmtPrice(displayPrice);
-    const daysElapsedInPeriod = stub.R - stub.r;
-    const accruedPer10000 = bondType === 'coupon' ? stub.period.taxBase * (daysElapsedInPeriod / stub.R) : 0;
-    document.getElementById('res-accrued').textContent = (bondType === 'coupon' && accruedPer10000 > 0) ? fmtWon(accruedPer10000 * scaleFactor) : '해당없음';
     document.getElementById('res-actualpay').textContent = fmtWon(actualPayment);
     document.getElementById('kpi-ytm').textContent = fmtPct(y * 100);
     document.getElementById('kpi-modd').textContent = modD.toFixed(2);
@@ -696,96 +606,6 @@
       `세후 총손익 <b>${fmtSigned(netGain)}</b> · 세후 연환산수익률 <b>${fmtPct(annualizedPct)}</b> · 누적 세금 ${Math.round(totalTax).toLocaleString('ko-KR')}원`;
     document.getElementById('bank-eq-hold').innerHTML =
       `🏦 은행 정기예금과 비교하면, 세전 금리 <span class="bank-eq-pct">${fmtPct(bankEqHold)}</span>짜리 예금에 넣어 세후로 받는 것과 비슷한 효과입니다.`;
-
-    // ---- 5. 중도매도 시뮬레이션 ----
-    const saleDateStr = document.getElementById('in-saledate').value;
-    const saleDate = saleDateStr ? parseDate(saleDateStr) : null;
-    const bpShift = Number(document.getElementById('in-bpnum').value) || 0;
-
-    if (saleDate && !isNaN(saleDate) && saleDate > settleDate && saleDate < maturityDate) {
-      function saleAt(yAt) {
-        const dirtyRaw = dirtyPrice(yAt, periods, freq, saleDate);
-        const dirtyDisplay = floor2(dirtyRaw);
-        const proceeds = (dirtyDisplay / 10000) * investFace; // 세전 매도금액(더티프라이스 기준)
-        return { dirtyDisplay, proceeds };
-      }
-
-      const flat = saleAt(y); // 금리변동 없음(0bp) 시나리오 — 매수수익률 그대로 유지됐을 때, 매도예정일 기준 가격
-      const yScenario = y + bpShift / 10000;
-      const scenario = saleAt(yScenario); // 사용자가 설정한 bp 시나리오
-
-      // 매매손익(평가손익): 같은 매도예정일 기준으로, 매수수익률 그대로였을 경우(flat) 대비 실제(시나리오) 가격 차이 — 순수하게 시장금리 변동 효과만
-      const capitalGain = scenario.proceeds - flat.proceeds;
-
-      document.getElementById('sale-flat-price').textContent = fmtWon(flat.proceeds);
-      document.getElementById('sale-scenario-price').textContent = fmtWon(scenario.proceeds);
-      document.getElementById('sale-scenario-gain').textContent = `매매손익(평가손익) ${fmtSigned(capitalGain)} (${bpShift >= 0 ? '+' : ''}${bpShift}bp)`;
-
-      // 보유기간 중 실제로 받은 현금(이표채 쿠폰; 할인채/복리채는 0)
-      let interimGrossCash = 0;
-      periods.forEach((p) => {
-        if (p.date > settleDate && p.date <= saleDate) interimGrossCash += p.amount * scaleFactor;
-      });
-
-      // 전체 보유기간에 대한 보유기간 이자상당액 세금 (총수익률 계산용)
-      const totalTaxableSale = taxableAccruedInterest(periods, settleDate, saleDate) * scaleFactor;
-      const totalTaxSale = totalTaxableSale * 0.154;
-
-      // 매도금액 자체에서 원천징수되는 세금 (이표채는 아직 지급되지 않은 진행중 구간분만, 할인채/복리채는 보유기간 전체)
-      let taxAtSaleForDisplay;
-      if (bondType === 'coupon') {
-        const saleStub = currentPeriodInfo(periods, saleDate);
-        let stubTaxable = 0;
-        if (saleStub) {
-          const overlapStart = saleStub.period.periodStart > settleDate ? saleStub.period.periodStart : settleDate;
-          const daysHeldInStub = daysBetween(overlapStart, saleDate);
-          stubTaxable = saleStub.period.taxBase * (daysHeldInStub / saleStub.R);
-        }
-        taxAtSaleForDisplay = stubTaxable * scaleFactor * 0.154;
-      } else {
-        taxAtSaleForDisplay = totalTaxSale;
-      }
-      const netProceedsAfterTax = scenario.proceeds - taxAtSaleForDisplay; // 매도로 실제 받는 세후 실수령액
-
-      const holdDays = daysBetween(settleDate, saleDate);
-      const totalGainSale = (interimGrossCash + scenario.proceeds - totalTaxSale) - actualPayment;
-      const annualizedSale = (totalGainSale / actualPayment) * (365 / holdDays) * 100;
-
-      document.getElementById('kpi-saleyield').textContent = fmtPct(yScenario * 100);
-      document.getElementById('kpi-saleyield-price').textContent = `적용단가 ${fmtPrice(scenario.dirtyDisplay)}`;
-
-      document.getElementById('kpi-saleprice').textContent = fmtWon(scenario.proceeds);
-      document.getElementById('kpi-salepricenote').textContent = `세전 금액입니다 (매도 시 원천징수 세금 별도 ${Math.round(taxAtSaleForDisplay).toLocaleString('ko-KR')}원)`;
-
-      const saleReturnEl = document.getElementById('kpi-salereturn');
-      saleReturnEl.textContent = fmtPct(annualizedSale);
-      saleReturnEl.className = 'kpi-value ' + (annualizedSale >= annualizedPct ? 'up' : 'down');
-      document.getElementById('kpi-salereturnnote').textContent = `세후 실수령액 ${fmtWon(netProceedsAfterTax)} · 보유 ${holdDays}일 · 세후 총손익 ${fmtSigned(totalGainSale)}`;
-
-      const diff = annualizedSale - annualizedPct;
-      const diffHtml = diff >= 0
-        ? `<span style="color:var(--up);font-weight:700;">+${diff.toFixed(3)}%p 유리</span>`
-        : `<span style="color:var(--down);font-weight:700;">${diff.toFixed(3)}%p 불리</span>`;
-      document.getElementById('sale-compare').innerHTML =
-        `만기까지 보유했을 때 세후 연환산수익률(${fmtPct(annualizedPct)}) 대비 ${diffHtml}합니다. (금리가 매수 시점보다 ${bpShift >= 0 ? '+' : ''}${bpShift}bp 움직였다고 가정)`;
-
-      const bankEqSale = bankEquivalentPct(annualizedSale);
-      document.getElementById('sale-bankeq').innerHTML =
-        `🏦 이 중도매도 시나리오는 은행 정기예금 세전 금리 <span class="bank-eq-pct">${fmtPct(bankEqSale)}</span>짜리에 넣어 세후로 받는 것과 비슷한 효과입니다.`;
-    } else {
-      document.getElementById('sale-flat-price').textContent = '-';
-      document.getElementById('sale-scenario-price').textContent = '-';
-      document.getElementById('sale-scenario-gain').textContent = '-';
-      document.getElementById('kpi-saleyield').textContent = '-';
-      document.getElementById('kpi-saleyield-price').textContent = '적용단가 -';
-      document.getElementById('kpi-saleprice').textContent = '-';
-      document.getElementById('kpi-salepricenote').textContent = '-';
-      document.getElementById('kpi-salereturn').textContent = '-';
-      document.getElementById('kpi-salereturn').className = 'kpi-value';
-      document.getElementById('kpi-salereturnnote').textContent = '-';
-      document.getElementById('sale-compare').textContent = '매도예정일은 매수일과 만기일 사이여야 합니다.';
-      document.getElementById('sale-bankeq').textContent = '-';
-    }
   }
 
   // ================== 기본값 세팅 ==================
@@ -795,13 +615,9 @@
     const issue = addMonths(today, -4);
     const maturity = addMonths(issue, 36);
 
-    const saleDate = new Date(today);
-    saleDate.setDate(saleDate.getDate() + Math.round(daysBetween(today, maturity) / 2));
-
     document.getElementById('in-settle').value = toISO(today);
     document.getElementById('in-issue').value = toISO(issue);
     document.getElementById('in-maturity').value = toISO(maturity);
-    document.getElementById('in-saledate').value = toISO(saleDate);
   })();
 
   updateBondTypeUI();

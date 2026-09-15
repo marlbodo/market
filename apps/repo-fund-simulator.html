@@ -488,10 +488,15 @@
     const leverageRatioPct = Math.max(bondRatioPct + cdRatioPct - 100, 0);
     const cdAmt = nav * cdRatioPct / 100;
     const bondAmt = nav * bondRatioPct / 100;
+    // 레버리지 대비 CD가 몇 %를 차지하는지 (레버리지가 0이면 계산 불가 -> null)
+    const cdOfLeveragePct = leverageRatioPct > 0 ? (cdRatioPct / leverageRatioPct) * 100 : null;
 
     document.getElementById('derived-leverage').textContent = `${leverageRatioPct.toFixed(0)}%`;
     document.getElementById('derived-bond-amt').textContent = `${Math.round(bondAmt).toLocaleString('ko-KR')}억`;
-    document.getElementById('derived-cd-amt').textContent = `${Math.round(cdAmt).toLocaleString('ko-KR')}억`;
+    // [수정 17] CD 매수액 옆에 "레버리지의 몇%"인지 항상 같이 보여준다
+    document.getElementById('derived-cd-amt').innerHTML = cdOfLeveragePct !== null
+      ? `${Math.round(cdAmt).toLocaleString('ko-KR')}억 <span style="font-size:11px;color:var(--text-faint);font-weight:600;">(레버리지의 ${cdOfLeveragePct.toFixed(0)}%)</span>`
+      : `${Math.round(cdAmt).toLocaleString('ko-KR')}억`;
 
     // [수정 15] 채권비율 기준 "레버리지 20%" CD 제안값을 항상 최신 상태로 표시
     const suggestHintEl = document.getElementById('cd-suggest-hint');
@@ -502,8 +507,7 @@
 
     // [수정 6] CD가 레버리지의 20% 이상인지 확인해서, 미달이면 빨간 경고 문구를 표시
     const warnEl = document.getElementById('cd-leverage-warning');
-    if (leverageRatioPct > 0) {
-      const cdOfLeveragePct = (cdRatioPct / leverageRatioPct) * 100;
+    if (cdOfLeveragePct !== null) {
       if (cdOfLeveragePct < 20) {
         warnEl.style.display = 'block';
         warnEl.textContent = `⚠ 입력하신 CD/레버리지 비율은 ${cdOfLeveragePct.toFixed(0)}%입니다. (레버리지의 20% 이상 필요)`;
@@ -639,12 +643,18 @@
     el.addEventListener('change', recalc);
   });
 
-  // [수정 15] CD를 직접 수정하면 더 이상 자동 제안으로 덮어쓰지 않음
+  // [수정 15/17] CD를 직접 수정하면 잠시 자동 제안 문구가 "직접 입력값"으로 바뀌지만,
+  // 채권 편입비율을 다시 만지면 그동안의 수동 입력은 무시하고 항상 자동 계산값으로 덮어쓴다.
+  // (버그 수정: 예전에는 여기서 recalc()를 다시 호출하지 않아서, CD 편입비율 입력창에는
+  // 새 값이 보여도 매수액/레버리지/경고문구 등 계산 결과는 한 박자 전 값 그대로 멈춰 있었다.
+  // 또, cdManuallyEdited가 한번 true가 되면 이후 채권비율을 아무리 바꿔도 CD가 다시는
+  // 자동 갱신되지 않는 문제도 있었다.)
   document.getElementById('in-cdratio').addEventListener('input', () => { cdManuallyEdited = true; });
   document.getElementById('in-bondratio').addEventListener('input', () => {
-    if (cdManuallyEdited) return;
+    cdManuallyEdited = false;
     const bondRatioVal = Number(document.getElementById('in-bondratio').value) || 0;
     document.getElementById('in-cdratio').value = suggestedCdRatio(bondRatioVal);
+    recalc();
   });
 
   // ---------- 펀드 가입일/만기일/환매예정일 기본값 ----------

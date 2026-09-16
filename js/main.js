@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-16-r (리서치센터 번호 옛날순)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-16-r2 (리서치센터 번호 제거, 카드 전체 클릭)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 
@@ -342,32 +342,35 @@ async function loadIpoSchedule() {
 }
 
 // ---------- 리서치센터 ----------
-// [수정] 번호를 "옛날 자료 = 1번"이 되도록 매긴다. 화면에는 여전히 최신순(위→아래)으로
-// 표시하되, 라벨 숫자는 전체 등록 개수를 기준으로 역산한다: 가장 최신 글이 No.(전체개수),
-// 그 다음이 -1씩 내려가서 가장 오래된 글이 No.1이 되는 방식.
-// total: 이 목록이 속한 리서치 자료 전체 개수 (research-all.html에서는 페이지가 바뀌어도
-// 항상 DB 전체 개수를 넘겨줘야 번호가 안 꼬인다).
-function renderResearchCards(el, data, total) {
-  el.innerHTML = data.map((r, i) => {
-    const rank = total - i;
+// [수정] 번호(No.X)는 제거했다 — 리포트들이 서로 연속적인 시리즈가 아니라 각자 독립적인
+// 자료라 순번을 매기는 게 의미가 없다는 판단. 대신 제목 앞에 문서 아이콘을 붙여
+// "리서치 자료"라는 느낌을 주고, 날짜는 부제 성격으로 카드 맨 아래에 작게 뺀다.
+// "파일 열기" 버튼도 없애고, 파일이 있는 카드는 카드 전체를 클릭 가능한 링크로 만든다.
+const RESEARCH_ICON_SVG =
+  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' +
+  '<path d="M5 2.5h6.5L15 6v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1Z"/>' +
+  '<path d="M11.5 2.5V6H15"/>' +
+  '<path d="M6.5 10h5M6.5 12.5h5M6.5 15h3"/>' +
+  '</svg>';
+
+function renderResearchCards(el, data) {
+  el.innerHTML = data.map((r) => {
     const titleInner = escapeHtml(r.title);
     const hasFile = !!r.file_url;
-    const titleHtml = hasFile
-      ? `<a class="research-title" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener" download>${titleInner}</a>`
-      : `<div class="research-title">${titleInner}</div>`;
-    const downloadBtn = hasFile
-      ? `<a class="research-download-btn" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener" download>파일 열기</a>`
-      : '';
     const summaryText = escapeHtml(truncateText(r.summary, 100));
-    return `
-      <div class="research-card">
-        <div class="research-card-head">
-          <div class="research-kicker">No.${rank} · ${formatDateTimeFull(r.created_at)}</div>
-          ${downloadBtn}
-        </div>
-        ${titleHtml}
-        <div class="research-desc">${summaryText}</div>
-      </div>`;
+    const dateText = formatDateTimeFull(r.created_at);
+
+    const inner = `
+      <div class="research-card-head">
+        <span class="research-icon" aria-hidden="true">${RESEARCH_ICON_SVG}</span>
+        <div class="research-title">${titleInner}</div>
+      </div>
+      <div class="research-desc">${summaryText}</div>
+      <div class="research-date">${dateText}</div>`;
+
+    return hasFile
+      ? `<a class="research-card" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener" download>${inner}</a>`
+      : `<div class="research-card">${inner}</div>`;
   }).join('');
 }
 
@@ -375,26 +378,19 @@ async function loadResearchReports() {
   const el = document.getElementById('research-list');
   if (!el) return;
   try {
-    // 개수(count)와 최신 5개 목록을 동시에 가져온다. count는 head:true라 실제 행을
-    // 내려받지 않고 총 개수만 가벼운 요청으로 얻는다.
-    const [countRes, dataRes] = await Promise.all([
-      db.from('research_reports').select('id', { count: 'exact', head: true }),
-      db.from('research_reports')
-        .select('id, title, summary, file_url, file_name, created_at')
-        .order('created_at', { ascending: false })
-        .limit(5),
-    ]);
-    if (countRes.error) throw countRes.error;
-    if (dataRes.error) throw dataRes.error;
+    const { data, error } = await db
+      .from('research_reports')
+      .select('id, title, summary, file_url, file_name, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (error) throw error;
 
-    const data = dataRes.data;
     if (!data || data.length === 0) {
       el.innerHTML = '<div class="list-empty">등록된 리서치 자료가 없습니다.</div>';
       return;
     }
 
-    const total = countRes.count ?? data.length;
-    renderResearchCards(el, data, total);
+    renderResearchCards(el, data);
   } catch (err) {
     showError(el, '리서치센터', err);
   }

@@ -597,13 +597,13 @@ a.research-title:hover { color: var(--accent); }
    (.rate-table의 기본 :first-child 26% 규칙보다 이 규칙이 나중에 오므로 우선 적용됨) */
 @media (max-width: 480px) {
   .econ-table th:first-child,
-  .econ-table td:first-child { width: 36%; }
+  .econ-table td:first-child { width: 32%; }
   .econ-table th:nth-child(2),
   .econ-table td:nth-child(2),
   .econ-table th:nth-child(3),
   .econ-table td:nth-child(3) { width: 24%; }
   .econ-table th:last-child,
-  .econ-table td:last-child { width: 16%; }
+  .econ-table td:last-child { width: 20%; }
   .econ-table th,
   .econ-table td { padding: 7px 3px; }
 }

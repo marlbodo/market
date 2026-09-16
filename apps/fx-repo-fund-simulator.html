@@ -231,7 +231,7 @@
     </div>
     <div class="field-hint" style="margin: -6px 0 4px;">원화 전환원금(스왑으로 조달한 원화) 대비 각각의 보유 비중 (채권 / CD)</div>
     <!-- [수정 15] 채권 편입비율을 바꾸면 "레버리지의 20%" 국룰을 채우는 CD 편입비율을 자동 제안(참고용).
-         CD 입력란을 직접 수정한 뒤에는 더 이상 자동으로 덮어쓰지 않는다. -->
+         채권 편입비율을 다시 만지면 그동안의 수동 입력은 무시하고 항상 자동 계산값으로 덮어쓴다. -->
     <div class="field-hint" id="cd-suggest-hint" style="margin: -2px 0 12px; color: var(--text-faint);"></div>
 
     <div class="derived-box">
@@ -278,6 +278,7 @@
 
     <div class="field-label" style="margin-top: 14px;">금통위 회차별 기준금리 변경</div>
     <div class="field-hint" style="margin: -2px 0 10px;">
+      회차별 기준금리는 기본적으로 현재 기준금리와 동일하게(변동 없음으로 가정) 자동으로 채워집니다.
       2027년 일정은 미발표 상태라 2026년 패턴(연 8회, 2·4주차 목요일)으로 추정했습니다. 공식 발표 후 직접 수정하세요.
       레포금리는 자동 계산되며, 직접 입력하면 그 값으로 고정됩니다 (더블클릭 시 자동계산 복귀).
     </div>
@@ -388,22 +389,32 @@
 
   // [수정 15] CD 편입비율 자동 제안: 레버리지(=채권비율+CD비율-100)의 20%를 CD로 채우려면
   // CD = 0.25 × (채권비율 - 100) 이어야 한다 (연립: CD = 0.2×(채권비율+CD-100) 풀면 나옴).
-  // 사용자가 CD 필드를 직접 건드리기 전까지는 채권비율을 바꿀 때마다 이 값으로 자동 채워준다.
   let cdManuallyEdited = false;
   function suggestedCdRatio(bondRatioVal) {
     return Math.max(0, Math.round(0.25 * (bondRatioVal - 100)));
   }
 
   // ---------- 금통위 회차 행 관리 (원화 레포펀드 시뮬레이터와 동일) ----------
+  // [수정 16] 2027년 말까지 전체 8회(연 8회, 2·4주차 목요일 패턴) 추정치로 확장.
+  // 회차별 "기준금리"의 초기값은 loadLiveRates()에서 실시간으로 가져온 현재 기준금리로
+  // 자동 덮어써진다(사용자가 직접 회차 금리를 수정하기 전까지). 아래 3.00은 그 전까지 쓰이는
+  // 표시용 임시값일 뿐이다.
   const DEFAULT_MEETINGS = [
     { date: '2026-10-22', rate: 3.00, repoOverride: null },
     { date: '2026-11-26', rate: 3.00, repoOverride: null },
-    { date: '2027-01-14', rate: 3.00, repoOverride: null },
-    { date: '2027-02-25', rate: 3.00, repoOverride: null },
-    { date: '2027-04-08', rate: 3.00, repoOverride: null },
-    { date: '2027-05-27', rate: 3.00, repoOverride: null },
+    { date: '2027-01-14', rate: 3.00, repoOverride: null }, // 2027년 공식 일정 미발표 · 2026년 패턴(연 8회, 2·4주차 목요일) 기준 추정치
+    { date: '2027-02-25', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-04-08', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-05-27', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-07-08', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-08-26', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-10-14', rate: 3.00, repoOverride: null }, // 〃
+    { date: '2027-11-25', rate: 3.00, repoOverride: null }, // 〃 (2027년 마지막 추정 회차)
   ];
   let meetings = DEFAULT_MEETINGS.map((m) => ({ ...m }));
+  // [수정 16] 사용자가 회차별 기준금리를 한 번이라도 직접 수정하면, 이후 실시간 기준금리
+  // 조회 결과로 회차 금리를 자동 덮어쓰지 않는다 (CD 편입비율의 cdManuallyEdited와 동일한 패턴).
+  let meetingRatesManuallyEdited = false;
 
   const meetRowsEl = document.getElementById('meet-rows');
   function currentSpreadBp() { return Number(document.getElementById('in-spread').value) || 0; }
@@ -433,6 +444,7 @@
       });
 
       row.querySelector('.meet-rate').addEventListener('input', (e) => {
+        meetingRatesManuallyEdited = true;
         const newRate = Number(e.target.value);
         meetings[idx].rate = newRate;
         for (let j = idx + 1; j < meetings.length; j++) meetings[j].rate = newRate;
@@ -549,10 +561,15 @@
     const leverageRatioPct = Math.max(bondRatioPct + cdRatioPct - 100, 0);
     const cdAmt = notionalWon0 * cdRatioPct / 100;
     const bondAmt = notionalWon0 * bondRatioPct / 100;
+    // [수정 17] 레버리지 대비 CD가 몇 %를 차지하는지 (레버리지가 0이면 계산 불가 -> null)
+    const cdOfLeveragePct = leverageRatioPct > 0 ? (cdRatioPct / leverageRatioPct) * 100 : null;
 
     document.getElementById('derived-leverage').textContent = `${leverageRatioPct.toFixed(0)}%`;
     document.getElementById('derived-bond-amt').textContent = fmtEok0(bondAmt);
-    document.getElementById('derived-cd-amt').textContent = fmtEok0(cdAmt);
+    // [수정 17] CD 매수액 옆에 "레버리지의 몇%"인지 항상 같이 보여준다
+    document.getElementById('derived-cd-amt').innerHTML = cdOfLeveragePct !== null
+      ? `${fmtEok0(cdAmt)} <span style="font-size:11px;color:var(--text-faint);font-weight:600;">(레버리지의 ${cdOfLeveragePct.toFixed(0)}%)</span>`
+      : fmtEok0(cdAmt);
 
     // [수정 15] 채권비율 기준 "레버리지 20%" CD 제안값을 항상 최신 상태로 표시
     const suggestHintEl = document.getElementById('cd-suggest-hint');
@@ -562,8 +579,7 @@
       : `채권 편입비율 기준, 레버리지의 20%를 채우는 CD 편입비율 ${suggestedCd}%를 자동으로 채워드렸어요. 직접 값을 입력하면 이후로는 자동 갱신하지 않습니다.`;
 
     const warnEl = document.getElementById('cd-leverage-warning');
-    if (leverageRatioPct > 0) {
-      const cdOfLeveragePct = (cdRatioPct / leverageRatioPct) * 100;
+    if (cdOfLeveragePct !== null) {
       if (cdOfLeveragePct < 20) {
         warnEl.style.display = 'block';
         warnEl.textContent = `⚠ 입력하신 CD/레버리지 비율은 ${cdOfLeveragePct.toFixed(0)}%입니다. (레버리지의 20% 이상 필요)`;
@@ -744,12 +760,18 @@
     el.addEventListener('change', recalc);
   });
 
-  // [수정 15] CD를 직접 수정하면 더 이상 자동 제안으로 덮어쓰지 않음
+  // [수정 15/17] CD를 직접 수정하면 잠시 자동 제안 문구가 "직접 입력값"으로 바뀌지만,
+  // 채권 편입비율을 다시 만지면 그동안의 수동 입력은 무시하고 항상 자동 계산값으로 덮어쓴다.
+  // (버그 수정: 예전에는 여기서 recalc()를 다시 호출하지 않아서, CD 편입비율 입력창에는
+  // 새 값이 보여도 매수액/레버리지/경고문구 등 계산 결과는 한 박자 전 값 그대로 멈춰 있었다.
+  // 또, cdManuallyEdited가 한번 true가 되면 이후 채권비율을 아무리 바꿔도 CD가 다시는
+  // 자동 갱신되지 않는 문제도 있었다.)
   document.getElementById('in-cdratio').addEventListener('input', () => { cdManuallyEdited = true; });
   document.getElementById('in-bondratio').addEventListener('input', () => {
-    if (cdManuallyEdited) return;
+    cdManuallyEdited = false;
     const bondRatioVal = Number(document.getElementById('in-bondratio').value) || 0;
     document.getElementById('in-cdratio').value = suggestedCdRatio(bondRatioVal);
+    recalc();
   });
 
   // ---------- 기본 날짜값 ----------
@@ -768,6 +790,13 @@
     document.getElementById('in-maturity').value = plus365Str;
     document.getElementById('in-swapmaturity').value = plus365Str;
   })();
+
+  // 페이지 최초 진입 시 CD 편입비율도 채권 편입비율 기준 자동 제안값으로 맞춰 시작한다
+  // (기본값끼리 우연히 일치하던 것을, 실제로 계산해서 채우도록 명시적으로 처리)
+  if (!cdManuallyEdited) {
+    const initialBondRatio = Number(document.getElementById('in-bondratio').value) || 0;
+    document.getElementById('in-cdratio').value = suggestedCdRatio(initialBondRatio);
+  }
 
   // ---------- 채권/CD 현재금리, 기준금리 자동 조회 (원화 레포펀드 시뮬레이터와 동일) ----------
   const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
@@ -795,7 +824,15 @@
         document.getElementById('in-endyield').value = bondYield.toFixed(3);
       }
       if (cdYield !== null && !Number.isNaN(cdYield)) document.getElementById('in-cdyield').value = cdYield.toFixed(3);
-      if (baseRate !== null && !Number.isNaN(baseRate)) document.getElementById('in-baserate0').value = baseRate.toFixed(2);
+      if (baseRate !== null && !Number.isNaN(baseRate)) {
+        document.getElementById('in-baserate0').value = baseRate.toFixed(2);
+        // [수정 16] 회차별 기준금리를 아직 직접 수정한 적이 없다면, 모든 회차 기본값을
+        // 방금 가져온 최신 기준금리로 맞춰서(=금리 동결 가정) 다시 그린다.
+        if (!meetingRatesManuallyEdited) {
+          meetings.forEach((m) => { m.rate = baseRate; });
+          renderMeetRows();
+        }
+      }
     } catch (err) {
       // 실시간 금리 조회 실패 시 화면의 기본값을 그대로 사용
       console.error('실시간 금리 로딩 실패, 기본값 사용', err);

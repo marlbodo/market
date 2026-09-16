@@ -16,6 +16,33 @@
   .popup-close { font-size: 12.5px; color: var(--text-muted); border: 1px solid var(--border-strong); border-radius: var(--radius-s); padding: 4px 10px; }
   .research-list-all { background: var(--bg); padding: 0 16px; border: 1px solid var(--border); }
   .research-list-all .research-card:first-child { padding-top: 14px; }
+
+  /* ---------- 페이지네이션 (지난 브리핑 보기 페이지와 동일한 느낌: 이전 / 번호 / 다음) ---------- */
+  .research-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .research-page-btn {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12.5px;
+    font-weight: 700;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-s);
+    background: var(--bg);
+    color: var(--text-muted);
+  }
+  .research-page-btn:hover:not(:disabled):not(.is-active) { border-color: var(--accent); color: var(--accent); }
+  .research-page-btn.is-active { background: var(--text); border-color: var(--text); color: #fff; cursor: default; }
+  .research-page-btn:disabled { opacity: 0.4; cursor: default; }
 </style>
 </head>
 <body>
@@ -27,28 +54,25 @@
     <div class="research-list-all" id="research-list-all">
       <div class="list-loading">자료를 불러오는 중…</div>
     </div>
+    <nav class="research-pagination" id="research-pagination"></nav>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/supabase-client.js"></script>
 <script src="../js/helpers.js"></script>
 <script>
-  (async function () {
-    const el = document.getElementById('research-list-all');
-    const { data, error } = await db
-      .from('research_reports')
-      .select('id, title, summary, file_url, file_name, created_at')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (error) {
-      console.error(error);
-      el.innerHTML = '<div class="list-empty">자료를 불러오지 못했습니다.</div>';
-      return;
-    }
-    if (!data || data.length === 0) {
-      el.innerHTML = '<div class="list-empty">등록된 리서치 자료가 없습니다.</div>';
-      return;
-    }
-    el.innerHTML = data.map((r, i) => {
+  const PAGE_SIZE = 10;
+  let currentPage = 1;
+  let totalCount = 0; // DB 전체 리서치 자료 개수 (번호 역산 + 페이지 수 계산에 사용)
+
+  const listEl = document.getElementById('research-list-all');
+  const pagerEl = document.getElementById('research-pagination');
+
+  // [수정] 번호를 "옛날 자료 = 1번"이 되도록 매긴다. 화면 정렬은 그대로 최신순(위→아래)을
+  // 유지하되, 라벨 숫자만 전체 개수 기준으로 역산한다.
+  // offset: 이 페이지가 전체 목록(최신순) 중 몇 번째부터 시작하는지 (0-based)
+  function renderResearchCards(data, offset) {
+    listEl.innerHTML = data.map((r, i) => {
+      const rank = totalCount - (offset + i);
       const titleInner = escapeHtml(r.title);
       const hasFile = !!r.file_url;
       const titleHtml = hasFile
@@ -61,14 +85,84 @@
       return `
         <div class="research-card">
           <div class="research-card-head">
-            <div class="research-kicker">No.${i + 1} · ${formatDateTimeFull(r.created_at)}</div>
+            <div class="research-kicker">No.${rank} · ${formatDateTimeFull(r.created_at)}</div>
             ${downloadBtn}
           </div>
           ${titleHtml}
           <div class="research-desc">${summaryText}</div>
         </div>`;
     }).join('');
-  })();
+  }
+
+  // 10개가 넘을 때만 페이지네이션을 그린다 (이전 / 1 / 2 / ... / 다음)
+  function renderPagination(totalPages) {
+    if (totalPages <= 1) {
+      pagerEl.innerHTML = '';
+      return;
+    }
+    const btn = (label, page, opts = {}) => {
+      const active = opts.active ? ' is-active' : '';
+      const disabled = opts.disabled ? 'disabled' : '';
+      return `<button class="research-page-btn${active}" data-page="${page}" ${disabled}>${label}</button>`;
+    };
+    let html = '';
+    html += btn('이전', currentPage - 1, { disabled: currentPage === 1 });
+    for (let p = 1; p <= totalPages; p++) {
+      html += btn(String(p), p, { active: p === currentPage });
+    }
+    html += btn('다음', currentPage + 1, { disabled: currentPage === totalPages });
+    pagerEl.innerHTML = html;
+
+    pagerEl.querySelectorAll('.research-page-btn').forEach((b) => {
+      b.addEventListener('click', () => {
+        const page = Number(b.getAttribute('data-page'));
+        if (page < 1 || page > totalPages || page === currentPage) return;
+        loadPage(page);
+      });
+    });
+  }
+
+  async function loadPage(page) {
+    currentPage = page;
+    listEl.innerHTML = '<div class="list-loading">자료를 불러오는 중…</div>';
+
+    try {
+      const offset = (page - 1) * PAGE_SIZE;
+
+      // count는 페이지를 옮길 때마다 다시 셀 필요 없이, 최초 1회만 가져와 재사용한다.
+      const needCount = totalCount === 0;
+      const [countRes, dataRes] = await Promise.all([
+        needCount
+          ? db.from('research_reports').select('id', { count: 'exact', head: true })
+          : Promise.resolve({ count: totalCount, error: null }),
+        db.from('research_reports')
+          .select('id, title, summary, file_url, file_name, created_at')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + PAGE_SIZE - 1),
+      ]);
+      if (countRes.error) throw countRes.error;
+      if (dataRes.error) throw dataRes.error;
+
+      if (needCount) totalCount = countRes.count ?? 0;
+
+      const data = dataRes.data || [];
+      if (data.length === 0) {
+        listEl.innerHTML = '<div class="list-empty">등록된 리서치 자료가 없습니다.</div>';
+        pagerEl.innerHTML = '';
+        return;
+      }
+
+      renderResearchCards(data, offset);
+      renderPagination(Math.max(1, Math.ceil(totalCount / PAGE_SIZE)));
+      window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    } catch (err) {
+      console.error(err);
+      listEl.innerHTML = '<div class="list-empty">자료를 불러오지 못했습니다.</div>';
+      pagerEl.innerHTML = '';
+    }
+  }
+
+  loadPage(1);
 </script>
 </body>
 </html>

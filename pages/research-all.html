@@ -62,35 +62,39 @@
 <script>
   const PAGE_SIZE = 10;
   let currentPage = 1;
-  let totalCount = 0; // DB 전체 리서치 자료 개수 (번호 역산 + 페이지 수 계산에 사용)
+  let totalCount = 0; // 페이지 수 계산용 (번호 매기기에는 더 이상 안 씀)
 
   const listEl = document.getElementById('research-list-all');
   const pagerEl = document.getElementById('research-pagination');
 
-  // [수정] 번호를 "옛날 자료 = 1번"이 되도록 매긴다. 화면 정렬은 그대로 최신순(위→아래)을
-  // 유지하되, 라벨 숫자만 전체 개수 기준으로 역산한다.
-  // offset: 이 페이지가 전체 목록(최신순) 중 몇 번째부터 시작하는지 (0-based)
-  function renderResearchCards(data, offset) {
-    listEl.innerHTML = data.map((r, i) => {
-      const rank = totalCount - (offset + i);
+  // [수정] 번호(No.X)는 제거 — 리포트가 서로 독립적인 자료라 순번이 의미 없다는 판단.
+  // 대신 제목 앞에 문서 아이콘을 붙이고, 날짜는 카드 맨 아래에 작게 부제로 뺀다.
+  // "파일 열기" 버튼도 없애고, 파일이 있으면 카드 전체를 클릭 가능한 링크로 만든다.
+  const RESEARCH_ICON_SVG =
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M5 2.5h6.5L15 6v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1Z"/>' +
+    '<path d="M11.5 2.5V6H15"/>' +
+    '<path d="M6.5 10h5M6.5 12.5h5M6.5 15h3"/>' +
+    '</svg>';
+
+  function renderResearchCards(data) {
+    listEl.innerHTML = data.map((r) => {
       const titleInner = escapeHtml(r.title);
       const hasFile = !!r.file_url;
-      const titleHtml = hasFile
-        ? `<a class="research-title" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener" download>${titleInner}</a>`
-        : `<div class="research-title">${titleInner}</div>`;
-      const downloadBtn = hasFile
-        ? `<a class="research-download-btn" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener" download>파일 열기</a>`
-        : '';
       const summaryText = escapeHtml(truncateText(r.summary, 100));
-      return `
-        <div class="research-card">
-          <div class="research-card-head">
-            <div class="research-kicker">No.${rank} · ${formatDateTimeFull(r.created_at)}</div>
-            ${downloadBtn}
-          </div>
-          ${titleHtml}
-          <div class="research-desc">${summaryText}</div>
-        </div>`;
+      const dateText = formatDateTimeFull(r.created_at);
+
+      const inner = `
+        <div class="research-card-head">
+          <span class="research-icon" aria-hidden="true">${RESEARCH_ICON_SVG}</span>
+          <div class="research-title">${titleInner}</div>
+        </div>
+        <div class="research-desc">${summaryText}</div>
+        <div class="research-date">${dateText}</div>`;
+
+      return hasFile
+        ? `<a class="research-card" href="${escapeHtml(r.file_url)}" target="_blank" rel="noopener" download>${inner}</a>`
+        : `<div class="research-card">${inner}</div>`;
     }).join('');
   }
 
@@ -152,7 +156,7 @@
         return;
       }
 
-      renderResearchCards(data, offset);
+      renderResearchCards(data);
       renderPagination(Math.max(1, Math.ceil(totalCount / PAGE_SIZE)));
       window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
     } catch (err) {

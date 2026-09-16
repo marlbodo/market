@@ -487,28 +487,41 @@ img { max-width: 100%; display: block; }
 .ipo-td-type { text-align: center; }
 
 /* ---------- Sidebar (우) ---------- */
-.research-card { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.research-card {
+  display: block;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease;
+}
 .research-card:first-child { padding-top: 0; }
+a.research-card:hover {
+  background: var(--bg-hover);
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: var(--radius-s);
+}
 .research-card-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
   margin-bottom: 6px;
 }
-.research-kicker { font-size: 12.5px; color: var(--teal); font-weight: 700; }
-.research-title { font-size: 15.5px; font-weight: 700; line-height: 1.45; margin-bottom: 7px; display: block; }
-a.research-title:hover { color: var(--accent); }
-.research-desc { font-size: 14px; color: var(--text-muted); line-height: 1.65; }
-.research-download-btn {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--teal);
-  border: 1px solid var(--teal);
-  border-radius: var(--radius-s);
-  padding: 4px 10px;
+.research-icon {
   flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: var(--teal-soft);
+  color: var(--teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.research-download-btn:hover { background: var(--teal); color: #fff; }
+.research-icon svg { width: 17px; height: 17px; display: block; }
+.research-title { font-size: 15.5px; font-weight: 700; line-height: 1.45; color: var(--text); flex: 1; min-width: 0; }
+.research-desc { font-size: 14px; color: var(--text-muted); line-height: 1.65; margin-bottom: 6px; }
+.research-date { font-size: 11px; color: var(--text-faint); }
 
 .apps-panel {
   background: linear-gradient(180deg, #fbfcfe 0%, #ffffff 60%);
@@ -597,11 +610,11 @@ a.research-title:hover { color: var(--accent); }
    (.rate-table의 기본 :first-child 26% 규칙보다 이 규칙이 나중에 오므로 우선 적용됨) */
 @media (max-width: 480px) {
   .econ-table th:first-child,
-  .econ-table td:first-child { width: 32%; }
+  .econ-table td:first-child { width: 28%; }
   .econ-table th:nth-child(2),
   .econ-table td:nth-child(2),
   .econ-table th:nth-child(3),
-  .econ-table td:nth-child(3) { width: 24%; }
+  .econ-table td:nth-child(3) { width: 26%; }
   .econ-table th:last-child,
   .econ-table td:last-child { width: 20%; }
   .econ-table th,

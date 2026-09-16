@@ -1,5 +1,5 @@
 // helpers.js에 정의된 formatDateShort, formatDateFull, formatNumber, escapeHtml, renderNewsList 사용
-console.log('%c[market] main.js v2026-09-14-r (AI 인사이트 날짜 연도 생략)', 'color:#16305c;font-weight:bold');
+console.log('%c[market] main.js v2026-09-16-r (리서치센터 번호 옛날순)', 'color:#16305c;font-weight:bold');
 
 const TODAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 
@@ -29,8 +29,6 @@ function showError(el, label, err) {
 }
 
 // ---------- 마지막 업데이트 표시 ----------
-// 메인 페이지는 "오늘" 기준 최신 데이터만 다루므로 날짜는 생략하고 시:분만 표시
-// (모바일 폭이 좁을 때 "2026. 09. 09. 18:30" 같은 긴 문자열이 줄바꿈되며 깨지는 문제 해결)
 function getMaxTimestamp(rows, fields = ['updated_at', 'created_at']) {
   if (!rows || rows.length === 0) return null;
   let max = null;
@@ -62,8 +60,6 @@ function setLastUpdated(elementId, timestamp) {
   el.innerHTML = `${CLOCK_ICON}마지막 업데이트: ${formatted}`;
 }
 
-// 주요금리 패널 전용: 한국(엑셀)과 미국(FRED)의 원천/입수 시각이 서로 다르므로 두 줄로 나눠 표시.
-// 예) 한국: 09.11. 18:30 기준 / 미국: 09.11. 05:30 기준
 function fmtShortDateTime(timestamp) {
   if (!timestamp) return '-';
   const d = new Date(timestamp);
@@ -82,7 +78,6 @@ function setRateLastUpdated(krTimestamp, usTimestamp) {
   el.classList.add('last-updated-dual');
   el.innerHTML =
     `<div class="last-updated-row">${CLOCK_ICON}한국: ${fmtShortDateTime(krTimestamp)} 기준</div>` +
-    // [수정 1] "·" 앞뒤 공백을 동일하게 맞춰서 점 간격이 좁아 보이던 문제 해결
     `<div class="last-updated-row">${CLOCK_ICON}미국: ${fmtShortDateTime(usTimestamp)} 기준 <span class="rate-source-note">· 美 재무부 · FRED</span></div>`;
 }
 
@@ -96,7 +91,6 @@ async function loadFinancialNews() {
       .order('article_published_at', { ascending: false })
       .limit(10);
     if (error) throw error;
-    // 메인 페이지 뉴스 목록은 시:분만 표시 (renderNewsList에 timeOnly 옵션 전달, helpers.js 참고)
     renderNewsList(el, data, { timeOnly: true });
     setLastUpdated('news-updated', getMaxTimestamp(data, ['created_at']));
   } catch (err) {
@@ -111,17 +105,8 @@ const RATE_ORDER = [
   'Fed금리', '미국2Y', '미국10Y',
 ];
 
-// 미국 국채금리(2Y·10Y)와 Fed금리는 2026-09-12부터 FRED API 자동 수집으로 전환되어 신뢰도 문제가
-// 해소되었으므로 더 이상 숨기지 않는다. (과거엔 엑셀 수기 입력값이라 '미국 10Y'를 숨겨왔음)
 const HIDDEN_INDICATORS = new Set([]);
-
-// 미국 국채금리/Fed금리는 FRED에서, 그 외는 엑셀에서 들어오므로 "마지막 업데이트" 시각을
-// 두 그룹으로 나눠서 각각 계산한다 (setRateLastUpdated 참고).
 const US_RATE_INDICATORS = new Set(['미국 10Y', '미국 2Y', 'Fed 금리(상단)']);
-
-// 미국10Y·Fed금리(상단)는 엑셀 임포트가 재무부/FRED보다 먼저 그날 값을 써넣을 수 있는데, 그 값은
-// updated_at이 비어있는 엑셀발 미검증 값이다. 공식 소스가 그 날짜를 확정(overwrite)하기 전까지는
-// "최신값"으로 채택하지 않는다 (미국2Y는 엑셀에 없던 신규 지표라 해당 없음).
 const STALE_GUARDED_INDICATORS = new Set(['미국 10Y', 'Fed 금리(상단)']);
 
 function rateSortKey(name) {
@@ -160,7 +145,6 @@ async function loadIndicators() {
     const currentByIndicator = {};
     latestRows.forEach((row) => {
       if (currentByIndicator[row.indicator]) return;
-      // 엑셀이 FRED보다 먼저 써넣은 미검증 값(updated_at 없음)은 최신값 후보에서 제외
       if (STALE_GUARDED_INDICATORS.has(row.indicator) && !row.updated_at) return;
       currentByIndicator[row.indicator] = row;
     });
@@ -199,10 +183,6 @@ async function loadIndicators() {
         ${deltaTd(r.current, r.yearRow)}
       </tr>`).join('');
 
-    // [수정 2] 헤더 날짜("09.12" 등)는 한국(민평) 지표의 최신 영업일만 기준으로 계산한다.
-    // 기존에는 미국 지표(FRED)의 date까지 섞여서 최댓값을 구했는데, FRED가 같은 값을
-    // 재확인(re-upsert)하며 date를 갱신하면 헤더 날짜가 실제 민평 발표일보다 앞서 보이는
-    // 문제가 있었다.
     const krIndicatorList = indicatorList.filter(([name]) => !US_RATE_INDICATORS.has(name));
     const dateSourceList = krIndicatorList.length ? krIndicatorList : indicatorList;
     const latestDate = dateSourceList.reduce(
@@ -213,12 +193,6 @@ async function loadIndicators() {
 
     el.innerHTML = rows_html || '<tr><td colspan="5" class="list-empty">지표 데이터가 아직 없습니다.</td></tr>';
 
-    // [수정 2] "마지막 업데이트" 시각도 마찬가지로 재계산 기준을 바꾼다.
-    // - 한국(엑셀) 지표: created_at 기준 (기존과 동일)
-    // - 미국(FRED) 지표: updated_at이 아니라 created_at 기준으로 사용.
-    //   FRED가 10분 단위로 같은 날짜의 값을 재확인만 하고 실제 값은 바뀌지 않는데,
-    //   updated_at을 쓰면 마치 미국 장이 계속 움직이는 것처럼 시각이 계속 갱신되어 보였다.
-    //   실제로는 그 값이 "그날 최초로 입수된 시점(created_at)" 기준 종가이므로 created_at을 쓴다.
     let krTs = null;
     let usTs = null;
     Object.entries(currentByIndicator).forEach(([name, row]) => {
@@ -368,8 +342,14 @@ async function loadIpoSchedule() {
 }
 
 // ---------- 리서치센터 ----------
-function renderResearchCards(el, data) {
+// [수정] 번호를 "옛날 자료 = 1번"이 되도록 매긴다. 화면에는 여전히 최신순(위→아래)으로
+// 표시하되, 라벨 숫자는 전체 등록 개수를 기준으로 역산한다: 가장 최신 글이 No.(전체개수),
+// 그 다음이 -1씩 내려가서 가장 오래된 글이 No.1이 되는 방식.
+// total: 이 목록이 속한 리서치 자료 전체 개수 (research-all.html에서는 페이지가 바뀌어도
+// 항상 DB 전체 개수를 넘겨줘야 번호가 안 꼬인다).
+function renderResearchCards(el, data, total) {
   el.innerHTML = data.map((r, i) => {
+    const rank = total - i;
     const titleInner = escapeHtml(r.title);
     const hasFile = !!r.file_url;
     const titleHtml = hasFile
@@ -382,7 +362,7 @@ function renderResearchCards(el, data) {
     return `
       <div class="research-card">
         <div class="research-card-head">
-          <div class="research-kicker">No.${i + 1} · ${formatDateTimeFull(r.created_at)}</div>
+          <div class="research-kicker">No.${rank} · ${formatDateTimeFull(r.created_at)}</div>
           ${downloadBtn}
         </div>
         ${titleHtml}
@@ -395,32 +375,35 @@ async function loadResearchReports() {
   const el = document.getElementById('research-list');
   if (!el) return;
   try {
-    const { data, error } = await db
-      .from('research_reports')
-      .select('id, title, summary, file_url, file_name, created_at')
-      .order('created_at', { ascending: false })
-      .limit(5);
-    if (error) throw error;
+    // 개수(count)와 최신 5개 목록을 동시에 가져온다. count는 head:true라 실제 행을
+    // 내려받지 않고 총 개수만 가벼운 요청으로 얻는다.
+    const [countRes, dataRes] = await Promise.all([
+      db.from('research_reports').select('id', { count: 'exact', head: true }),
+      db.from('research_reports')
+        .select('id, title, summary, file_url, file_name, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5),
+    ]);
+    if (countRes.error) throw countRes.error;
+    if (dataRes.error) throw dataRes.error;
 
+    const data = dataRes.data;
     if (!data || data.length === 0) {
       el.innerHTML = '<div class="list-empty">등록된 리서치 자료가 없습니다.</div>';
       return;
     }
 
-    renderResearchCards(el, data);
+    const total = countRes.count ?? data.length;
+    renderResearchCards(el, data, total);
   } catch (err) {
     showError(el, '리서치센터', err);
   }
 }
 
 // ---------- AI 인사이트 (매일 새벽 자동 생성된 AI 기사 2편) ----------
-// 항목이 항상 같은 시각(예: 매일 08:00)에 함께 갱신되므로, 시각은 패널 헤더에 한 번만
-// 표시하고 각 항목에서는 제거함 (모바일에서 제목이 3줄까지 늘어지는 문제 해결)
 const AI_INSIGHT_LABELS = { bond: '채권·금리', ipo: '공모주(IPO)' };
 
 function formatDateTimeDot(iso) {
-  // "2026-09-10T08:00:00+00:00" -> "09.10. 08:00" (KST 고정)
-  // 연도는 표시하지 않음: 항상 올해 기사라 의미가 없고, 길게 표시되면 모바일에서 보기 안 좋음.
   if (!iso) return '';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '';
@@ -470,7 +453,6 @@ async function loadAiInsights() {
 
     if (updatedEl) {
       const latestTs = getMaxTimestamp(items, ['updated_at']);
-      // [수정 8] "업데이트" -> "AI 자동 생성"으로 문구 변경
       updatedEl.textContent = latestTs ? `${formatDateTimeDot(latestTs)} AI 자동 생성` : '';
     }
 
@@ -496,7 +478,6 @@ async function loadAiInsights() {
 }
 
 // ---------- init ----------
-// ---------- 헤더 여의도 날씨 (Open-Meteo, API 키 불필요) ----------
 const WEATHER_CODE_INFO = {
   0: ['☀️', '맑음'], 1: ['🌤️', '대체로 맑음'], 2: ['⛅', '구름 조금'], 3: ['☁️', '흐림'],
   45: ['🌫️', '안개'], 48: ['🌫️', '안개'],

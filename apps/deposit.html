@@ -49,6 +49,13 @@
     margin: 0 0 4px;
     letter-spacing: -0.01em;
   }
+  h1.title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+  }
+  .title-icon { width: 26px; height: 26px; flex: none; }
   .sub {
     font-size: 13px;
     color: var(--ink-soft);
@@ -173,7 +180,17 @@
 <div class="wrap">
   <header>
     <div class="header-text">
-      <h1>정기예금 금리 비교</h1>
+      <h1 class="title-row">
+        <svg class="title-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M16 4 L28 11 H4 Z" fill="#1F7A5C"/>
+          <rect x="5" y="13" width="3.4" height="12" fill="#1F7A5C"/>
+          <rect x="11.3" y="13" width="3.4" height="12" fill="#1F7A5C"/>
+          <rect x="17.3" y="13" width="3.4" height="12" fill="#1F7A5C"/>
+          <rect x="23.6" y="13" width="3.4" height="12" fill="#1F7A5C"/>
+          <rect x="3.5" y="26" width="25" height="3" rx="1" fill="#1F7A5C"/>
+        </svg>
+        정기예금 금리 비교
+      </h1>
       <p class="sub">금융감독원 금융상품통합비교공시(finlife) 오픈API 기준 · 매시간 자동 갱신</p>
     </div>
     <button class="close-btn" onclick="window.close()">닫기</button>

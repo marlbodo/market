@@ -35,6 +35,8 @@
     padding-bottom: 14px; margin-bottom: 14px;
   }
   h1 { font-size: 21px; margin: 0; }
+  h1.title-row { display: flex; align-items: center; gap: 9px; }
+  .title-icon { width: 28px; height: 28px; flex: none; }
   .sub { font-size: 12.5px; color: var(--ink-soft); margin: 3px 0 0; }
   .close-btn {
     border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
@@ -180,7 +182,20 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>📅 경제지표 캘린더</h1>
+      <h1 class="title-row">
+        <svg class="title-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="4" y="6" width="24" height="22" rx="3" fill="#16305C"/>
+          <rect x="4" y="6" width="24" height="6" rx="3" fill="#16305C"/>
+          <rect x="8" y="3" width="2.4" height="6" rx="1.2" fill="#16305C"/>
+          <rect x="21.6" y="3" width="2.4" height="6" rx="1.2" fill="#16305C"/>
+          <rect x="7" y="15" width="4" height="4" rx="1" fill="#ffffff"/>
+          <rect x="14" y="15" width="4" height="4" rx="1" fill="#ffffff"/>
+          <rect x="21" y="15" width="4" height="4" rx="1" fill="#F2994A"/>
+          <rect x="7" y="21" width="4" height="4" rx="1" fill="#ffffff" opacity="0.6"/>
+          <rect x="14" y="21" width="4" height="4" rx="1" fill="#ffffff" opacity="0.6"/>
+        </svg>
+        경제지표 캘린더
+      </h1>
       <p class="sub">중앙은행 회의 · 주요 경제지표 발표 · 공모주 일정을 한 번에</p>
       <p class="sub range-note">2026년 12월까지 일정이 등록되어 있습니다. 그 이후 일정은 추후 업데이트될 예정입니다.</p>
     </div>

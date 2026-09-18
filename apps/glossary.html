@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>용어해설집 — AI 마켓 인사이트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --paper:#f3efe4;
+    --paper-2:#ece5d3;
+    --ink:#1c2016;
+    --ink-soft:#4d5142;
+    --rule:#c9bf9e;
+    --seal:#6e2f2b;
+    --seal-soft:#8a4440;
+    --gold:#8a6a2f;
+    --deepdive-bg:#efe6cf;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --serif:'Noto Serif KR', serif;
+    --sans:'Noto Sans KR', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    min-height:100vh;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+    z-index:0;
+  }
+  a{color:inherit;}
+
+  header.masthead{
+    position:relative;
+    border-bottom:2px solid var(--ink);
+    padding:22px 24px 16px;
+    background:var(--paper);
+  }
+  .masthead-inner{
+    max-width:1180px;
+    margin:0 auto;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .masthead-title{
+    font-family:var(--serif);
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:0.02em;
+  }
+  .masthead-title .seal{
+    color:var(--seal);
+  }
+  .masthead-sub{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .masthead-count{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+
+  .search-bar{
+    max-width:1180px;
+    margin:14px auto 0;
+    position:relative;
+  }
+  .search-bar input{
+    width:100%;
+    padding:11px 14px;
+    font-family:var(--sans);
+    font-size:14px;
+    background:var(--paper-2);
+    border:1px solid var(--rule);
+    color:var(--ink);
+    outline:none;
+  }
+  .search-bar input:focus{
+    border-color:var(--seal);
+  }
+  .search-bar input::placeholder{color:var(--ink-soft);}
+
+  .layout{
+    position:relative;
+    z-index:1;
+    max-width:1180px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:250px 1fr;
+    gap:0;
+  }
+  @media (max-width: 860px){
+    .layout{grid-template-columns:1fr;}
+    nav.toc{
+      border-right:none;
+      border-bottom:2px solid var(--ink);
+    }
+  }
+
+  nav.toc{
+    border-right:2px solid var(--ink);
+    padding:20px 16px 40px;
+    position:sticky;
+    top:0;
+    align-self:start;
+    max-height:100vh;
+    overflow-y:auto;
+  }
+  .toc-section{margin-bottom:22px;}
+  .toc-section-title{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.08em;
+    color:var(--seal);
+    margin:0 0 8px;
+    padding-bottom:4px;
+    border-bottom:1px solid var(--rule);
+  }
+  .toc-cat{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    padding:6px 4px;
+    font-size:13.5px;
+    cursor:pointer;
+    border-bottom:1px dotted transparent;
+    color:var(--ink-soft);
+  }
+  .toc-cat:hover{color:var(--ink);}
+  .toc-cat.active{
+    color:var(--ink);
+    font-weight:700;
+    background:var(--paper-2);
+  }
+  .toc-cat .n{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+
+  main.content{
+    padding:28px 28px 80px;
+    min-width:0;
+  }
+  .cat-header{
+    margin-bottom:20px;
+    padding-bottom:14px;
+    border-bottom:1px solid var(--rule);
+  }
+  .cat-header .section-label{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--seal);
+    letter-spacing:0.06em;
+  }
+  .cat-header h2{
+    font-family:var(--serif);
+    font-size:24px;
+    margin:6px 0 8px;
+  }
+  .cat-header p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:14px;
+    line-height:1.7;
+    max-width:70ch;
+  }
+
+  .term{
+    border-bottom:1px solid var(--rule);
+    padding:16px 0;
+  }
+  .term:first-of-type{padding-top:0;}
+  .term-row{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    cursor:pointer;
+    flex-wrap:wrap;
+  }
+  .term-kr{
+    font-family:var(--serif);
+    font-weight:700;
+    font-size:17px;
+  }
+  .term-en{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .term-abbr{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--seal-soft);
+    border:1px solid var(--seal-soft);
+    padding:1px 6px;
+  }
+  .term-toggle{
+    margin-left:auto;
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+  .term-body{
+    margin-top:10px;
+    display:none;
+  }
+  .term.open .term-body{display:block;}
+  .term.open .term-row .term-kr{color:var(--seal);}
+  .layer{
+    display:flex;
+    gap:10px;
+    padding:8px 0;
+    align-items:flex-start;
+  }
+  .layer-label{
+    flex:0 0 78px;
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--ink-soft);
+    padding-top:2px;
+    letter-spacing:0.03em;
+  }
+  .layer-text{
+    font-size:14.5px;
+    line-height:1.75;
+    color:var(--ink);
+  }
+  .layer1 .layer-text{color:var(--ink-soft); font-size:14px;}
+  .deepdive{
+    margin-top:6px;
+    background:var(--deepdive-bg);
+    border-left:3px solid var(--gold);
+    padding:12px 14px;
+  }
+  .deepdive .layer-label{color:var(--gold);}
+  .related{
+    margin-top:10px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--ink-soft);
+  }
+  .related span{
+    display:inline-block;
+    border:1px solid var(--rule);
+    padding:2px 7px;
+    margin:2px 4px 2px 0;
+    cursor:pointer;
+  }
+  .related span:hover{border-color:var(--seal); color:var(--seal);}
+
+  .empty, .loading{
+    padding:60px 0;
+    text-align:center;
+    color:var(--ink-soft);
+    font-family:var(--mono);
+    font-size:13px;
+  }
+
+  .search-results-label{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--seal);
+    margin-bottom:16px;
+  }
+  mark{
+    background:var(--gold);
+    color:var(--paper);
+    padding:0 2px;
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div>
+      <div class="masthead-title"><span class="seal">§</span> 용어해설집</div>
+      <div class="masthead-sub">정의 → 실무적 의미 → 딥다이브. AI 마켓 인사이트 부속 사전.</div>
+    </div>
+    <div class="masthead-count" id="term-count"></div>
+  </div>
+  <div class="search-bar">
+    <input id="search-input" type="text" placeholder="용어 검색 (한글, 영문, 약어 — 예: PCE, 듀레이션, IRS)">
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" id="toc"></nav>
+  <main class="content" id="content">
+    <div class="loading">불러오는 중…</div>
+  </main>
+</div>
+
+<script>
+const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let categories = [];
+let terms = [];
+let activeCategoryCode = null;
+
+const tocEl = document.getElementById('toc');
+const contentEl = document.getElementById('content');
+const countEl = document.getElementById('term-count');
+const searchInput = document.getElementById('search-input');
+
+async function loadData(){
+  try{
+    const [{ data: catData, error: catErr }, { data: termData, error: termErr }] = await Promise.all([
+      sb.from('glossary_categories').select('*').order('order_index'),
+      sb.from('glossary_terms').select('*').order('order_index')
+    ]);
+    if(catErr) throw catErr;
+    if(termErr) throw termErr;
+    categories = catData || [];
+    terms = termData || [];
+    countEl.textContent = `${categories.length}개 섹션 · ${terms.length}개 용어`;
+    renderToc();
+    if(categories.length) selectCategory(categories[0].code);
+  }catch(e){
+    contentEl.innerHTML = `<div class="empty">데이터를 불러오지 못했습니다.<br>${(e && e.message) ? e.message : e}</div>`;
+    console.error(e);
+  }
+}
+
+function renderToc(){
+  const sections = {};
+  categories.forEach(c => {
+    if(!sections[c.section]) sections[c.section] = [];
+    sections[c.section].push(c);
+  });
+  tocEl.innerHTML = Object.entries(sections).map(([section, cats]) => `
+    <div class="toc-section">
+      <div class="toc-section-title">${escapeHtml(section)}</div>
+      ${cats.map(c => {
+        const count = terms.filter(t => t.category_id === c.id).length;
+        return `<div class="toc-cat" data-code="${c.code}">
+          <span>${escapeHtml(c.name)}</span><span class="n">${count}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  `).join('');
+
+  tocEl.querySelectorAll('.toc-cat').forEach(el => {
+    el.addEventListener('click', () => {
+      searchInput.value = '';
+      selectCategory(el.dataset.code);
+    });
+  });
+}
+
+function selectCategory(code){
+  activeCategoryCode = code;
+  tocEl.querySelectorAll('.toc-cat').forEach(el => {
+    el.classList.toggle('active', el.dataset.code === code);
+  });
+  const cat = categories.find(c => c.code === code);
+  if(!cat) return;
+  const catTerms = terms.filter(t => t.category_id === cat.id).sort((a,b) => a.order_index - b.order_index);
+  contentEl.innerHTML = `
+    <div class="cat-header">
+      <div class="section-label">${escapeHtml(cat.section)}</div>
+      <h2>${escapeHtml(cat.name)}</h2>
+      ${cat.intro ? `<p>${escapeHtml(cat.intro)}</p>` : ''}
+    </div>
+    <div id="term-list"></div>
+  `;
+  renderTerms(catTerms, document.getElementById('term-list'));
+}
+
+function renderTerms(list, container, highlight){
+  if(!list.length){
+    container.innerHTML = `<div class="empty">해당하는 용어가 없습니다.</div>`;
+    return;
+  }
+  container.innerHTML = list.map(t => termHtml(t, highlight)).join('');
+  container.querySelectorAll('.term').forEach(el => {
+    el.querySelector('.term-row').addEventListener('click', () => {
+      el.classList.toggle('open');
+    });
+  });
+  container.querySelectorAll('.related span').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const target = terms.find(t => t.term_kr === el.dataset.term);
+      if(target){
+        searchInput.value = '';
+        const cat = categories.find(c => c.id === target.category_id);
+        if(cat) selectCategory(cat.code);
+        setTimeout(() => {
+          const termEl = [...document.querySelectorAll('.term')].find(e => e.dataset.id == target.id);
+          if(termEl){
+            termEl.classList.add('open');
+            termEl.scrollIntoView({behavior:'smooth', block:'center'});
+          }
+        }, 30);
+      }
+    });
+  });
+}
+
+function termHtml(t, highlight){
+  const hl = (s) => highlight ? highlightText(s, highlight) : escapeHtml(s || '');
+  return `
+    <div class="term" data-id="${t.id}">
+      <div class="term-row">
+        <span class="term-kr">${hl(t.term_kr)}</span>
+        ${t.term_en ? `<span class="term-en">${hl(t.term_en)}</span>` : ''}
+        ${t.abbr ? `<span class="term-abbr">${hl(t.abbr)}</span>` : ''}
+        <span class="term-toggle">펼치기 ▾</span>
+      </div>
+      <div class="term-body">
+        <div class="layer layer1">
+          <div class="layer-label">1. 정의</div>
+          <div class="layer-text">${escapeHtml(t.layer1_definition)}</div>
+        </div>
+        <div class="layer layer2">
+          <div class="layer-label">2. 실무 의미</div>
+          <div class="layer-text">${escapeHtml(t.layer2_meaning)}</div>
+        </div>
+        ${t.layer3_deepdive ? `
+        <div class="deepdive">
+          <div class="layer">
+            <div class="layer-label">3. 딥다이브</div>
+            <div class="layer-text">${escapeHtml(t.layer3_deepdive)}</div>
+          </div>
+        </div>` : ''}
+        ${t.related_terms && t.related_terms.length ? `
+        <div class="related">관련 용어: ${t.related_terms.map(r => `<span data-term="${escapeHtml(r)}">${escapeHtml(r)}</span>`).join('')}</div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function highlightText(s, q){
+  if(!s) return '';
+  const escaped = escapeHtml(s);
+  if(!q) return escaped;
+  const idx = escaped.toLowerCase().indexOf(q.toLowerCase());
+  if(idx === -1) return escaped;
+  return escaped.slice(0, idx) + '<mark>' + escaped.slice(idx, idx+q.length) + '</mark>' + escaped.slice(idx+q.length);
+}
+
+function escapeHtml(s){
+  if(s === null || s === undefined) return '';
+  return String(s)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;');
+}
+
+let searchTimeout;
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    const q = searchInput.value.trim();
+    if(!q){
+      if(activeCategoryCode) selectCategory(activeCategoryCode);
+      return;
+    }
+    const ql = q.toLowerCase();
+    const matches = terms.filter(t =>
+      (t.term_kr && t.term_kr.toLowerCase().includes(ql)) ||
+      (t.term_en && t.term_en.toLowerCase().includes(ql)) ||
+      (t.abbr && t.abbr.toLowerCase().includes(ql)) ||
+      (t.layer1_definition && t.layer1_definition.toLowerCase().includes(ql)) ||
+      (t.layer2_meaning && t.layer2_meaning.toLowerCase().includes(ql))
+    );
+    tocEl.querySelectorAll('.toc-cat').forEach(el => el.classList.remove('active'));
+    contentEl.innerHTML = `
+      <div class="search-results-label">"${escapeHtml(q)}" 검색 결과 ${matches.length}건</div>
+      <div id="term-list"></div>
+    `;
+    renderTerms(matches, document.getElementById('term-list'), q);
+  }, 150);
+});
+
+loadData();
+</script>
+</body>
+</html>

@@ -183,6 +183,8 @@
     color:var(--ink-soft); padding-top:2px; letter-spacing:0.01em;
   }
   .layer-text{font-size:17px; line-height:1.8; color:var(--ink);}
+  .layer-text p{margin:0 0 14px;}
+  .layer-text p:last-child{margin-bottom:0;}
   .layer1 .layer-text{color:var(--ink-soft); font-size:16.5px;}
   .deepdive{margin-top:8px; background:var(--deepdive-bg); border-left:3px solid var(--gold); padding:13px 15px; border-radius:4px;}
   .deepdive .layer-label{color:var(--gold);}
@@ -396,7 +398,7 @@ function termHtml(t, highlight){
         <div class="deepdive">
           <div class="layer">
             <div class="layer-label">3. 딥다이브</div>
-            <div class="layer-text">${escapeHtml(t.layer3_deepdive)}</div>
+            <div class="layer-text">${formatMultiParagraph(t.layer3_deepdive)}</div>
           </div>
           ${showChart ? `
           <div class="chart-wrap">
@@ -480,6 +482,11 @@ function highlightText(s, q){
   const idx = escaped.toLowerCase().indexOf(q.toLowerCase());
   if(idx === -1) return escaped;
   return escaped.slice(0, idx) + '<mark>' + escaped.slice(idx, idx+q.length) + '</mark>' + escaped.slice(idx+q.length);
+}
+
+function formatMultiParagraph(s){
+  if(!s) return '';
+  return s.split(/\n\s*\n/).map(p => `<p>${escapeHtml(p.trim())}</p>`).join('');
 }
 
 function escapeHtml(s){

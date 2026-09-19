@@ -167,23 +167,23 @@
   .term{border-bottom:1px solid var(--rule); padding:16px 0;}
   .term:first-of-type{padding-top:0;}
   .term-row{display:flex; align-items:baseline; gap:10px; cursor:pointer; flex-wrap:wrap;}
-  .term-kr{font-family:var(--sans); font-weight:700; font-size:18px;}
-  .term-en{font-family:var(--mono); font-size:13px; color:var(--ink-soft);}
+  .term-kr{font-family:var(--sans); font-weight:700; font-size:19px;}
+  .term-en{font-family:var(--mono); font-size:15px; color:var(--ink-soft);}
   .term-abbr{
-    font-family:var(--mono); font-size:12px; color:var(--seal-soft);
+    font-family:var(--mono); font-size:13px; color:var(--seal-soft);
     border:1px solid var(--seal-soft); padding:1px 7px; border-radius:4px;
   }
   .term-toggle{margin-left:auto; font-family:var(--mono); font-size:11.5px; color:var(--ink-soft);}
   .term-body{margin-top:12px; display:none;}
   .term.open .term-body{display:block;}
   .term.open .term-row .term-kr{color:var(--seal);}
-  .layer{display:flex; gap:12px; padding:8px 0; align-items:flex-start;}
+  .layer{display:flex; gap:12px; padding:10px 0; align-items:flex-start;}
   .layer-label{
-    flex:0 0 84px; font-family:var(--mono); font-size:11px;
-    color:var(--ink-soft); padding-top:3px; letter-spacing:0.02em;
+    flex:0 0 96px; font-family:var(--sans); font-weight:700; font-size:13.5px;
+    color:var(--ink-soft); padding-top:2px; letter-spacing:0.01em;
   }
-  .layer-text{font-size:15px; line-height:1.75; color:var(--ink);}
-  .layer1 .layer-text{color:var(--ink-soft); font-size:14.5px;}
+  .layer-text{font-size:17px; line-height:1.8; color:var(--ink);}
+  .layer1 .layer-text{color:var(--ink-soft); font-size:16.5px;}
   .deepdive{margin-top:8px; background:var(--deepdive-bg); border-left:3px solid var(--gold); padding:13px 15px; border-radius:4px;}
   .deepdive .layer-label{color:var(--gold);}
   .related{margin-top:10px; font-family:var(--mono); font-size:12px; color:var(--ink-soft);}
@@ -408,7 +408,7 @@ function termHtml(t, highlight){
             <div class="chart-canvas-box">
               <canvas data-chart-term="${escapeHtml(t.term_kr)}" role="img" aria-label="10년 만기 표면금리 5% 채권의 가격-금리 곡선과 1차, 2차, 3차 테일러근사 비교"></canvas>
             </div>
-            <div class="chart-caption">10년물 / 표면금리 5% / 최초금리 5% 채권. 5%에서 15%(1,000bp) 신용사건급 구간으로 갈수록 1차(직선) 근사와 실제 곡선의 간극이 커지고, 2차(컨벡시티)가 그 간극을 크게 좁혀준다.</div>
+            <div class="chart-caption">10년물 / 표면금리 5% / 최초금리 5% 채권. 5%에서 15%(1,000bp)로 갈수록 1차(직선) 근사와 실제 곡선의 간극이 커지고, 2차(컨벡시티)가 그 간극을 크게 좁혀준다.</div>
           </div>` : ''}
         </div>` : ''}
         ${t.related_terms && t.related_terms.length ? `

@@ -633,7 +633,7 @@ function contangoSVG(){
 
 function ipoTimelineSVG(){
   const W=700, H=140;
-  const steps = ['수요예측','공모가 확정','청약','상장','락업 해제'];
+  const steps = ['수요예측','공모가 확정','청약','상장','의무보유확약 해제'];
   const xs = [80,220,360,500,640];
   const nodes = steps.map((s,i)=>`
     <circle cx="${xs[i]}" cy="70" r="9" fill="${i===4?'#96751f':'#7a3230'}"/>
@@ -642,7 +642,7 @@ function ipoTimelineSVG(){
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:sans-serif;" role="img" aria-label="공모주 상장 절차 타임라인">
     <line x1="80" y1="70" x2="640" y2="70" stroke="#c9bf9e" stroke-width="2"/>
     ${nodes}
-    <text x="640" y="100" font-size="10" fill="#6b6f60" text-anchor="middle">보통 상장 후 90~180일</text>
+    <text x="640" y="100" font-size="10" fill="#6b6f60" text-anchor="middle">보통 상장 후 15일~6개월</text>
   </svg>`;
 }
 
@@ -980,7 +980,7 @@ const VISUALS = {
   },
   '수요예측': {
     kind: 'svg', svg: ipoTimelineSVG,
-    caption: '공모주 상장까지의 전체 절차 흐름. 상장 이후에도 락업 해제라는 이벤트가 남아있다는 점에 유의.'
+    caption: '공모주 상장까지의 전체 절차 흐름. 상장 이후에도 의무보유확약 해제라는 이벤트가 남아있다는 점에 유의.'
   },
   '신용부도스와프': {
     kind: 'svg', svg: cdsTriangleSVG,

@@ -15,7 +15,7 @@
     --bg:#ffffff;
     --panel:#fafafa;
     --ink:#1a1c16;
-    --ink-soft:#6b6f60;
+    --ink-soft:#484c3d;
     --rule:#e4e2d8;
     --seal:#7a3230;
     --seal-soft:#9a5250;
@@ -167,7 +167,7 @@
   .term{border-bottom:1px solid var(--rule); padding:16px 0;}
   .term:first-of-type{padding-top:0;}
   .term-row{display:flex; align-items:baseline; gap:10px; cursor:pointer; flex-wrap:wrap;}
-  .term-kr{font-family:var(--sans); font-weight:700; font-size:19px;}
+  .term-kr{font-family:var(--sans); font-weight:700; font-size:17px;}
   .term-en{font-family:var(--mono); font-size:15px; color:var(--ink-soft);}
   .term-abbr{
     font-family:var(--mono); font-size:13px; color:var(--seal-soft);
@@ -461,13 +461,13 @@ function renderBondChart(canvas){
         x: {
           type: 'linear',
           min: 0, max: 15,
-          title: { display: true, text: '만기수익률 (%)', color: '#6b6f60', font: { size: 12 } },
-          ticks: { stepSize: 5, color: '#6b6f60', font: { size: 11 }, callback: (v) => Math.round(v) },
+          title: { display: true, text: '만기수익률 (%)', color: '#484c3d', font: { size: 12 } },
+          ticks: { stepSize: 5, color: '#484c3d', font: { size: 11 }, callback: (v) => Math.round(v) },
           grid: { color: '#eeece2' }
         },
         y: {
-          title: { display: true, text: '가격 (원)', color: '#6b6f60', font: { size: 12 } },
-          ticks: { color: '#6b6f60', font: { size: 11 } },
+          title: { display: true, text: '가격 (원)', color: '#484c3d', font: { size: 12 } },
+          ticks: { color: '#484c3d', font: { size: 11 } },
           grid: { color: '#eeece2' }
         }
       }

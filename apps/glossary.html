@@ -186,6 +186,7 @@
   .layer1 .layer-text{color:var(--ink-soft); font-size:16.5px;}
   .deepdive{margin-top:8px; background:var(--deepdive-bg); border-left:3px solid var(--gold); padding:13px 15px; border-radius:4px;}
   .deepdive .layer-label{color:var(--gold);}
+  .historical-note{margin-top:10px; padding:10px 14px; border-top:1px dashed var(--rule); font-size:13px; color:var(--ink-soft); line-height:1.7; font-style:italic;}
   .related{margin-top:10px; font-family:var(--mono); font-size:12px; color:var(--ink-soft);}
   .related span{display:inline-block; border:1px solid var(--rule); padding:3px 8px; margin:2px 4px 2px 0; cursor:pointer; border-radius:4px;}
   .related span:hover{border-color:var(--seal); color:var(--seal);}
@@ -410,6 +411,7 @@ function termHtml(t, highlight){
             </div>
             <div class="chart-caption">10년물 / 표면금리 5% / 최초금리 5% 채권. 5%에서 15%(1,000bp)로 갈수록 1차(직선) 근사와 실제 곡선의 간극이 커지고, 2차(컨벡시티)가 그 간극을 크게 좁혀준다.</div>
           </div>` : ''}
+          ${t.historical_note ? `<div class="historical-note">${escapeHtml(t.historical_note)}</div>` : ''}
         </div>` : ''}
         ${t.related_terms && t.related_terms.length ? `
         <div class="related">관련 용어: ${t.related_terms.map(r => `<span data-term="${escapeHtml(r)}">${escapeHtml(r)}</span>`).join('')}</div>

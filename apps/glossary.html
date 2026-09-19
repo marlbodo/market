@@ -197,6 +197,8 @@
   .chart-legend{display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
   .chart-legend .sw{display:inline-block; width:16px; height:2px; margin-right:5px; vertical-align:middle;}
   .chart-canvas-box{position:relative; width:100%; height:260px;}
+  .svg-diagram{width:100%;}
+  .svg-diagram svg{display:block; width:100%; height:auto;}
   .chart-caption{margin-top:10px; font-size:12px; color:var(--ink-soft); line-height:1.7;}
 
   .empty, .loading{padding:60px 0; text-align:center; color:var(--ink-soft); font-family:var(--mono); font-size:13.5px;}
@@ -252,8 +254,6 @@ const CATEGORY_ICONS = {
   bank_liquidity: '🌊',
   bank_risk: '⚠️'
 };
-
-const BOND_CHART_TERMS = { '수정듀레이션': true, '컨벡시티': true };
 
 let categories = [];
 let terms = [];
@@ -344,11 +344,7 @@ function renderTerms(list, container, highlight){
       const wasOpen = el.classList.contains('open');
       el.classList.toggle('open');
       if(!wasOpen){
-        const chartCanvas = el.querySelector('canvas[data-chart-term]');
-        if(chartCanvas && !chartCanvas.dataset.rendered){
-          chartCanvas.dataset.rendered = '1';
-          renderBondChart(chartCanvas);
-        }
+        renderVisualIfNeeded(el);
       }
     });
   });
@@ -364,8 +360,7 @@ function renderTerms(list, container, highlight){
           const termEl = [...document.querySelectorAll('.term')].find(e => e.dataset.id == target.id);
           if(termEl){
             termEl.classList.add('open');
-            const c = termEl.querySelector('canvas[data-chart-term]');
-            if(c && !c.dataset.rendered){ c.dataset.rendered = '1'; renderBondChart(c); }
+            renderVisualIfNeeded(termEl);
             termEl.scrollIntoView({behavior:'smooth', block:'center'});
           }
         }, 30);
@@ -376,7 +371,7 @@ function renderTerms(list, container, highlight){
 
 function termHtml(t, highlight){
   const hl = (s) => highlight ? highlightText(s, highlight) : escapeHtml(s || '');
-  const showChart = !!BOND_CHART_TERMS[t.term_kr];
+  const visual = VISUALS[t.term_kr];
   return `
     <div class="term" data-id="${t.id}">
       <div class="term-row">
@@ -401,18 +396,13 @@ function termHtml(t, highlight){
             <div class="layer-label">3. 딥다이브</div>
             <div class="layer-text">${formatMultiParagraph(t.layer3_deepdive)}</div>
           </div>
-          ${showChart ? `
+          ${visual ? `
           <div class="chart-wrap">
-            <div class="chart-legend">
-              <span><span class="sw" style="background:#2a78d6;"></span>실제 가격 P(y)</span>
-              <span><span class="sw" style="background:#eb6834; border-top:2px dashed #eb6834; height:0;"></span>1차(듀레이션)</span>
-              <span><span class="sw" style="background:#1baf7a;"></span>1+2차(듀레이션+컨벡시티)</span>
-              <span><span class="sw" style="background:#9b59b6;"></span>1+2+3차</span>
-            </div>
-            <div class="chart-canvas-box">
-              <canvas data-chart-term="${escapeHtml(t.term_kr)}" role="img" aria-label="10년 만기 표면금리 5% 채권의 가격-금리 곡선과 1차, 2차, 3차 테일러근사 비교"></canvas>
-            </div>
-            <div class="chart-caption">10년물 / 표면금리 5% / 최초금리 5% 채권. 5%에서 15%(1,000bp)로 갈수록 1차(직선) 근사와 실제 곡선의 간극이 커지고, 2차(컨벡시티)가 그 간극을 크게 좁혀준다.</div>
+            ${visual.legend ? `<div class="chart-legend">${visual.legend.map(l => `<span><span class="sw" style="background:${l.color};${l.dash ? `border-top:2px dashed ${l.color};height:0;` : ''}"></span>${escapeHtml(l.label)}</span>`).join('')}</div>` : ''}
+            ${visual.kind === 'canvas'
+              ? `<div class="chart-canvas-box"><canvas data-visual-term="${escapeHtml(t.term_kr)}" role="img" aria-label="${escapeHtml(visual.ariaLabel || '')}"></canvas></div>`
+              : `<div class="svg-diagram">${visual.svg()}</div>`}
+            <div class="chart-caption">${escapeHtml(visual.caption)}</div>
           </div>` : ''}
           ${t.historical_note ? `<div class="historical-note">${escapeHtml(t.historical_note)}</div>` : ''}
         </div>` : ''}
@@ -422,6 +412,15 @@ function termHtml(t, highlight){
       </div>
     </div>
   `;
+}
+
+function renderVisualIfNeeded(termEl){
+  const canvas = termEl.querySelector('canvas[data-visual-term]');
+  if(canvas && !canvas.dataset.rendered){
+    canvas.dataset.rendered = '1';
+    const visual = VISUALS[canvas.dataset.visualTerm];
+    if(visual && visual.render) visual.render(canvas);
+  }
 }
 
 function renderBondChart(canvas){
@@ -475,6 +474,309 @@ function renderBondChart(canvas){
     }
   });
 }
+
+async function fetchIndicatorHistory(indicator, fromDate, toDate){
+  let all = [];
+  let from = 0;
+  const pageSize = 1000;
+  while(true){
+    let q = sb.from('interest_rates').select('date,value').eq('indicator', indicator).order('date', { ascending: true });
+    if(fromDate) q = q.gte('date', fromDate);
+    if(toDate) q = q.lte('date', toDate);
+    const { data, error } = await q.range(from, from + pageSize - 1);
+    if(error) throw error;
+    if(!data || data.length === 0) break;
+    all = all.concat(data);
+    if(data.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
+
+async function renderYieldSpreadChart(canvas){
+  try{
+    const [us2y, us10y] = await Promise.all([
+      fetchIndicatorHistory('미국 2Y'),
+      fetchIndicatorHistory('미국 10Y')
+    ]);
+    const map2 = new Map(us2y.map(r => [r.date, r.value]));
+    const map10 = new Map(us10y.map(r => [r.date, r.value]));
+    const commonDates = [...map10.keys()].filter(d => map2.has(d)).sort();
+    const byMonth = new Map();
+    commonDates.forEach(d => byMonth.set(d.slice(0,7), d));
+    const monthDates = [...byMonth.values()].sort();
+    const points = monthDates.map(d => ({ x: new Date(d).getTime(), y: Math.round((map10.get(d) - map2.get(d)) * 100) / 100 }));
+    if(!points.length){ canvas.parentElement.innerHTML = '<div class="empty">데이터가 없습니다.</div>'; return; }
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        datasets: [
+          { label: '0선', data: [{x: points[0].x, y:0}, {x: points[points.length-1].x, y:0}], borderColor: '#9a5250', borderWidth: 1, borderDash: [4,4], pointRadius: 0, parsing:false },
+          { label: '2Y-10Y 스프레드', data: points, borderColor: '#2a78d6', borderWidth: 1.8, pointRadius: 0, tension: 0.05, parsing:false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { type: 'linear', ticks: { color: '#484c3d', font: { size: 11 }, callback: (v) => new Date(v).getFullYear() }, grid: { color: '#eeece2' } },
+          y: { title: { display: true, text: '%p', color: '#484c3d', font: { size: 12 } }, ticks: { color: '#484c3d', font: { size: 11 } }, grid: { color: '#eeece2' } }
+        }
+      }
+    });
+  }catch(e){
+    canvas.parentElement.innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>';
+    console.error(e);
+  }
+}
+
+async function renderYieldCurveSnapshot(canvas){
+  try{
+    const indicators = ['국고 3Y','국고 5Y','국고 10Y','미국 2Y','미국 10Y'];
+    const results = await Promise.all(indicators.map(ind =>
+      sb.from('interest_rates').select('date,value').eq('indicator', ind).order('date', { ascending: false }).limit(1)
+    ));
+    const latest = {};
+    indicators.forEach((ind, i) => {
+      const row = results[i].data && results[i].data[0];
+      if(row) latest[ind] = row.value;
+    });
+    const krPoints = [
+      { x: 3, y: latest['국고 3Y'] }, { x: 5, y: latest['국고 5Y'] }, { x: 10, y: latest['국고 10Y'] }
+    ].filter(p => p.y != null);
+    const usPoints = [
+      { x: 2, y: latest['미국 2Y'] }, { x: 10, y: latest['미국 10Y'] }
+    ].filter(p => p.y != null);
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        datasets: [
+          { label: '한국 국고채', data: krPoints, borderColor: '#7a3230', backgroundColor: '#7a3230', borderWidth: 2, pointRadius: 4, parsing:false },
+          { label: '미국 국채', data: usPoints, borderColor: '#2a78d6', backgroundColor: '#2a78d6', borderWidth: 2, pointRadius: 4, borderDash: [6,3], parsing:false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: true, position: 'top', labels: { color: '#484c3d', font: { size: 11 } } } },
+        scales: {
+          x: { type: 'linear', min: 0, max: 11, title: { display: true, text: '만기(년)', color: '#484c3d', font: { size: 12 } }, ticks: { color: '#484c3d', font: { size: 11 } }, grid: { color: '#eeece2' } },
+          y: { title: { display: true, text: '금리(%)', color: '#484c3d', font: { size: 12 } }, ticks: { color: '#484c3d', font: { size: 11 } }, grid: { color: '#eeece2' } }
+        }
+      }
+    });
+  }catch(e){
+    canvas.parentElement.innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>';
+    console.error(e);
+  }
+}
+
+async function renderTaperChart(canvas){
+  try{
+    const data = await fetchIndicatorHistory('미국 10Y', '2013-01-01', '2013-12-31');
+    const points = data.map(r => ({ x: new Date(r.date).getTime(), y: r.value }));
+    if(!points.length){ canvas.parentElement.innerHTML = '<div class="empty">데이터가 없습니다.</div>'; return; }
+    new Chart(canvas, {
+      type: 'line',
+      data: { datasets: [
+        { label: '미국 10년물 금리', data: points, borderColor: '#7a3230', borderWidth: 2, pointRadius: 0, tension: 0.1, parsing:false }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { type: 'linear', ticks: { color: '#484c3d', font: { size: 11 }, callback: (v) => (new Date(v).getMonth()+1) + '월' }, grid: { color: '#eeece2' } },
+          y: { title: { display: true, text: '%', color: '#484c3d', font: { size: 12 } }, ticks: { color: '#484c3d', font: { size: 11 } }, grid: { color: '#eeece2' } }
+        }
+      }
+    });
+  }catch(e){
+    canvas.parentElement.innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>';
+    console.error(e);
+  }
+}
+
+function optionPayoffSVG(){
+  const W=600, H=380, panelW=260, panelH=140;
+  const positions = [
+    {x:20,y:30,title:'콜옵션 매수 (Long Call)', pts:[[20,85],[130,85],[240,20]], color:'#1baf7a'},
+    {x:320,y:30,title:'콜옵션 매도 (Short Call)', pts:[[20,55],[130,55],[240,120]], color:'#7a3230'},
+    {x:20,y:210,title:'풋옵션 매수 (Long Put)', pts:[[240,85],[130,85],[20,20]], color:'#1baf7a'},
+    {x:320,y:210,title:'풋옵션 매도 (Short Put)', pts:[[240,55],[130,55],[20,120]], color:'#7a3230'}
+  ];
+  const panels = positions.map(p => `
+    <g transform="translate(${p.x},${p.y})">
+      <text x="0" y="-8" font-size="13" font-weight="700" fill="#1a1c16">${p.title}</text>
+      <rect x="0" y="0" width="${panelW}" height="${panelH}" fill="none" stroke="#e4e2d8"/>
+      <line x1="0" y1="70" x2="${panelW}" y2="70" stroke="#c9bf9e" stroke-dasharray="3,3"/>
+      <line x1="130" y1="0" x2="130" y2="${panelH}" stroke="#c9bf9e" stroke-dasharray="3,3"/>
+      <polyline points="${p.pts.map(pt=>pt.join(',')).join(' ')}" fill="none" stroke="${p.color}" stroke-width="2.5"/>
+      <text x="130" y="${panelH+16}" font-size="10" fill="#6b6f60" text-anchor="middle">행사가</text>
+    </g>
+  `).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:sans-serif;" role="img" aria-label="콜옵션, 풋옵션 매수/매도 손익구조 다이어그램">${panels}</svg>`;
+}
+
+function contangoSVG(){
+  const W=600, H=300;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:sans-serif;" role="img" aria-label="콘탱고와 백워데이션 선물 곡선 비교">
+    <line x1="60" y1="180" x2="560" y2="180" stroke="#c9bf9e" stroke-dasharray="3,3"/>
+    <text x="565" y="184" font-size="10" fill="#6b6f60">현물가격</text>
+    <polyline points="60,180 220,160 380,135 540,105" fill="none" stroke="#eb6834" stroke-width="2.5"/>
+    <text x="480" y="98" font-size="12" fill="#eb6834" font-weight="700">콘탱고</text>
+    <polyline points="60,180 220,195 380,215 540,235" fill="none" stroke="#2a78d6" stroke-width="2.5"/>
+    <text x="470" y="252" font-size="12" fill="#2a78d6" font-weight="700">백워데이션</text>
+    <line x1="60" y1="260" x2="560" y2="260" stroke="#1a1c16" stroke-width="1"/>
+    <text x="60" y="278" font-size="10" fill="#6b6f60">근월물</text>
+    <text x="560" y="278" font-size="10" fill="#6b6f60" text-anchor="end">원월물(만기 김)</text>
+  </svg>`;
+}
+
+function ipoTimelineSVG(){
+  const W=700, H=140;
+  const steps = ['수요예측','공모가 확정','청약','상장','락업 해제'];
+  const xs = [80,220,360,500,640];
+  const nodes = steps.map((s,i)=>`
+    <circle cx="${xs[i]}" cy="70" r="9" fill="${i===4?'#96751f':'#7a3230'}"/>
+    <text x="${xs[i]}" y="50" font-size="12" text-anchor="middle" fill="#1a1c16" font-weight="700">${s}</text>
+  `).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:sans-serif;" role="img" aria-label="공모주 상장 절차 타임라인">
+    <line x1="80" y1="70" x2="640" y2="70" stroke="#c9bf9e" stroke-width="2"/>
+    ${nodes}
+    <text x="640" y="100" font-size="10" fill="#6b6f60" text-anchor="middle">보통 상장 후 90~180일</text>
+  </svg>`;
+}
+
+function cdsTriangleSVG(){
+  const W=520, H=340;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:sans-serif;" role="img" aria-label="CDS 거래 구조도">
+    <defs><marker id="cdsArrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#1a1c16"/></marker></defs>
+    <rect x="20" y="20" width="160" height="60" rx="6" fill="#fbf6e8" stroke="#96751f"/>
+    <text x="100" y="45" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1c16">보장매수자</text>
+    <text x="100" y="62" text-anchor="middle" font-size="10" fill="#6b6f60">(Protection Buyer)</text>
+    <rect x="340" y="20" width="160" height="60" rx="6" fill="#fbf6e8" stroke="#96751f"/>
+    <text x="420" y="45" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1c16">보장매도자</text>
+    <text x="420" y="62" text-anchor="middle" font-size="10" fill="#6b6f60">(Protection Seller)</text>
+    <rect x="180" y="250" width="160" height="60" rx="6" fill="#fff" stroke="#7a3230"/>
+    <text x="260" y="275" text-anchor="middle" font-size="13" font-weight="700" fill="#7a3230">참조기업(기초자산)</text>
+    <text x="260" y="292" text-anchor="middle" font-size="10" fill="#6b6f60">부도 발생 시 정산</text>
+    <line x1="180" y1="55" x2="340" y2="55" stroke="#1a1c16" stroke-width="1.5" marker-end="url(#cdsArrow)"/>
+    <text x="260" y="48" text-anchor="middle" font-size="11" fill="#1a1c16">프리미엄(정기 지급)</text>
+    <line x1="340" y1="75" x2="180" y2="75" stroke="#1a1c16" stroke-width="1.5" marker-end="url(#cdsArrow)"/>
+    <text x="260" y="95" text-anchor="middle" font-size="11" fill="#1a1c16">신용사건 발생 시 보장금 지급</text>
+    <line x1="100" y1="80" x2="220" y2="250" stroke="#9a5250" stroke-width="1" stroke-dasharray="4,3"/>
+    <line x1="420" y1="80" x2="300" y2="250" stroke="#9a5250" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="260" y="230" text-anchor="middle" font-size="10" fill="#9a5250">신용사건(부도) 참조</text>
+  </svg>`;
+}
+
+function bankCapitalSVG(){
+  const W=420, H=360;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:sans-serif;" role="img" aria-label="은행 자본 손실흡수 순서 다이어그램">
+    <defs><marker id="capArrow" markerWidth="8" markerHeight="8" refX="4" refY="7" orient="auto"><path d="M0,8 L4,0 L8,8 Z" fill="#7a3230"/></marker></defs>
+    <rect x="140" y="40" width="140" height="60" fill="#c9bf9e" stroke="#1a1c16"/>
+    <text x="210" y="65" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1c16">Tier2</text>
+    <text x="210" y="82" text-anchor="middle" font-size="10" fill="#4d5142">(후순위채)</text>
+    <rect x="140" y="100" width="140" height="60" fill="#e8c98a" stroke="#1a1c16"/>
+    <text x="210" y="125" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1c16">AT1</text>
+    <text x="210" y="142" text-anchor="middle" font-size="10" fill="#4d5142">(조건부자본증권)</text>
+    <rect x="140" y="160" width="140" height="140" fill="#c65a4a" stroke="#1a1c16"/>
+    <text x="210" y="220" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">CET1</text>
+    <text x="210" y="238" text-anchor="middle" font-size="10" fill="#fbe8e4">(보통주자본)</text>
+    <text x="55" y="305" font-size="18" fill="#7a3230" font-weight="700">①</text>
+    <text x="55" y="135" font-size="18" fill="#7a3230" font-weight="700">②</text>
+    <text x="55" y="75" font-size="18" fill="#7a3230" font-weight="700">③</text>
+    <line x1="90" y1="300" x2="90" y2="40" stroke="#7a3230" stroke-width="2" marker-end="url(#capArrow)"/>
+    <text x="90" y="330" text-anchor="middle" font-size="11" fill="#6b6f60">손실이 커질수록 ①→②→③ 순서로 잠식</text>
+  </svg>`;
+}
+
+function assetGradientSVG(){
+  const W=600, H=120;
+  const stages = [
+    {label:'정상', color:'#4fae7a'},
+    {label:'요주의', color:'#a9c24a'},
+    {label:'고정', color:'#e0b23c'},
+    {label:'회수의문', color:'#e07a3c'},
+    {label:'추정손실', color:'#c0392b'}
+  ];
+  const segW=108, gap=4, startX=10;
+  const segs = stages.map((s,i)=>{
+    const x = startX + i*(segW+gap);
+    return `<rect x="${x}" y="15" width="${segW}" height="50" fill="${s.color}"/><text x="${x+segW/2}" y="45" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${s.label}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:sans-serif;" role="img" aria-label="여신건전성 5단계 분류 그라데이션">
+    ${segs}
+    <text x="10" y="90" font-size="11" fill="#6b6f60">충당금 적립비율 낮음</text>
+    <text x="590" y="90" font-size="11" fill="#6b6f60" text-anchor="end">충당금 적립비율 높음(최대 100%)</text>
+  </svg>`;
+}
+
+const VISUALS = {
+  '수정듀레이션': {
+    kind: 'canvas', render: renderBondChart,
+    legend: [
+      { label: '실제 가격 P(y)', color: '#2a78d6' },
+      { label: '1차(듀레이션)', color: '#eb6834', dash: true },
+      { label: '1+2차(듀레이션+컨벡시티)', color: '#1baf7a' },
+      { label: '1+2+3차', color: '#9b59b6' }
+    ],
+    caption: '10년물 / 표면금리 5% / 최초금리 5% 채권. 5%에서 15%(1,000bp)로 갈수록 1차(직선) 근사와 실제 곡선의 간극이 커지고, 2차(컨벡시티)가 그 간극을 크게 좁혀준다.',
+    ariaLabel: '10년 만기 표면금리 5% 채권의 가격-금리 곡선과 1차, 2차, 3차 테일러근사 비교'
+  },
+  '컨벡시티': {
+    kind: 'canvas', render: renderBondChart,
+    legend: [
+      { label: '실제 가격 P(y)', color: '#2a78d6' },
+      { label: '1차(듀레이션)', color: '#eb6834', dash: true },
+      { label: '1+2차(듀레이션+컨벡시티)', color: '#1baf7a' },
+      { label: '1+2+3차', color: '#9b59b6' }
+    ],
+    caption: '10년물 / 표면금리 5% / 최초금리 5% 채권. 5%에서 15%(1,000bp)로 갈수록 1차(직선) 근사와 실제 곡선의 간극이 커지고, 2차(컨벡시티)가 그 간극을 크게 좁혀준다.',
+    ariaLabel: '10년 만기 표면금리 5% 채권의 가격-금리 곡선과 1차, 2차, 3차 테일러근사 비교'
+  },
+  '장단기금리차': {
+    kind: 'canvas', render: renderYieldSpreadChart,
+    legend: [ { label: '미국 2Y-10Y 스프레드', color: '#2a78d6' }, { label: '0선(역전 기준)', color: '#9a5250', dash: true } ],
+    caption: '2001년부터 현재까지 미국 2Y-10Y 스프레드 실제 추이(월별). 선이 0선 아래로 내려간 구간이 장단기금리 역전이다.',
+    ariaLabel: '미국 2년물-10년물 국채금리 스프레드의 2001년 이후 실제 추이'
+  },
+  '수익률곡선': {
+    kind: 'canvas', render: renderYieldCurveSnapshot,
+    legend: [ { label: '한국 국고채', color: '#7a3230' }, { label: '미국 국채', color: '#2a78d6', dash: true } ],
+    caption: 'DB에 저장된 가장 최근 데이터 기준, 한국(국고 3·5·10Y)과 미국(2·10Y) 수익률곡선 스냅샷.',
+    ariaLabel: '한국과 미국의 최신 국채 수익률곡선 스냅샷'
+  },
+  '테이퍼링': {
+    kind: 'canvas', render: renderTaperChart,
+    legend: [ { label: '미국 10년물 금리', color: '#7a3230' } ],
+    caption: '2013년 미국 10년물 금리의 실제 추이. 5월 버냉키 의장의 테이퍼링 시사 발언 이후 금리가 급등한 "테이퍼 탠트럼" 구간이 보인다.',
+    ariaLabel: '2013년 테이퍼 탠트럼 당시 미국 10년물 금리 추이'
+  },
+  '콜옵션 대 풋옵션': {
+    kind: 'svg', svg: optionPayoffSVG,
+    caption: '만기 시점 손익만 표시한 단순화된 구조(프리미엄 반영). 매수자는 손실이 프리미엄으로 제한되고 이익은 무제한, 매도자는 정반대다.'
+  },
+  '콘탱고 대 백워데이션': {
+    kind: 'svg', svg: contangoSVG,
+    caption: '콘탱고는 만기가 멀수록 선물가격이 높아지는 구조, 백워데이션은 그 반대다.'
+  },
+  '수요예측': {
+    kind: 'svg', svg: ipoTimelineSVG,
+    caption: '공모주 상장까지의 전체 절차 흐름. 상장 이후에도 락업 해제라는 이벤트가 남아있다는 점에 유의.'
+  },
+  '신용부도스와프': {
+    kind: 'svg', svg: cdsTriangleSVG,
+    caption: '보장매수자는 프리미엄을 내고 위험을 이전하며, 신용사건 발생 시 보장매도자가 보장금을 지급한다.'
+  },
+  'Tier1 및 Tier2 자본': {
+    kind: 'svg', svg: bankCapitalSVG,
+    caption: '손실은 CET1(①)부터 흡수되고, 이후 AT1(②), 마지막으로 Tier2(③) 순으로 잠식된다 — 등급이 낮을수록(후순위일수록) 더 나중에, 더 보호받는 자리에 있다.'
+  },
+  '여신건전성 5단계 분류': {
+    kind: 'svg', svg: assetGradientSVG,
+    caption: '오른쪽으로 갈수록 부실 정도가 심해지고, 요구되는 충당금 적립비율도 함께 높아진다.'
+  }
+};
 
 function highlightText(s, q){
   if(!s) return '';

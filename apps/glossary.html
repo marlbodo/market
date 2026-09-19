@@ -168,6 +168,10 @@
     font-family:var(--mono); font-size:13px; color:var(--seal-soft);
     border:1px solid var(--seal-soft); padding:1px 7px; border-radius:4px;
   }
+  .term-deepdive-badge{
+    font-family:var(--sans); font-weight:700; font-size:11.5px; color:var(--gold);
+    border:1px solid var(--gold); padding:1px 8px; border-radius:4px; letter-spacing:0.01em;
+  }
   .term-toggle{margin-left:auto; font-family:var(--mono); font-size:11.5px; color:var(--ink-soft);}
   .term-body{margin-top:12px; display:none;}
   .term.open .term-body{display:block;}
@@ -378,6 +382,7 @@ function termHtml(t, highlight){
         <span class="term-kr">${hl(t.term_kr)}</span>
         ${t.term_en ? `<span class="term-en">${hl(t.term_en)}</span>` : ''}
         ${t.abbr ? `<span class="term-abbr">${hl(t.abbr)}</span>` : ''}
+        ${t.layer3_deepdive ? `<span class="term-deepdive-badge">딥다이브</span>` : ''}
         <span class="term-toggle">펼치기 ▾</span>
       </div>
       <div class="term-body">

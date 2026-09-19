@@ -206,7 +206,7 @@
 <header class="masthead">
   <div class="masthead-inner">
     <div>
-      <div class="masthead-title"><span class="seal">§</span> 용어해설집</div>
+      <div class="masthead-title" id="masthead-title" style="cursor:pointer;" title="처음 화면으로"><span class="seal">§</span> 용어해설집</div>
       <div class="masthead-sub">정의 → 실무적 의미 → 딥다이브. AI 마켓 인사이트 부속 사전.</div>
     </div>
     <div class="masthead-count" id="term-count"></div>
@@ -509,6 +509,12 @@ searchInput.addEventListener('input', () => {
     `;
     renderTerms(matches, document.getElementById('term-list'), q);
   }, 150);
+});
+
+document.getElementById('masthead-title').addEventListener('click', () => {
+  searchInput.value = '';
+  if(categories.length) selectCategory(categories[0].code);
+  window.scrollTo({top: 0, behavior: 'smooth'});
 });
 
 loadData();

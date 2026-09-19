@@ -711,6 +711,224 @@ function assetGradientSVG(){
   </svg>`;
 }
 
+async function renderPolicyRateHistory(canvas){
+  try{
+    const data = await fetchIndicatorHistory('기준금리');
+    const byMonth = new Map();
+    data.forEach(r => byMonth.set(r.date.slice(0,7), r));
+    const rows = [...byMonth.values()].sort((a,b)=> a.date.localeCompare(b.date));
+    const points = rows.map(r => ({ x: new Date(r.date).getTime(), y: r.value }));
+    if(!points.length){ canvas.parentElement.innerHTML = '<div class="empty">데이터가 없습니다.</div>'; return; }
+    new Chart(canvas, {
+      type: 'line',
+      data: { datasets: [
+        { label: '한국 기준금리', data: points, borderColor: '#7a3230', borderWidth: 2, pointRadius: 0, stepped: true, parsing:false }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { type: 'linear', ticks: { color: '#484c3d', font: { size: 11 }, callback: (v) => new Date(v).getFullYear() }, grid: { color: '#eeece2' } },
+          y: { title: { display: true, text: '%', color: '#484c3d', font: { size: 12 } }, ticks: { color: '#484c3d', font: { size: 11 } }, grid: { color: '#eeece2' } }
+        }
+      }
+    });
+  }catch(e){
+    canvas.parentElement.innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>';
+    console.error(e);
+  }
+}
+
+async function renderCreditSpreadProxy(canvas){
+  try{
+    const [gov, agency] = await Promise.all([
+      fetchIndicatorHistory('국고 3Y'),
+      fetchIndicatorHistory('공사 3Y')
+    ]);
+    const mapGov = new Map(gov.map(r => [r.date, r.value]));
+    const mapAg = new Map(agency.map(r => [r.date, r.value]));
+    const commonDates = [...mapAg.keys()].filter(d => mapGov.has(d)).sort();
+    const byMonth = new Map();
+    commonDates.forEach(d => byMonth.set(d.slice(0,7), d));
+    const monthDates = [...byMonth.values()].sort();
+    const points = monthDates.map(d => ({ x: new Date(d).getTime(), y: Math.round((mapAg.get(d) - mapGov.get(d)) * 100) / 100 }));
+    if(!points.length){ canvas.parentElement.innerHTML = '<div class="empty">데이터가 없습니다.</div>'; return; }
+    new Chart(canvas, {
+      type: 'line',
+      data: { datasets: [
+        { label: '공사채-국고채(3Y) 스프레드', data: points, borderColor: '#2a78d6', borderWidth: 1.8, pointRadius: 0, tension: 0.05, parsing:false }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { type: 'linear', ticks: { color: '#484c3d', font: { size: 11 }, callback: (v) => new Date(v).getFullYear() }, grid: { color: '#eeece2' } },
+          y: { title: { display: true, text: '%p', color: '#484c3d', font: { size: 12 } }, ticks: { color: '#484c3d', font: { size: 11 } }, grid: { color: '#eeece2' } }
+        }
+      }
+    });
+  }catch(e){
+    canvas.parentElement.innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>';
+    console.error(e);
+  }
+}
+
+async function fetchUSEconSeries(indicator){
+  let all = []; let from = 0; const pageSize = 1000;
+  while(true){
+    const { data, error } = await sb.from('economic_indicators').select('date,value').eq('indicator', indicator).order('date', { ascending: true }).range(from, from+pageSize-1);
+    if(error) throw error;
+    if(!data || data.length === 0) break;
+    all = all.concat(data);
+    if(data.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
+
+async function fetchKRIndicatorSeries(indicatorName){
+  let all = []; let from = 0; const pageSize = 1000;
+  while(true){
+    const { data, error } = await sb.from('bok_indicators').select('period_date,value').eq('indicator_name', indicatorName).order('period_date', { ascending: true }).range(from, from+pageSize-1);
+    if(error) throw error;
+    if(!data || data.length === 0) break;
+    all = all.concat(data);
+    if(data.length < pageSize) break;
+    from += pageSize;
+  }
+  return all.map(r => ({ date: r.period_date, value: r.value }));
+}
+
+function computeYoY(rows){
+  const map = new Map(rows.map(r => [r.date.slice(0,7), r.value]));
+  const out = [];
+  rows.forEach(r => {
+    const [y, m] = r.date.slice(0,7).split('-').map(Number);
+    const priorKey = `${y-1}-${String(m).padStart(2,'0')}`;
+    if(map.has(priorKey)){
+      const prior = map.get(priorKey);
+      if(prior){
+        out.push({ x: new Date(r.date).getTime(), y: Math.round(((r.value - prior) / prior) * 10000) / 100 });
+      }
+    }
+  });
+  return out;
+}
+
+async function renderCpiCoreChart(canvas){
+  try{
+    const [cpi, coreCpi] = await Promise.all([fetchUSEconSeries('CPI'), fetchUSEconSeries('Core CPI')]);
+    const cpiYoy = computeYoY(cpi);
+    const coreYoy = computeYoY(coreCpi);
+    new Chart(canvas, {
+      type: 'line',
+      data: { datasets: [
+        { label: 'CPI(헤드라인)', data: cpiYoy, borderColor: '#7a3230', borderWidth: 2, pointRadius: 0, tension: 0.1, parsing:false },
+        { label: 'Core CPI', data: coreYoy, borderColor: '#2a78d6', borderWidth: 2, pointRadius: 0, tension: 0.1, parsing:false, borderDash: [6,3] }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { type: 'linear', ticks: { color: '#484c3d', font: { size: 11 }, callback: (v) => new Date(v).getFullYear() }, grid: { color: '#eeece2' } },
+          y: { title: { display: true, text: 'YoY %', color: '#484c3d', font: { size: 12 } }, ticks: { color: '#484c3d', font: { size: 11 } }, grid: { color: '#eeece2' } }
+        }
+      }
+    });
+  }catch(e){ canvas.parentElement.innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>'; console.error(e); }
+}
+
+async function renderPceCoreChart(canvas){
+  try{
+    const [pce, corePce] = await Promise.all([fetchUSEconSeries('PCE'), fetchUSEconSeries('Core PCE')]);
+    const pceYoy = computeYoY(pce);
+    const coreYoy = computeYoY(corePce);
+    new Chart(canvas, {
+      type: 'line',
+      data: { datasets: [
+        { label: 'PCE(헤드라인)', data: pceYoy, borderColor: '#7a3230', borderWidth: 2, pointRadius: 0, tension: 0.1, parsing:false },
+        { label: 'Core PCE', data: coreYoy, borderColor: '#2a78d6', borderWidth: 2, pointRadius: 0, tension: 0.1, parsing:false, borderDash: [6,3] }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { type: 'linear', ticks: { color: '#484c3d', font: { size: 11 }, callback: (v) => new Date(v).getFullYear() }, grid: { color: '#eeece2' } },
+          y: { title: { display: true, text: 'YoY %', color: '#484c3d', font: { size: 12 } }, ticks: { color: '#484c3d', font: { size: 11 } }, grid: { color: '#eeece2' } }
+        }
+      }
+    });
+  }catch(e){ canvas.parentElement.innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>'; console.error(e); }
+}
+
+async function renderUnemploymentChart(canvas){
+  try{
+    const rows = await fetchUSEconSeries('실업률');
+    const points = rows.map(r => ({ x: new Date(r.date).getTime(), y: r.value }));
+    new Chart(canvas, {
+      type: 'line',
+      data: { datasets: [ { label: '미국 실업률', data: points, borderColor: '#7a3230', borderWidth: 2, pointRadius: 0, tension: 0.1, parsing:false } ] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { type: 'linear', ticks: { color: '#484c3d', font: { size: 11 }, callback: (v) => new Date(v).getFullYear() }, grid: { color: '#eeece2' } },
+          y: { title: { display: true, text: '%', color: '#484c3d', font: { size: 12 } }, ticks: { color: '#484c3d', font: { size: 11 } }, grid: { color: '#eeece2' } }
+        }
+      }
+    });
+  }catch(e){ canvas.parentElement.innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>'; console.error(e); }
+}
+
+async function renderNfpChart(canvas){
+  try{
+    const rows = await fetchUSEconSeries('비농업고용자수');
+    const sorted = rows.slice().sort((a,b) => a.date.localeCompare(b.date));
+    const points = [];
+    for(let i=1;i<sorted.length;i++){
+      points.push({ x: new Date(sorted[i].date).getTime(), y: Math.round(sorted[i].value - sorted[i-1].value) });
+    }
+    new Chart(canvas, {
+      type: 'bar',
+      data: { datasets: [ { label: '전월대비 증감', data: points, backgroundColor: points.map(p => p.y >= 0 ? '#1baf7a' : '#c0392b'), parsing:false } ] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { type: 'linear', ticks: { color: '#484c3d', font: { size: 11 }, callback: (v) => new Date(v).getFullYear() }, grid: { display: false } },
+          y: { title: { display: true, text: '천명', color: '#484c3d', font: { size: 12 } }, ticks: { color: '#484c3d', font: { size: 11 } }, grid: { color: '#eeece2' } }
+        }
+      }
+    });
+  }catch(e){ canvas.parentElement.innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>'; console.error(e); }
+}
+
+async function renderGdpChart(canvas){
+  try{
+    const [krGdp, usGdp] = await Promise.all([
+      fetchKRIndicatorSeries('국내총생산(실질, 계절조정)'),
+      fetchUSEconSeries('GDP(실질)')
+    ]);
+    const krYoy = computeYoY(krGdp);
+    const usYoy = computeYoY(usGdp);
+    new Chart(canvas, {
+      type: 'line',
+      data: { datasets: [
+        { label: '한국 실질GDP', data: krYoy, borderColor: '#7a3230', borderWidth: 2, pointRadius: 0, tension: 0.1, parsing:false },
+        { label: '미국 실질GDP', data: usYoy, borderColor: '#2a78d6', borderWidth: 2, pointRadius: 0, tension: 0.1, parsing:false, borderDash: [6,3] }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { type: 'linear', ticks: { color: '#484c3d', font: { size: 11 }, callback: (v) => new Date(v).getFullYear() }, grid: { color: '#eeece2' } },
+          y: { title: { display: true, text: 'YoY %', color: '#484c3d', font: { size: 12 } }, ticks: { color: '#484c3d', font: { size: 11 } }, grid: { color: '#eeece2' } }
+        }
+      }
+    });
+  }catch(e){ canvas.parentElement.innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>'; console.error(e); }
+}
+
 const VISUALS = {
   '수정듀레이션': {
     kind: 'canvas', render: renderBondChart,
@@ -775,6 +993,48 @@ const VISUALS = {
   '여신건전성 5단계 분류': {
     kind: 'svg', svg: assetGradientSVG,
     caption: '오른쪽으로 갈수록 부실 정도가 심해지고, 요구되는 충당금 적립비율도 함께 높아진다.'
+  },
+  '기준금리': {
+    kind: 'canvas', render: renderPolicyRateHistory,
+    legend: [ { label: '한국 기준금리', color: '#7a3230' } ],
+    caption: '2001년 이후 한국 기준금리 실제 변천사. 금리인상·인하 사이클이 반복되는 모습을 그대로 보여준다.',
+    ariaLabel: '2001년 이후 한국 기준금리 실제 추이'
+  },
+  '신용스프레드': {
+    kind: 'canvas', render: renderCreditSpreadProxy,
+    legend: [ { label: '공사채-국고채(3Y) 스프레드', color: '#2a78d6' } ],
+    caption: '준정부기관 공사채와 국고채(3Y)의 실제 금리차. 완전한 회사채 신용스프레드는 아니지만, 위기 때 스프레드가 벌어지는 패턴을 실데이터로 보여주는 근사치다.',
+    ariaLabel: '공사채와 국고채 3년물의 실제 금리차 추이'
+  },
+  '헤드라인 대 코어': {
+    kind: 'canvas', render: renderCpiCoreChart,
+    legend: [ { label: 'CPI(헤드라인)', color: '#7a3230' }, { label: 'Core CPI', color: '#2a78d6', dash: true } ],
+    caption: '2006년 이후 미국 CPI와 Core CPI의 실제 전년동월비(YoY) 추이. 식품·에너지를 포함한 헤드라인이 코어보다 훨씬 크게 출렁이는 걸 볼 수 있다.',
+    ariaLabel: '미국 CPI와 Core CPI의 실제 YoY 추이 비교'
+  },
+  '개인소비지출물가지수': {
+    kind: 'canvas', render: renderPceCoreChart,
+    legend: [ { label: 'PCE(헤드라인)', color: '#7a3230' }, { label: 'Core PCE', color: '#2a78d6', dash: true } ],
+    caption: '2006년 이후 미국 PCE와 Core PCE의 실제 전년동월비(YoY) 추이.',
+    ariaLabel: '미국 PCE와 Core PCE의 실제 YoY 추이 비교'
+  },
+  '실업률': {
+    kind: 'canvas', render: renderUnemploymentChart,
+    legend: [ { label: '미국 실업률', color: '#7a3230' } ],
+    caption: '2006년 이후 미국 실업률 실제 추이. 2020년 팬데믹 때 급등했다가 빠르게 회복된 구간이 뚜렷하게 보인다.',
+    ariaLabel: '미국 실업률의 2006년 이후 실제 추이'
+  },
+  '비농업고용지수': {
+    kind: 'canvas', render: renderNfpChart,
+    legend: [ { label: '전월대비 증감(천명)', color: '#1baf7a' } ],
+    caption: '미국 비농업고용자수의 실제 전월대비 증감. 2020년 팬데믹 초기의 급격한 마이너스가 눈에 띈다.',
+    ariaLabel: '미국 비농업고용자수 전월대비 증감 실제 추이'
+  },
+  '국내총생산': {
+    kind: 'canvas', render: renderGdpChart,
+    legend: [ { label: '한국 실질GDP', color: '#7a3230' }, { label: '미국 실질GDP', color: '#2a78d6', dash: true } ],
+    caption: '한국과 미국 실질GDP의 실제 전년동기비(YoY) 추이 비교.',
+    ariaLabel: '한국과 미국 실질GDP YoY 실제 추이 비교'
   }
 };
 

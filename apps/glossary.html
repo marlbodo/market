@@ -388,7 +388,7 @@ function termHtml(t, highlight){
         </div>
         <div class="layer layer2">
           <div class="layer-label">2. 실무 의미</div>
-          <div class="layer-text">${escapeHtml(t.layer2_meaning)}</div>
+          <div class="layer-text">${formatMultiParagraph(t.layer2_meaning)}</div>
         </div>
         ${t.layer3_deepdive ? `
         <div class="deepdive">

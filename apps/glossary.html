@@ -4,51 +4,44 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>용어해설집 — AI 마켓 인사이트</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
   :root{
-    --paper:#f3efe4;
-    --paper-2:#ece5d3;
-    --ink:#1c2016;
-    --ink-soft:#4d5142;
-    --rule:#c9bf9e;
-    --seal:#6e2f2b;
-    --seal-soft:#8a4440;
-    --gold:#8a6a2f;
-    --deepdive-bg:#efe6cf;
+    --bg:#ffffff;
+    --panel:#fafafa;
+    --ink:#1a1c16;
+    --ink-soft:#6b6f60;
+    --rule:#e4e2d8;
+    --seal:#7a3230;
+    --seal-soft:#9a5250;
+    --gold:#96751f;
+    --deepdive-bg:#fbf6e8;
     --mono:'IBM Plex Mono', ui-monospace, monospace;
-    --serif:'Noto Serif KR', serif;
-    --sans:'Noto Sans KR', sans-serif;
+    --sans:'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', 'Noto Sans KR', sans-serif;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--paper);
+    background:var(--bg);
     color:var(--ink);
     font-family:var(--sans);
+    font-size:16px;
     min-height:100vh;
-  }
-  body::before{
-    content:"";
-    position:fixed; inset:0;
-    background-image:
-      repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px);
-    pointer-events:none;
-    z-index:0;
   }
   a{color:inherit;}
 
   header.masthead{
-    position:relative;
     border-bottom:2px solid var(--ink);
-    padding:22px 24px 16px;
-    background:var(--paper);
+    padding:22px 18px 16px;
+    background:var(--bg);
   }
   .masthead-inner{
-    max-width:1180px;
+    max-width:1240px;
     margin:0 auto;
     display:flex;
     align-items:baseline;
@@ -57,233 +50,155 @@
     gap:10px;
   }
   .masthead-title{
-    font-family:var(--serif);
-    font-weight:700;
+    font-family:var(--sans);
+    font-weight:800;
     font-size:26px;
-    letter-spacing:0.02em;
+    letter-spacing:-0.01em;
   }
-  .masthead-title .seal{
-    color:var(--seal);
-  }
+  .masthead-title .seal{color:var(--seal);}
   .masthead-sub{
     font-family:var(--mono);
-    font-size:12px;
+    font-size:12.5px;
     color:var(--ink-soft);
+    margin-top:4px;
   }
   .masthead-count{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--ink-soft);
-  }
-
-  .search-bar{
-    max-width:1180px;
-    margin:14px auto 0;
-    position:relative;
-  }
-  .search-bar input{
-    width:100%;
-    padding:11px 14px;
-    font-family:var(--sans);
-    font-size:14px;
-    background:var(--paper-2);
-    border:1px solid var(--rule);
-    color:var(--ink);
-    outline:none;
-  }
-  .search-bar input:focus{
-    border-color:var(--seal);
-  }
-  .search-bar input::placeholder{color:var(--ink-soft);}
-
-  .layout{
-    position:relative;
-    z-index:1;
-    max-width:1180px;
-    margin:0 auto;
-    display:grid;
-    grid-template-columns:250px 1fr;
-    gap:0;
-  }
-  @media (max-width: 860px){
-    .layout{grid-template-columns:1fr;}
-    nav.toc{
-      border-right:none;
-      border-bottom:2px solid var(--ink);
-    }
-  }
-
-  nav.toc{
-    border-right:2px solid var(--ink);
-    padding:20px 16px 40px;
-    position:sticky;
-    top:0;
-    align-self:start;
-    max-height:100vh;
-    overflow-y:auto;
-  }
-  .toc-section{margin-bottom:22px;}
-  .toc-section-title{
-    font-family:var(--mono);
-    font-size:11px;
-    letter-spacing:0.08em;
-    color:var(--seal);
-    margin:0 0 8px;
-    padding-bottom:4px;
-    border-bottom:1px solid var(--rule);
-  }
-  .toc-cat{
-    display:flex;
-    justify-content:space-between;
-    gap:8px;
-    padding:6px 4px;
-    font-size:13.5px;
-    cursor:pointer;
-    border-bottom:1px dotted transparent;
-    color:var(--ink-soft);
-  }
-  .toc-cat:hover{color:var(--ink);}
-  .toc-cat.active{
-    color:var(--ink);
-    font-weight:700;
-    background:var(--paper-2);
-  }
-  .toc-cat .n{
-    font-family:var(--mono);
-    font-size:11px;
-    color:var(--ink-soft);
-  }
-
-  main.content{
-    padding:28px 28px 80px;
-    min-width:0;
-  }
-  .cat-header{
-    margin-bottom:20px;
-    padding-bottom:14px;
-    border-bottom:1px solid var(--rule);
-  }
-  .cat-header .section-label{
-    font-family:var(--mono);
-    font-size:11px;
-    color:var(--seal);
-    letter-spacing:0.06em;
-  }
-  .cat-header h2{
-    font-family:var(--serif);
-    font-size:24px;
-    margin:6px 0 8px;
-  }
-  .cat-header p{
-    margin:0;
-    color:var(--ink-soft);
-    font-size:14px;
-    line-height:1.7;
-    max-width:70ch;
-  }
-
-  .term{
-    border-bottom:1px solid var(--rule);
-    padding:16px 0;
-  }
-  .term:first-of-type{padding-top:0;}
-  .term-row{
-    display:flex;
-    align-items:baseline;
-    gap:10px;
-    cursor:pointer;
-    flex-wrap:wrap;
-  }
-  .term-kr{
-    font-family:var(--serif);
-    font-weight:700;
-    font-size:17px;
-  }
-  .term-en{
     font-family:var(--mono);
     font-size:12.5px;
     color:var(--ink-soft);
   }
-  .term-abbr{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--seal-soft);
-    border:1px solid var(--seal-soft);
-    padding:1px 6px;
+
+  .search-bar{
+    max-width:1240px;
+    margin:14px auto 0;
   }
-  .term-toggle{
-    margin-left:auto;
-    font-family:var(--mono);
-    font-size:11px;
+  .search-bar input{
+    width:100%;
+    padding:13px 15px;
+    font-family:var(--sans);
+    font-size:16px;
+    background:var(--panel);
+    border:1px solid var(--rule);
+    color:var(--ink);
+    outline:none;
+    border-radius:6px;
+  }
+  .search-bar input:focus{border-color:var(--seal);}
+  .search-bar input::placeholder{color:var(--ink-soft);}
+
+  /* ---- Mobile-first layout: stacked by default ---- */
+  .layout{
+    max-width:1240px;
+    margin:0 auto;
+    display:block;
+  }
+  nav.toc{
+    border-right:none;
+    border-bottom:2px solid var(--ink);
+    padding:16px 16px 18px;
+    position:static;
+    max-height:none;
+    overflow-y:visible;
+  }
+  main.content{
+    padding:22px 18px 70px;
+    min-width:0;
+  }
+
+  /* ---- Desktop: two columns, sticky sidebar ---- */
+  @media (min-width: 861px){
+    .layout{
+      display:grid;
+      grid-template-columns:270px 1fr;
+    }
+    nav.toc{
+      border-right:2px solid var(--ink);
+      border-bottom:none;
+      padding:22px 18px 40px;
+      position:sticky;
+      top:0;
+      align-self:start;
+      max-height:100vh;
+      overflow-y:auto;
+    }
+    main.content{
+      padding:32px 32px 90px;
+    }
+  }
+
+  .toc-section{margin-bottom:22px;}
+  .toc-section-title{
+    font-family:var(--sans);
+    font-weight:800;
+    font-size:15px;
+    color:var(--seal);
+    margin:0 0 8px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--rule);
+  }
+  .toc-cat{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    justify-content:space-between;
+    padding:9px 6px;
+    font-size:15px;
+    cursor:pointer;
     color:var(--ink-soft);
+    border-radius:5px;
   }
-  .term-body{
-    margin-top:10px;
-    display:none;
+  .toc-cat .label{display:flex; align-items:center; gap:8px;}
+  .toc-cat .icon{font-size:17px; width:22px; text-align:center;}
+  .toc-cat:hover{color:var(--ink); background:var(--panel);}
+  .toc-cat.active{color:var(--ink); font-weight:700; background:var(--panel);}
+  .toc-cat .n{font-family:var(--mono); font-size:12px; color:var(--ink-soft);}
+
+  .cat-header{margin-bottom:22px; padding-bottom:14px; border-bottom:1px solid var(--rule);}
+  .cat-header .section-label{
+    font-family:var(--mono); font-size:11.5px; color:var(--seal); letter-spacing:0.06em;
   }
+  .cat-header h2{
+    font-family:var(--sans); font-weight:800; font-size:26px; margin:6px 0 8px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .cat-header h2 .icon{font-size:26px;}
+  .cat-header p{margin:0; color:var(--ink-soft); font-size:14.5px; line-height:1.75; max-width:72ch;}
+
+  .term{border-bottom:1px solid var(--rule); padding:16px 0;}
+  .term:first-of-type{padding-top:0;}
+  .term-row{display:flex; align-items:baseline; gap:10px; cursor:pointer; flex-wrap:wrap;}
+  .term-kr{font-family:var(--sans); font-weight:700; font-size:18px;}
+  .term-en{font-family:var(--mono); font-size:13px; color:var(--ink-soft);}
+  .term-abbr{
+    font-family:var(--mono); font-size:12px; color:var(--seal-soft);
+    border:1px solid var(--seal-soft); padding:1px 7px; border-radius:4px;
+  }
+  .term-toggle{margin-left:auto; font-family:var(--mono); font-size:11.5px; color:var(--ink-soft);}
+  .term-body{margin-top:12px; display:none;}
   .term.open .term-body{display:block;}
   .term.open .term-row .term-kr{color:var(--seal);}
-  .layer{
-    display:flex;
-    gap:10px;
-    padding:8px 0;
-    align-items:flex-start;
-  }
+  .layer{display:flex; gap:12px; padding:8px 0; align-items:flex-start;}
   .layer-label{
-    flex:0 0 78px;
-    font-family:var(--mono);
-    font-size:10.5px;
-    color:var(--ink-soft);
-    padding-top:2px;
-    letter-spacing:0.03em;
+    flex:0 0 84px; font-family:var(--mono); font-size:11px;
+    color:var(--ink-soft); padding-top:3px; letter-spacing:0.02em;
   }
-  .layer-text{
-    font-size:14.5px;
-    line-height:1.75;
-    color:var(--ink);
-  }
-  .layer1 .layer-text{color:var(--ink-soft); font-size:14px;}
-  .deepdive{
-    margin-top:6px;
-    background:var(--deepdive-bg);
-    border-left:3px solid var(--gold);
-    padding:12px 14px;
-  }
+  .layer-text{font-size:15px; line-height:1.75; color:var(--ink);}
+  .layer1 .layer-text{color:var(--ink-soft); font-size:14.5px;}
+  .deepdive{margin-top:8px; background:var(--deepdive-bg); border-left:3px solid var(--gold); padding:13px 15px; border-radius:4px;}
   .deepdive .layer-label{color:var(--gold);}
-  .related{
-    margin-top:10px;
-    font-family:var(--mono);
-    font-size:11.5px;
-    color:var(--ink-soft);
-  }
-  .related span{
-    display:inline-block;
-    border:1px solid var(--rule);
-    padding:2px 7px;
-    margin:2px 4px 2px 0;
-    cursor:pointer;
-  }
+  .related{margin-top:10px; font-family:var(--mono); font-size:12px; color:var(--ink-soft);}
+  .related span{display:inline-block; border:1px solid var(--rule); padding:3px 8px; margin:2px 4px 2px 0; cursor:pointer; border-radius:4px;}
   .related span:hover{border-color:var(--seal); color:var(--seal);}
 
-  .empty, .loading{
-    padding:60px 0;
-    text-align:center;
-    color:var(--ink-soft);
-    font-family:var(--mono);
-    font-size:13px;
-  }
+  .chart-wrap{margin-top:14px; padding:14px; background:var(--panel); border:1px solid var(--rule); border-radius:6px;}
+  .chart-legend{display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
+  .chart-legend .sw{display:inline-block; width:16px; height:2px; margin-right:5px; vertical-align:middle;}
+  .chart-canvas-box{position:relative; width:100%; height:260px;}
+  .chart-caption{margin-top:10px; font-size:12px; color:var(--ink-soft); line-height:1.7;}
 
-  .search-results-label{
-    font-family:var(--mono);
-    font-size:12px;
-    color:var(--seal);
-    margin-bottom:16px;
-  }
-  mark{
-    background:var(--gold);
-    color:var(--paper);
-    padding:0 2px;
-  }
+  .empty, .loading{padding:60px 0; text-align:center; color:var(--ink-soft); font-family:var(--mono); font-size:13.5px;}
+  .search-results-label{font-family:var(--mono); font-size:12.5px; color:var(--seal); margin-bottom:16px;}
+  mark{background:var(--gold); color:#fff; padding:0 2px; border-radius:2px;}
 </style>
 </head>
 <body>
@@ -312,6 +227,30 @@
 const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const CATEGORY_ICONS = {
+  basic: '📏',
+  monetary: '🏛️',
+  inflation: '🛒',
+  employment: '👷',
+  growth: '📊',
+  macro_global: '🌐',
+  bond: '📜',
+  swap: '🔄',
+  credit: '🛡️',
+  liquidity_market: '💧',
+  fx: '💱',
+  equity: '📈',
+  ipo: '🎟️',
+  derivatives: '🎲',
+  bank_profitability: '💰',
+  bank_asset_quality: '🩺',
+  bank_capital: '🧱',
+  bank_liquidity: '🌊',
+  bank_risk: '⚠️'
+};
+
+const BOND_CHART_TERMS = { '수정듀레이션': true, '컨벡시티': true };
 
 let categories = [];
 let terms = [];
@@ -352,8 +291,9 @@ function renderToc(){
       <div class="toc-section-title">${escapeHtml(section)}</div>
       ${cats.map(c => {
         const count = terms.filter(t => t.category_id === c.id).length;
+        const icon = CATEGORY_ICONS[c.code] || '•';
         return `<div class="toc-cat" data-code="${c.code}">
-          <span>${escapeHtml(c.name)}</span><span class="n">${count}</span>
+          <span class="label"><span class="icon">${icon}</span>${escapeHtml(c.name)}</span><span class="n">${count}</span>
         </div>`;
       }).join('')}
     </div>
@@ -363,6 +303,9 @@ function renderToc(){
     el.addEventListener('click', () => {
       searchInput.value = '';
       selectCategory(el.dataset.code);
+      if(window.innerWidth <= 860){
+        contentEl.scrollIntoView({behavior:'smooth', block:'start'});
+      }
     });
   });
 }
@@ -374,11 +317,12 @@ function selectCategory(code){
   });
   const cat = categories.find(c => c.code === code);
   if(!cat) return;
+  const icon = CATEGORY_ICONS[cat.code] || '•';
   const catTerms = terms.filter(t => t.category_id === cat.id).sort((a,b) => a.order_index - b.order_index);
   contentEl.innerHTML = `
     <div class="cat-header">
       <div class="section-label">${escapeHtml(cat.section)}</div>
-      <h2>${escapeHtml(cat.name)}</h2>
+      <h2><span class="icon">${icon}</span>${escapeHtml(cat.name)}</h2>
       ${cat.intro ? `<p>${escapeHtml(cat.intro)}</p>` : ''}
     </div>
     <div id="term-list"></div>
@@ -394,7 +338,15 @@ function renderTerms(list, container, highlight){
   container.innerHTML = list.map(t => termHtml(t, highlight)).join('');
   container.querySelectorAll('.term').forEach(el => {
     el.querySelector('.term-row').addEventListener('click', () => {
+      const wasOpen = el.classList.contains('open');
       el.classList.toggle('open');
+      if(!wasOpen){
+        const chartCanvas = el.querySelector('canvas[data-chart-term]');
+        if(chartCanvas && !chartCanvas.dataset.rendered){
+          chartCanvas.dataset.rendered = '1';
+          renderBondChart(chartCanvas);
+        }
+      }
     });
   });
   container.querySelectorAll('.related span').forEach(el => {
@@ -409,6 +361,8 @@ function renderTerms(list, container, highlight){
           const termEl = [...document.querySelectorAll('.term')].find(e => e.dataset.id == target.id);
           if(termEl){
             termEl.classList.add('open');
+            const c = termEl.querySelector('canvas[data-chart-term]');
+            if(c && !c.dataset.rendered){ c.dataset.rendered = '1'; renderBondChart(c); }
             termEl.scrollIntoView({behavior:'smooth', block:'center'});
           }
         }, 30);
@@ -419,6 +373,7 @@ function renderTerms(list, container, highlight){
 
 function termHtml(t, highlight){
   const hl = (s) => highlight ? highlightText(s, highlight) : escapeHtml(s || '');
+  const showChart = !!BOND_CHART_TERMS[t.term_kr];
   return `
     <div class="term" data-id="${t.id}">
       <div class="term-row">
@@ -442,6 +397,19 @@ function termHtml(t, highlight){
             <div class="layer-label">3. 딥다이브</div>
             <div class="layer-text">${escapeHtml(t.layer3_deepdive)}</div>
           </div>
+          ${showChart ? `
+          <div class="chart-wrap">
+            <div class="chart-legend">
+              <span><span class="sw" style="background:#2a78d6;"></span>실제 가격 P(y)</span>
+              <span><span class="sw" style="background:#eb6834; border-top:2px dashed #eb6834; height:0;"></span>1차(듀레이션)</span>
+              <span><span class="sw" style="background:#1baf7a;"></span>1+2차(듀레이션+컨벡시티)</span>
+              <span><span class="sw" style="background:#9b59b6;"></span>1+2+3차</span>
+            </div>
+            <div class="chart-canvas-box">
+              <canvas data-chart-term="${escapeHtml(t.term_kr)}" role="img" aria-label="10년 만기 표면금리 5% 채권의 가격-금리 곡선과 1차, 2차, 3차 테일러근사 비교"></canvas>
+            </div>
+            <div class="chart-caption">10년물 / 표면금리 5% / 최초금리 5% 채권. 5%에서 15%(1,000bp) 신용사건급 구간으로 갈수록 1차(직선) 근사와 실제 곡선의 간극이 커지고, 2차(컨벡시티)가 그 간극을 크게 좁혀준다.</div>
+          </div>` : ''}
         </div>` : ''}
         ${t.related_terms && t.related_terms.length ? `
         <div class="related">관련 용어: ${t.related_terms.map(r => `<span data-term="${escapeHtml(r)}">${escapeHtml(r)}</span>`).join('')}</div>
@@ -449,6 +417,58 @@ function termHtml(t, highlight){
       </div>
     </div>
   `;
+}
+
+function renderBondChart(canvas){
+  const n = 10, C = 500, F = 10000, y0 = 0.05;
+  function price(y){
+    if (Math.abs(y) < 1e-9) return C*n + F;
+    const df = Math.pow(1+y, -n);
+    return C*(1-df)/y + F*df;
+  }
+  const h = 0.0001;
+  const P0 = price(y0);
+  const dP = (price(y0+h) - price(y0-h)) / (2*h);
+  const d2P = (price(y0+h) - 2*P0 + price(y0-h)) / (h*h);
+  const d3P = (price(y0+2*h) - 2*price(y0+h) + 2*price(y0-h) - price(y0-2*h)) / (2*h*h*h);
+
+  const pts = [];
+  for (let y = 0; y <= 0.15 + 1e-9; y += 0.0025) pts.push(Math.round(y*10000)/10000);
+
+  const actual = pts.map(y => ({x: y*100, y: Math.round(price(y))}));
+  const linear = pts.map(y => ({x: y*100, y: Math.round(P0 + dP*(y-y0))}));
+  const quad = pts.map(y => ({x: y*100, y: Math.round(P0 + dP*(y-y0) + 0.5*d2P*Math.pow(y-y0,2))}));
+  const cubic = pts.map(y => ({x: y*100, y: Math.round(P0 + dP*(y-y0) + 0.5*d2P*Math.pow(y-y0,2) + (1/6)*d3P*Math.pow(y-y0,3))}));
+
+  new Chart(canvas, {
+    type: 'line',
+    data: {
+      datasets: [
+        { label: '실제 가격', data: actual, borderColor: '#2a78d6', borderWidth: 2.5, pointRadius: 0, tension: 0.1, parsing:false },
+        { label: '1차(듀레이션)', data: linear, borderColor: '#eb6834', borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, parsing:false },
+        { label: '1+2차(컨벡시티)', data: quad, borderColor: '#1baf7a', borderWidth: 1.5, pointRadius: 0, parsing:false },
+        { label: '1+2+3차', data: cubic, borderColor: '#9b59b6', borderWidth: 1.5, borderDash: [2,3], pointRadius: 0, parsing:false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          type: 'linear',
+          min: 0, max: 15,
+          title: { display: true, text: '만기수익률 (%)', color: '#6b6f60', font: { size: 12 } },
+          ticks: { stepSize: 5, color: '#6b6f60', font: { size: 11 }, callback: (v) => Math.round(v) },
+          grid: { color: '#eeece2' }
+        },
+        y: {
+          title: { display: true, text: '가격 (원)', color: '#6b6f60', font: { size: 12 } },
+          ticks: { color: '#6b6f60', font: { size: 11 } },
+          grid: { color: '#eeece2' }
+        }
+      }
+    }
+  });
 }
 
 function highlightText(s, q){
@@ -462,10 +482,7 @@ function highlightText(s, q){
 
 function escapeHtml(s){
   if(s === null || s === undefined) return '';
-  return String(s)
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;');
+  return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 }
 
 let searchTimeout;

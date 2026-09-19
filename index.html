@@ -463,6 +463,13 @@
             <div class="app-desc">금통위·FOMC·ECB 등 중앙은행 일정과 주요 지표 발표일, 공모주 일정을 한눈에 보여드려요</div>
           </div>
         </a>
+        <a class="app-card" href="apps/glossary.html" id="glossary-link">
+          <span class="app-icon app-icon-accent">📖</span>
+          <div>
+            <div class="app-name">전문용어 해설집</div>
+            <div class="app-desc">기본 용어 및 이 사이트에 있는 용어들의 의미를 알려드려요</div>
+          </div>
+        </a>
       </div>
 
     </aside>
@@ -473,7 +480,7 @@
 <footer class="site-footer">
   <div class="wrap">
     <!-- [수정 4] 안내 문구의 브랜드명 변경 -->
-    AI 마켓 브리핑은 공개 뉴스와 공시 데이터를 자동으로 수집·요약합니다. 투자 판단의 참고 자료이며, 투자 권유가 아닙니다.
+    AI 마켓 인사이트는 공개 뉴스와 공시 데이터를 자동으로 수집·요약합니다. 투자 판단의 참고 자료이며, 투자 권유가 아닙니다.
   </div>
 </footer>
 
@@ -531,6 +538,12 @@
     const w = Math.min(1300, screen.availWidth - 40);
     const h = Math.min(950, screen.availHeight - 60);
     openCentered(this.href, 'econCalendar', w, h);
+  });
+  document.getElementById('glossary-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    const w = Math.min(1300, screen.availWidth - 40);
+    const h = screen.availHeight - 60;
+    openCentered(this.href, 'termsGlossary', w, h);
   });
   document.getElementById('research-more-link').addEventListener('click', function (e) {
     e.preventDefault();

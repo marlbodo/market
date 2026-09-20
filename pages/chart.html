@@ -47,6 +47,11 @@
   .picker-panel, .chart-panel {
     background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px;
   }
+  /* [모바일] 카드 좌우 패딩을 줄여서 차트가 쓸 수 있는 가로폭을 최대한 확보 */
+  @media (max-width: 480px) {
+    .chart-wrap { padding: 12px 8px 32px; }
+    .chart-panel { padding: 10px 4px; }
+  }
   .picker-panel h2, .chart-panel h2 { font-size: 14px; margin: 0 0 10px; color: #374151; }
   .picker-search {
     width: 100%; padding: 7px 10px; border: 1px solid #d7dae0; border-radius: 7px;
@@ -82,6 +87,7 @@
   }
 
   .chart-canvas-box { position: relative; height: 640px; }
+  @media (max-width: 480px) { .chart-canvas-box { height: 460px; } }
   .chart-empty { color: #9ca3af; font-size: 13px; text-align: center; padding: 60px 0; }
   .chart-loading { color: #9ca3af; font-size: 13px; text-align: center; padding: 60px 0; }
 
@@ -146,6 +152,12 @@
 
   const SPREAD_LINE_COLOR = '#3fae86';
   const SPREAD_FILL_COLOR = 'rgba(93, 202, 165, 0.35)';
+
+  // [신규] 모바일 화면 여부. 오른쪽 축 눈금과 끝값 라벨이 차지하는 여백을
+  // 화면 폭에 맞게 줄이기 위해 사용한다 (차트를 다시 그릴 때마다 최신 값으로 갱신).
+  function isMobile() {
+    return window.matchMedia('(max-width: 480px)').matches;
+  }
 
   const LEVEL_ONLY_KEYS = new Set([
     'us_econ::실업률',
@@ -421,11 +433,20 @@
     return `${sign}${num.toFixed(decimals)}${unit}`;
   }
 
+  // [수정] endLabel이 차지하는 오른쪽 여백을 화면 크기에 맞게 가변으로 계산.
+  // 모바일에서는 글자를 살짝 줄이고 여백도 줄여서, 선을 가리지 않는 선에서 최대한
+  // 차트 플롯 영역이 넓어지도록 한다.
+  function endLabelReservedWidth() {
+    return isMobile() ? 40 : 58;
+  }
+
   const endLabelPlugin = {
     id: 'endLabel',
     afterDatasetsDraw(chart) {
       const { ctx, chartArea } = chart;
       if (!chartArea) return;
+      const mobile = isMobile();
+      const fontSize = mobile ? 10 : 11;
       chart.data.datasets.forEach((ds, i) => {
         const meta = chart.getDatasetMeta(i);
         if (!meta || meta.hidden || !ds.data || !ds.data.length) return;
@@ -437,13 +458,13 @@
         const text = formatDatasetValue(ds, raw.y);
 
         ctx.save();
-        ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
         const textWidth = ctx.measureText(text).width;
-        const x = Math.min(point.x + 6, chart.width - textWidth - 6);
+        const x = Math.min(point.x + (mobile ? 4 : 6), chart.width - textWidth - (mobile ? 3 : 6));
         const y = point.y;
 
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.fillRect(x - 3, y - 8, textWidth + 6, 16);
+        ctx.fillRect(x - 3, y - (mobile ? 7 : 8), textWidth + 6, mobile ? 14 : 16);
 
         ctx.fillStyle = ds.borderColor || '#111827';
         ctx.textBaseline = 'middle';
@@ -481,6 +502,7 @@
     try {
       const startDate = startDateFor(RANGE_MONTHS);
       const seriesList = await Promise.all(SELECTED.map((item) => fetchSeries(item, startDate)));
+      const mobile = isMobile();
 
       const datasets = SELECTED.map((item, i) => {
         const isMoMDiff = MOM_DIFF_KEYS.has(chipKey(item));
@@ -544,13 +566,18 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          layout: { padding: { right: 58 } },
+          layout: { padding: { right: endLabelReservedWidth() } },
           interaction: { mode: 'x', intersect: false },
           plugins: {
             legend: {
               display: true,
               position: 'top',
-              labels: { usePointStyle: true, boxWidth: 26, boxHeight: 10 },
+              labels: {
+                usePointStyle: true,
+                boxWidth: mobile ? 18 : 26,
+                boxHeight: 10,
+                font: { size: mobile ? 10.5 : 12 },
+              },
             },
             // [수정 6] 툴팁이 차트를 가리는 문제로 비활성화. 값은 endLabel + crosshair로 확인.
             tooltip: {
@@ -583,17 +610,25 @@
                   year: 'yyyy',
                 },
               },
+              ticks: { font: { size: mobile ? 10 : 12 }, maxRotation: 0, autoSkipPadding: mobile ? 16 : 8 },
             },
-            y: { type: 'linear', position: 'left', title: { display: usesRight, text: '좌축' } },
+            y: {
+              type: 'linear', position: 'left', title: { display: usesRight, text: '좌축' },
+              ticks: { font: { size: mobile ? 10 : 12 } },
+            },
+            // [수정] 모바일에서는 우축 눈금 숫자를 끄고 축 자체 폭만 최소로 남겨서
+            // 그만큼을 플롯 영역(선이 그려지는 공간)에 돌려준다. 현재 값은 어차피
+            // endLabel이 선 끝에 항상 보여주므로 정보 손실은 없다.
             y1: {
-              type: 'linear', position: 'right', title: { display: usesRight, text: '우축' },
+              type: 'linear', position: 'right', title: { display: usesRight && !mobile, text: '우축' },
               grid: { drawOnChartArea: false }, display: usesRight,
+              ticks: { display: !mobile, font: { size: 12 } },
             },
             y2: {
               type: 'linear', position: 'right', display: usesSpread,
               min: spreadAxisRange.min, max: spreadAxisRange.max,
               grid: { drawOnChartArea: false },
-              ticks: { color: SPREAD_LINE_COLOR, font: { size: 10 } },
+              ticks: { display: !mobile, color: SPREAD_LINE_COLOR, font: { size: 10 } },
             },
           },
         },
@@ -676,6 +711,13 @@
 
   document.getElementById('close-btn').addEventListener('click', () => {
     window.close();
+  });
+
+  // 화면 회전 등으로 모바일↔데스크톱 판정이 바뀌면 차트를 다시 그려 여백을 재계산
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { if (SELECTED.length) refreshChart(); }, 200);
   });
 
   renderChips();

@@ -127,12 +127,17 @@
     font-weight: 600;
   }
 
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--line);
+  }
   table {
     width: 100%;
     border-collapse: collapse;
     background: #fff;
     font-size: 13.5px;
-    border: 1px solid var(--line);
   }
   thead th {
     text-align: center;
@@ -162,9 +167,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  @media (max-width: 640px) {
-    td.cond { max-width: 130px; }
-  }
   .cond-arrow { color: var(--accent); margin-left: 4px; font-size: 10px; }
   tr.data-row { cursor: pointer; }
   tr.detail-row { display: none; background: var(--accent-soft); }
@@ -173,10 +175,24 @@
     padding: 10px 14px;
     font-size: 12.5px;
     color: var(--ink-soft);
-    line-height: 1.6;
+    line-height: 1.7;
     white-space: normal;
   }
+  tr.detail-row td strong { color: var(--ink); }
   .best { color: var(--accent); font-weight: 800; }
+
+  /* 모바일에서만 쓰이는 "펼치기" 열: 기본은 숨김 */
+  th.opener, td.opener {
+    display: none;
+    width: 28px;
+    text-align: center;
+    color: var(--accent);
+    font-size: 11px;
+    padding-left: 4px;
+    padding-right: 8px;
+    transition: transform .15s ease;
+  }
+  tr.data-row.open td.opener { transform: rotate(180deg); }
 
   .empty, .loading {
     padding: 40px 0;
@@ -190,6 +206,20 @@
     color: var(--ink-soft);
     border-top: 1px solid var(--line-soft);
     padding-top: 14px;
+  }
+
+  /* ── 모바일: 상품명 열 확보를 위해 가입방법·우대조건 열을 숨기고
+       대신 행을 탭하면 펼쳐지는 상세 영역에서 보여준다 ── */
+  @media (max-width: 640px) {
+    th:nth-child(5), td:nth-child(5),   /* 가입방법 */
+    th:nth-child(6), td:nth-child(6) {  /* 우대조건 */
+      display: none;
+    }
+    th.opener, td.opener {
+      display: table-cell;
+    }
+    tbody td { padding: 12px 8px; }
+    thead th { padding: 10px 8px; font-size: 12.5px; }
   }
 </style>
 </head>
@@ -286,24 +316,30 @@
 
     const maxRate = Math.max(...rows.map(r => r.intr_rate2 ?? 0));
 
-    // 표시 순서: 금융회사 · 상품명 · 기본금리 · 최고금리 · 가입방법 · 우대조건(클릭 시 펼침)
+    // 표시 순서: 금융회사 · 상품명 · 기본금리 · 최고금리 · 가입방법 · 우대조건(클릭 시 펼침) · (모바일 전용 펼침 표시)
     const bodyHtml = rows.slice(0, 100).map((r, i) => {
       const isBest = r.intr_rate2 !== null && r.intr_rate2 === maxRate;
       const rateCell = `${(r.intr_rate2 ?? 0).toFixed(2)}%`;
       const cond = r.spcl_cnd ?? "-";
+      const joinWay = fmtJoinWay(r.join_way);
 
       return `<tr class="data-row" data-idx="${i}">
         <td>${r.kor_co_nm}</td>
         <td>${r.fin_prdt_nm ?? ""}</td>
         <td class="num">${(r.intr_rate ?? 0).toFixed(2)}%</td>
         <td class="num ${isBest ? "best" : ""}">${rateCell}</td>
-        <td>${fmtJoinWay(r.join_way)}</td>
+        <td>${joinWay}</td>
         <td class="cond" title="클릭해서 전체 보기">${cond}<span class="cond-arrow">▾</span></td>
+        <td class="opener">▾</td>
       </tr>
-      <tr class="detail-row" id="detail-${i}"><td colspan="6"><strong>우대조건:</strong> ${cond}</td></tr>`;
+      <tr class="detail-row" id="detail-${i}"><td colspan="7">
+        <strong>가입방법</strong> ${joinWay}<br>
+        <strong>우대조건</strong> ${cond}
+      </td></tr>`;
     }).join("");
 
     area.innerHTML = `
+      <div class="table-wrap">
       <table>
         <thead>
           <tr>
@@ -313,16 +349,19 @@
             <th class="num">최고금리</th>
             <th>가입방법</th>
             <th>우대조건</th>
+            <th class="opener" aria-label="상세보기"></th>
           </tr>
         </thead>
         <tbody>${bodyHtml}</tbody>
       </table>
+      </div>
     `;
 
     area.querySelectorAll("tr.data-row").forEach((tr) => {
       tr.addEventListener("click", () => {
         const detail = document.getElementById(`detail-${tr.dataset.idx}`);
         if (detail) detail.classList.toggle("open");
+        tr.classList.toggle("open");
       });
     });
   }

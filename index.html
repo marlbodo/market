@@ -32,6 +32,10 @@
     .ai-insight-actions { flex-direction: row; }
     .ai-insight-actions > a { flex: 1; }
   }
+
+  /* [수정 13] "유용한 앱" 아래, 별도 패널로 아이디어 제안함 링크 카드 추가 */
+  .suggestion-panel .app-card { margin-top: 0; }
+  .app-icon-suggest { background: #EFECFB; color: #6A5FCB; }
 </style>
 </head>
 <body>
@@ -472,6 +476,20 @@
         </a>
       </div>
 
+      <!-- [수정 13] "유용한 앱" 패널과는 별도로, 아이디어 제안함으로 가는 독립 패널 추가 -->
+      <div class="panel suggestion-panel">
+        <div class="panel-head">
+          <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.6c-3 0-5.2 2.2-5.2 4.9 0 1.7.9 3.2 2.3 4.1.2.6 0 1.4-.5 2.1 1 0 2-.4 2.8-1 .2 0 .4.1.6.1 3 0 5.2-2.2 5.2-4.9S12 2.6 9 2.6Z"/><path d="M9 6.3v2.6M9 10.7h.01"/></svg></span>아이디어 제안함</h2>
+        </div>
+        <a class="app-card" href="pages/suggestions.html" id="suggestion-link">
+          <span class="app-icon app-icon-suggest">💡</span>
+          <div>
+            <div class="app-name">아이디어 · 건의 남기기</div>
+            <div class="app-desc">필요한 기능이나 데이터, 불편한 점을 자유롭게 남겨주시면 반영 진행 상황을 그대로 공유해드려요</div>
+          </div>
+        </a>
+      </div>
+
     </aside>
 
   </div>
@@ -565,6 +583,13 @@
     const w = Math.min(1600, screen.availWidth - 40);
     const h = Math.min(950, screen.availHeight - 60);
     openCentered(this.href, 'econChart', w, h);
+  });
+  // [수정 13] 아이디어 제안함도 다른 앱 카드들과 동일하게 새 팝업창으로 연다.
+  document.getElementById('suggestion-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    const w = Math.min(900, screen.availWidth - 40);
+    const h = screen.availHeight - 60;
+    openCentered(this.href, 'suggestions', w, h);
   });
 </script>
 </body>

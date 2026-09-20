@@ -3,9 +3,9 @@
 :root {
   --bg: #ffffff;
   --bg-subtle: #f6f7f9;
-  --text: #14171f;
-  --text-muted: #14171f;
-  --text-faint: #14171f;
+  --text: #000000;
+  --text-muted: #000000;
+  --text-faint: #000000;
   --border: #e6e8ec;
   --border-strong: #d6dae1;
 
@@ -350,7 +350,7 @@ img { max-width: 100%; display: block; }
 .indicator-flag {
   display: inline-block;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 400;
   color: var(--text-faint);
   margin-right: 2px;
 }

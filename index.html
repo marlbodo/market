@@ -607,13 +607,8 @@
     const h = Math.min(950, screen.availHeight - 60);
     openCentered(this.href, 'suggestions', w, h);
   });
-  // [수정 14] "AI에게 물어보기"도 다른 팝업들과 동일한 크기로 새 팝업창으로 연다.
-  document.getElementById('ai-ask-btn').addEventListener('click', function (e) {
-    e.preventDefault();
-    const w = Math.min(1100, screen.availWidth - 40);
-    const h = Math.min(950, screen.availHeight - 60);
-    openCentered(this.href, 'aiAsk', w, h);
-  });
+  // [수정 14] "AI에게 물어보기"는 main.js의 loadAiInsights()에서 이미 팝업으로 처리하므로
+  // (거기서도 이제 동일한 popupSize()를 씀) 여기서 별도로 다시 바인딩하지 않는다.
 </script>
 </body>
 </html>

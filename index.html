@@ -485,7 +485,7 @@
           <span class="app-icon app-icon-suggest">💡</span>
           <div>
             <div class="app-name">아이디어 · 건의 남기기</div>
-            <div class="app-desc">필요한 기능이나, 불편한 점을 자유롭게 남겨주세요</div>
+            <div class="app-desc">필요한 기능이나 데이터, 불편한 점을 자유롭게 남겨주시면 반영 진행 상황을 그대로 공유해드려요</div>
           </div>
         </a>
       </div>
@@ -523,27 +523,39 @@
 
   document.getElementById('news-more-link').addEventListener('click', function (e) {
     e.preventDefault();
-    openCentered(this.href, 'newsAll', 760, 900);
+    const w = Math.min(1200, screen.availWidth - 40);
+    const h = Math.min(950, screen.availHeight - 60);
+    openCentered(this.href, 'newsAll', w, h);
   });
   document.getElementById('ipo-schedule-more-link').addEventListener('click', function (e) {
     e.preventDefault();
-    openCentered(this.href, 'ipoScheduleAll', 760, 900);
+    const w = Math.min(1300, screen.availWidth - 40);
+    const h = screen.availHeight - 60;
+    openCentered(this.href, 'ipoScheduleAll', w, h);
   });
   document.getElementById('ipo-news-more-link').addEventListener('click', function (e) {
     e.preventDefault();
-    openCentered(this.href, 'ipoNewsAll', 760, 900);
+    const w = Math.min(1200, screen.availWidth - 40);
+    const h = Math.min(950, screen.availHeight - 60);
+    openCentered(this.href, 'ipoNewsAll', w, h);
   });
   document.getElementById('repo-fund-link').addEventListener('click', function (e) {
     e.preventDefault();
-    openCentered(this.href, 'repoFundSimulator', 760, 900);
+    const w = Math.min(1200, screen.availWidth - 40);
+    const h = Math.min(950, screen.availHeight - 60);
+    openCentered(this.href, 'repoFundSimulator', w, h);
   });
   document.getElementById('fx-repo-fund-link').addEventListener('click', function (e) {
     e.preventDefault();
-    openCentered(this.href, 'fxRepoFundSimulator', 760, 900);
+    const w = Math.min(1200, screen.availWidth - 40);
+    const h = Math.min(950, screen.availHeight - 60);
+    openCentered(this.href, 'fxRepoFundSimulator', w, h);
   });
   document.getElementById('bond-calc-link').addEventListener('click', function (e) {
     e.preventDefault();
-    openCentered(this.href, 'bondYieldCalculator', 760, 900);
+    const w = Math.min(1200, screen.availWidth - 40);
+    const h = Math.min(950, screen.availHeight - 60);
+    openCentered(this.href, 'bondYieldCalculator', w, h);
   });
   document.getElementById('deposit-link').addEventListener('click', function (e) {
     e.preventDefault();
@@ -565,12 +577,16 @@
   });
   document.getElementById('research-more-link').addEventListener('click', function (e) {
     e.preventDefault();
-    openCentered(this.href, 'researchAll', 760, 900);
+    const w = Math.min(1200, screen.availWidth - 40);
+    const h = Math.min(950, screen.availHeight - 60);
+    openCentered(this.href, 'researchAll', w, h);
   });
   // [수정 11] 지난 브리핑 보기 버튼도 다른 "더보기" 링크들과 동일하게 새 팝업창으로 연다.
   document.getElementById('ai-history-btn').addEventListener('click', function (e) {
     e.preventDefault();
-    openCentered(this.href, 'aiHistory', 760, 900);
+    const w = Math.min(1200, screen.availWidth - 40);
+    const h = Math.min(950, screen.availHeight - 60);
+    openCentered(this.href, 'aiHistory', w, h);
   });
   document.getElementById('rate-chart-link').addEventListener('click', function (e) {
     e.preventDefault();

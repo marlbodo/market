@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="../css/style.css">
 <style>
   body { background: var(--bg-subtle); }
-  .popup-wrap { max-width: 720px; margin: 0 auto; padding: 20px 20px 40px; }
+  .popup-wrap { max-width: 900px; margin: 0 auto; padding: 20px 20px 40px; }
   .popup-head {
     display: flex; align-items: center; justify-content: space-between;
     padding-bottom: 14px; margin-bottom: 12px; border-bottom: 2px solid var(--text);
@@ -15,38 +15,83 @@
   .popup-head h1 { font-size: 16px; margin: 0; }
   .popup-close { font-size: 12.5px; color: var(--text-muted); border: 1px solid var(--border-strong); border-radius: var(--radius-s); padding: 4px 10px; }
 
-  .detail-table { width: 100%; border-collapse: collapse; border: 1px solid var(--border-strong); background: var(--bg); }
+  .filter-row {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px;
+    margin-bottom: 10px;
+  }
+  .ipo-summary {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .ipo-summary strong { color: var(--text); font-weight: 700; }
+  .ipo-summary .sep { margin: 0 4px; color: var(--border-strong); }
+
+  .table-scroll { width: 100%; overflow-x: auto; }
+
+  .detail-table { width: 100%; min-width: 640px; border-collapse: collapse; border: 1px solid var(--border-strong); background: var(--bg); }
   .detail-table th, .detail-table td {
     border: 1px solid var(--border);
     padding: 8px 6px;
     font-size: 12px;
-    vertical-align: top;
+    vertical-align: middle;
+    text-align: center;
   }
   .detail-table thead th {
     background: var(--bg-subtle);
     font-weight: 700;
     color: var(--text-muted);
     font-size: 11px;
-    text-align: center;
   }
+  .detail-table td.col-stock { text-align: left; font-weight: 700; }
+  .detail-table td.col-date { color: var(--text-muted); white-space: nowrap; }
+  .detail-table td.col-amount { white-space: nowrap; }
 
-  /* 기본(PC/웹): 구분 칸에 충분한 공간을 주어 한 줄로 표시 */
-  .detail-table th:nth-child(1), .detail-table td:nth-child(1) { width: 11%; white-space: nowrap; text-align: center; color: var(--text-muted); }
-  .detail-table th:nth-child(2), .detail-table td:nth-child(2) { width: 30%; font-weight: 700; }
-  .detail-table th:nth-child(3), .detail-table td:nth-child(3) { width: 14%; white-space: nowrap; text-align: center; color: var(--text-muted); }
-  .detail-table th:nth-child(4), .detail-table td:nth-child(4) { width: 18%; white-space: nowrap; text-align: center; }
-  .detail-table th:nth-child(5), .detail-table td:nth-child(5) { width: 27%; color: var(--text-muted); }
-
-  /* 모바일 화면(폭 768px 이하): 종목명과 구분 칸 비율 조정 및 구분 칸 자동 줄바꿈 허용 */
-  @media (max-width: 768px) {
-    .detail-table th:nth-child(1), .detail-table td:nth-child(1) { width: 13%; }
-    .detail-table th:nth-child(2), .detail-table td:nth-child(2) { width: 34%; }
-    .detail-table th:nth-child(3), .detail-table td:nth-child(3) { width: 16%; }
-    .detail-table th:nth-child(4), .detail-table td:nth-child(4) { width: 18%; white-space: normal; }
-    .detail-table th:nth-child(5), .detail-table td:nth-child(5) { width: 19%; }
-  }
+  /* 기본(PC/웹): 일자·종목명·공모금액·구분은 2행 병합, 경쟁률은 기관/확약/개인 3칸 */
+  .detail-table th.col-date, .detail-table td.col-date { width: 9%; }
+  .detail-table th.col-stock, .detail-table td.col-stock { width: 24%; }
+  .detail-table th.col-amount, .detail-table td.col-amount { width: 12%; }
+  .detail-table th.col-type, .detail-table td.col-type { width: 12%; }
+  .detail-table th.rate-sub, .detail-table td.rate-cell { width: 14.3%; }
 
   .detail-table tbody tr:hover td { background: var(--bg-hover); }
+
+  .opener-th, td.opener { display: none; }
+
+  /* 모바일: 경쟁률(기관/확약/개인) 칸을 숨기고, 탭하면 펼쳐지는 상세 행으로 대체 */
+  @media (max-width: 768px) {
+    .detail-table { min-width: 0; }
+    .detail-table thead tr:nth-child(2) th.rate-sub,
+    .detail-table td.rate-cell {
+      display: none;
+    }
+    .detail-table thead tr:first-child th[colspan="3"] { display: none; }
+
+    .detail-table th.col-date, .detail-table td.col-date { width: 14%; }
+    .detail-table th.col-stock, .detail-table td.col-stock { width: 38%; }
+    .detail-table th.col-amount, .detail-table td.col-amount { width: 18%; }
+    .detail-table th.col-type, .detail-table td.col-type { width: 18%; }
+
+    .opener-th, td.opener {
+      display: table-cell;
+      width: 12%;
+      color: var(--accent, #0f7a6b);
+      font-size: 11px;
+      transition: transform .15s ease;
+    }
+    tr.data-row.open td.opener { transform: rotate(180deg); }
+    tr.data-row { cursor: pointer; }
+
+    tr.detail-row { display: none; }
+    tr.detail-row.open { display: table-row; }
+    tr.detail-row td {
+      text-align: left;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg-subtle);
+      line-height: 1.9;
+    }
+    tr.detail-row .rate-line strong { color: var(--text); font-weight: 700; margin-right: 6px; }
+  }
 
   /* [수정 5] "마감" 이벤트(수요예측 마감/청약 마감)는 배경색은 "시작"과 동일하게 두고
      글자색만 검정으로 바꿔서 시작과 마감을 구분한다.
@@ -63,28 +108,38 @@
       <button class="popup-close" onclick="window.close()">닫기</button>
     </div>
 
-    <div class="tag-legend" id="detail-filter-row">
-      <button class="ipo-filter-btn is-active" data-ipo-filter="all">전체</button>
-      <button class="ipo-filter-btn" data-ipo-filter="forecast">수요예측</button>
-      <button class="ipo-filter-btn" data-ipo-filter="subscription">청약</button>
-      <button class="ipo-filter-btn" data-ipo-filter="listing">상장</button>
-      <span class="ipo-count" id="detail-count">일정: -</span>
+    <div class="filter-row" id="detail-filter-row">
+      <div class="tag-legend" style="margin:0;">
+        <button class="ipo-filter-btn is-active" data-ipo-filter="all">전체</button>
+        <button class="ipo-filter-btn" data-ipo-filter="forecast">수요예측</button>
+        <button class="ipo-filter-btn" data-ipo-filter="subscription">청약</button>
+        <button class="ipo-filter-btn" data-ipo-filter="listing">상장</button>
+      </div>
+      <span class="ipo-summary" id="detail-summary">일정: -</span>
     </div>
 
-    <table class="detail-table">
-      <thead>
-        <tr>
-          <th>일자</th>
-          <th>종목명</th>
-          <th>공모금액</th>
-          <th>구분</th>
-          <th>비고</th>
-        </tr>
-      </thead>
-      <tbody id="detail-body">
-        <tr><td colspan="5" class="list-loading">일정을 불러오는 중…</td></tr>
-      </tbody>
-    </table>
+    <div class="table-scroll">
+      <table class="detail-table">
+        <thead>
+          <tr>
+            <th class="col-date" rowspan="2">일자</th>
+            <th class="col-stock" rowspan="2">종목명</th>
+            <th class="col-amount" rowspan="2">공모금액</th>
+            <th class="col-type" rowspan="2">구분</th>
+            <th colspan="3">경쟁률</th>
+            <th class="opener-th" rowspan="2"></th>
+          </tr>
+          <tr>
+            <th class="rate-sub">기관</th>
+            <th class="rate-sub">확약</th>
+            <th class="rate-sub">개인</th>
+          </tr>
+        </thead>
+        <tbody id="detail-body">
+          <tr><td colspan="8" class="list-loading">일정을 불러오는 중…</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -95,10 +150,6 @@
   let ALL_DETAIL_EVENTS = [];
   let DETAIL_FILTER = 'all';
 
-  function dowKo(dateStr) {
-    const days = ['일', '월', '화', '수', '목', '금', '토'];
-    return days[new Date(`${dateStr}T00:00:00`).getDay()];
-  }
   function formatDateShort(dateStr) {
     const parts = dateStr.split('-');
     if (parts.length !== 3) return dateStr;
@@ -109,11 +160,11 @@
     return `${Math.round(Number(n)).toLocaleString('ko-KR')}억원`;
   }
   function formatRatio(n, suffix) {
-    if (n === null || n === undefined) return null;
+    if (n === null || n === undefined) return '-';
     return `${Number(n).toLocaleString('ko-KR')}${suffix}`;
   }
   function formatPercent(n) {
-    if (n === null || n === undefined) return null;
+    if (n === null || n === undefined) return '-';
     return `${Number(n).toFixed(2)}%`;
   }
 
@@ -121,38 +172,28 @@
     const events = [];
 
     rows.forEach((r) => {
-      const base = { stock: r.stock_name, amount: r.offering_amount_eok };
+      // 경쟁률 3칸(기관/확약/개인)은 이벤트 종류와 무관하게 같은 원본 데이터에서 그대로 가져온다
+      const rates = {
+        inst: formatRatio(r.institutional_competition_rate, ':1'),
+        lockup: formatPercent(r.lockup_commitment_ratio),
+        retail: formatRatio(r.subscription_competition_rate, ':1'),
+      };
+      const base = { stock: r.stock_name, amount: r.offering_amount_eok, ...rates };
 
       if (r.demand_forecast_start_date && r.demand_forecast_start_date >= TODAY) {
-        events.push({ ...base, date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측 시작', note: '' });
+        events.push({ ...base, date: r.demand_forecast_start_date, type: 'forecast', label: '수요예측 시작' });
       }
       if (r.demand_forecast_end_date && r.demand_forecast_end_date >= TODAY) {
-        events.push({ ...base, date: r.demand_forecast_end_date, type: 'forecast', label: '수요예측 마감', note: '' });
+        events.push({ ...base, date: r.demand_forecast_end_date, type: 'forecast', label: '수요예측 마감' });
       }
-
-      const rateNoteParts = [];
-      const inst = formatRatio(r.institutional_competition_rate, ':1');
-      const lockup = formatPercent(r.lockup_commitment_ratio);
-      if (inst) rateNoteParts.push(`기관경쟁률 ${inst}`);
-      if (lockup) rateNoteParts.push(`확약률 ${lockup}`);
-      const rateNote = rateNoteParts.join(' · ');
-
       if (r.subscription_start_date && r.subscription_start_date >= TODAY) {
-        events.push({ ...base, date: r.subscription_start_date, type: 'subscription', label: '청약 시작', note: rateNote });
+        events.push({ ...base, date: r.subscription_start_date, type: 'subscription', label: '청약 시작' });
       }
       if (r.subscription_end_date && r.subscription_end_date >= TODAY) {
-        events.push({ ...base, date: r.subscription_end_date, type: 'subscription', label: '청약 마감', note: rateNote });
+        events.push({ ...base, date: r.subscription_end_date, type: 'subscription', label: '청약 마감' });
       }
-
       if (r.listing_date && r.listing_date >= TODAY) {
-        const listNoteParts = [];
-        const inst2 = formatRatio(r.institutional_competition_rate, ':1');
-        const lockup2 = formatPercent(r.lockup_commitment_ratio);
-        const sub2 = formatRatio(r.subscription_competition_rate, ':1');
-        if (inst2) listNoteParts.push(`기관경쟁률 ${inst2}`);
-        if (lockup2) listNoteParts.push(`확약률 ${lockup2}`);
-        if (sub2) listNoteParts.push(`청약(개인)경쟁률 ${sub2}`);
-        events.push({ ...base, date: r.listing_date, type: 'listing', label: '상장', note: listNoteParts.join(' · ') });
+        events.push({ ...base, date: r.listing_date, type: 'listing', label: '상장' });
       }
     });
 
@@ -166,29 +207,63 @@
 
   function renderDetail(el, events) {
     if (events.length === 0) {
-      el.innerHTML = '<tr><td colspan="5" class="list-empty">해당하는 일정이 없습니다.</td></tr>';
+      el.innerHTML = '<tr><td colspan="8" class="list-empty">해당하는 일정이 없습니다.</td></tr>';
       return;
     }
-    el.innerHTML = events.map((ev) => {
-      // [수정 5] "마감"으로 끝나는 라벨은 is-end 클래스를 붙여 검은색으로 렌더링 (위 <style> 참고)
+    el.innerHTML = events.map((ev, i) => {
       const phase = ev.label.endsWith('시작') ? 'is-start' : ev.label.endsWith('마감') ? 'is-end' : '';
       return `
-      <tr>
-        <td>${formatDateShort(ev.date)}</td>
-        <td>${escapeHtml(ev.stock)}</td>
-        <td style="text-align: center;">${formatEok(ev.amount)}</td>
-        <td style="text-align: center;"><span class="event-tag tag-${ev.type} ${phase}">${ev.label}</span></td>
-        <td>${ev.note ? escapeHtml(ev.note) : '-'}</td>
+      <tr class="data-row" data-idx="${i}">
+        <td class="col-date">${formatDateShort(ev.date)}</td>
+        <td class="col-stock">${escapeHtml(ev.stock)}</td>
+        <td class="col-amount">${formatEok(ev.amount)}</td>
+        <td class="col-type"><span class="event-tag tag-${ev.type} ${phase}">${ev.label}</span></td>
+        <td class="rate-cell">${ev.inst}</td>
+        <td class="rate-cell">${ev.lockup}</td>
+        <td class="rate-cell">${ev.retail}</td>
+        <td class="opener">▾</td>
+      </tr>
+      <tr class="detail-row" id="detail-row-${i}">
+        <td colspan="8">
+          <div class="rate-line"><strong>기관</strong>${ev.inst}</div>
+          <div class="rate-line"><strong>확약</strong>${ev.lockup}</div>
+          <div class="rate-line"><strong>개인</strong>${ev.retail}</div>
+        </td>
       </tr>`;
     }).join('');
+
+    el.querySelectorAll('tr.data-row').forEach((tr) => {
+      tr.addEventListener('click', () => {
+        const row = document.getElementById(`detail-row-${tr.dataset.idx}`);
+        if (row) row.classList.toggle('open');
+        tr.classList.toggle('open');
+      });
+    });
+  }
+
+  // "일정: 총 66개, 9월 22개, 10월 12개, 11월 2개" 형태로 월별 집계해서 보여줌
+  function renderSummary(events) {
+    const summaryEl = document.getElementById('detail-summary');
+    if (!summaryEl) return;
+    if (events.length === 0) {
+      summaryEl.textContent = '일정: 0개';
+      return;
+    }
+    const byMonth = {};
+    events.forEach((ev) => {
+      const month = Number(ev.date.split('-')[1]);
+      byMonth[month] = (byMonth[month] || 0) + 1;
+    });
+    const months = Object.keys(byMonth).map(Number).sort((a, b) => a - b);
+    const monthText = months.map((m) => `${m}월 ${byMonth[m]}개`).join(' · ');
+    summaryEl.innerHTML = `일정: <strong>총 ${events.length}개</strong><span class="sep">|</span>${monthText}`;
   }
 
   function applyDetailFilter() {
     const el = document.getElementById('detail-body');
-    const countEl = document.getElementById('detail-count');
     const filtered = DETAIL_FILTER === 'all' ? ALL_DETAIL_EVENTS : ALL_DETAIL_EVENTS.filter((ev) => ev.type === DETAIL_FILTER);
     renderDetail(el, filtered);
-    if (countEl) countEl.textContent = `일정: ${filtered.length}개`;
+    renderSummary(filtered);
   }
 
   document.getElementById('detail-filter-row').querySelectorAll('[data-ipo-filter]').forEach((btn) => {
@@ -212,7 +287,7 @@
       applyDetailFilter();
     } catch (err) {
       console.error(err);
-      el.innerHTML = `<tr><td colspan="5" class="list-empty">⚠ 불러오기 실패: ${escapeHtml(err.message || String(err))}</td></tr>`;
+      el.innerHTML = `<tr><td colspan="8" class="list-empty">⚠ 불러오기 실패: ${escapeHtml(err.message || String(err))}</td></tr>`;
     }
   })();
 </script>

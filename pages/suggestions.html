@@ -622,7 +622,7 @@
           <div class="meta">
             <span>${escapeHtml(r.nickname)}</span>
             <span class="dot"></span>
-            <span>${formatDate(r.created_at)}</span>
+            <span>${formatDateTime(r.created_at)}</span>
           </div>
           <div class="actions">
             <button class="like-btn ${likedIds.has(r.id) ? "liked" : ""}" data-action="like" data-id="${r.id}">

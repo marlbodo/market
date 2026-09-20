@@ -260,6 +260,17 @@
   .comment-item .comment-nick { font-weight: 700; color: var(--ink); }
   .comment-item .comment-body { white-space: pre-wrap; word-break: break-word; }
   .comment-empty { font-size: 12.5px; color: var(--ink-soft); padding: 4px 0 10px; }
+  .comment-del-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #B8B4A8;
+    font-size: 11.5px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    padding: 0;
+  }
 
   .comment-form {
     display: flex;
@@ -270,14 +281,15 @@
     display: flex;
     gap: 6px;
   }
-  .comment-form input[type="text"] {
+  .comment-form input[type="text"], .comment-form input[type="password"] {
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 8px 10px;
     font-size: 13px;
     font-family: inherit;
   }
-  .comment-form input.c-nick { width: 90px; flex: none; }
+  .comment-form input.c-nick { width: 76px; flex: none; }
+  .comment-form input.c-password { width: 88px; flex: none; }
   .comment-form input.c-content { flex: 1; min-width: 0; }
   .comment-form button {
     border: none;
@@ -574,6 +586,7 @@
             <div class="comment-head">
               <span class="comment-nick">${escapeHtml(c.nickname)}</span>
               <span>${formatDateTime(c.created_at)}</span>
+              <button type="button" class="comment-del-btn" data-action="delete-comment" data-comment-id="${c.id}" data-suggestion-id="${id}">삭제</button>
             </div>
             <div class="comment-body">${escapeHtml(c.content)}</div>
           </div>
@@ -586,6 +599,7 @@
         <div class="comment-form">
           <div class="comment-form-row">
             <input type="text" class="c-nick" maxlength="20" placeholder="닉네임" />
+            <input type="password" class="c-password" maxlength="50" placeholder="비번(삭제용)" />
             <input type="text" class="c-content" maxlength="500" placeholder="댓글을 남겨주세요" />
             <button type="button" class="c-submit" data-id="${id}">등록</button>
           </div>
@@ -662,13 +676,19 @@
       const id = commentBtn.dataset.id;
       const wrapEl = commentBtn.closest(".comments");
       const nickInput = wrapEl.querySelector(".c-nick");
+      const pwInput = wrapEl.querySelector(".c-password");
       const contentInput = wrapEl.querySelector(".c-content");
       const msgEl = wrapEl.querySelector(".comment-msg");
       const nickname = nickInput.value.trim();
+      const password = pwInput.value;
       const content = contentInput.value.trim();
 
-      if (!nickname || !content) {
-        msgEl.textContent = "닉네임과 댓글 내용을 모두 입력해주세요.";
+      if (!nickname || !password || !content) {
+        msgEl.textContent = "닉네임, 비밀번호, 댓글 내용을 모두 입력해주세요.";
+        return;
+      }
+      if (password.length < 4) {
+        msgEl.textContent = "비밀번호는 4자 이상이어야 합니다.";
         return;
       }
 
@@ -676,6 +696,7 @@
       const { error } = await sb.rpc("create_suggestion_comment", {
         p_suggestion_id: id,
         p_nickname: nickname,
+        p_password: password,
         p_content: content,
       });
       commentBtn.disabled = false;
@@ -686,6 +707,7 @@
         return;
       }
 
+      pwInput.value = "";
       contentInput.value = "";
       openCommentIds.add(id);
 
@@ -703,6 +725,33 @@
     if (!btn) return;
     const id = btn.dataset.id;
     const action = btn.dataset.action;
+
+    if (action === "delete-comment") {
+      const commentId = btn.dataset.commentId;
+      const suggestionId = btn.dataset.suggestionId;
+      const pw = prompt("댓글을 삭제하려면 비밀번호를 입력해주세요.");
+      if (pw === null) return;
+
+      const { error } = await sb.rpc("delete_suggestion_comment", {
+        p_id: commentId,
+        p_password: pw,
+      });
+
+      if (error) {
+        alert(error.message.includes("일치") ? "비밀번호가 일치하지 않습니다." : "댓글 삭제에 실패했습니다.");
+        return;
+      }
+
+      openCommentIds.add(suggestionId);
+      const { data: newComments } = await sb
+        .from("suggestion_comments")
+        .select("id, suggestion_id, nickname, content, created_at")
+        .eq("suggestion_id", suggestionId)
+        .order("created_at", { ascending: true });
+      commentsBySuggestion[suggestionId] = newComments || [];
+      renderList();
+      return;
+    }
 
     if (action === "toggle-comments") {
       if (openCommentIds.has(id)) openCommentIds.delete(id);

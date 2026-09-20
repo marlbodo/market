@@ -36,6 +36,71 @@
   /* [수정 13] "유용한 앱" 아래, 별도 패널로 아이디어 제안함 링크 카드 추가 */
   .suggestion-panel .app-card { margin-top: 0; }
   .app-icon-suggest { background: #EFECFB; color: #6A5FCB; }
+
+  /* [신규] 실무 적용 사례 패널 ("유용한 앱" 바로 아래) */
+  .case-app-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background: #fff;
+    overflow: hidden;
+  }
+  .case-app-card:last-child { margin-bottom: 0; }
+  .case-app-card-head {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 14px 15px;
+    cursor: pointer;
+  }
+  .case-app-card.is-soon .case-app-card-head { cursor: default; }
+  .case-app-card-head:hover { background: var(--bg-hover); }
+  .case-app-card.is-soon .case-app-card-head:hover { background: none; }
+  .case-app-arrow {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-faint);
+    transition: transform .15s ease;
+    flex: none;
+  }
+  .case-app-card.open .case-app-arrow { transform: rotate(180deg); }
+  .soon-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text-faint);
+    background: var(--gray, #efede7);
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .case-app-modes {
+    display: none;
+    gap: 8px;
+    padding: 0 15px 14px;
+  }
+  .case-app-card.open .case-app-modes { display: flex; flex-wrap: wrap; }
+  .case-mode-btn {
+    flex: 1;
+    min-width: 140px;
+    text-align: center;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+    background: var(--bg-subtle);
+  }
+  .case-mode-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .case-mode-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .case-mode-btn.primary:hover { background: #0f2247; color: #fff; }
+  .case-app-note {
+    font-size: 11px;
+    color: var(--text-faint);
+    padding: 0 15px 14px;
+    line-height: 1.6;
+  }
 </style>
 </head>
 <body>
@@ -476,6 +541,33 @@
         </a>
       </div>
 
+      <!-- [신규] "유용한 앱" 바로 아래, 실무에 실제로 적용해 쓰고 있는 사례 소개 패널.
+           로그인 없이 더미 데이터로 운용사 모드/관리자 모드를 각각 체험해볼 수 있다. -->
+      <div class="panel apps-panel case-study-panel">
+        <div class="panel-head">
+          <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3" width="13" height="11" rx="1.3"/><path d="M2.5 6.5h13"/><circle cx="5.2" cy="4.75" r="0.5" fill="currentColor" stroke="none"/><circle cx="7" cy="4.75" r="0.5" fill="currentColor" stroke="none"/></svg></span>실무 적용 사례</h2>
+        </div>
+
+        <div class="case-app-card" id="repoFundCard">
+          <div class="case-app-card-head" id="repoFundCardHead">
+            <span class="app-icon app-icon-accent">🏦</span>
+            <div>
+              <div class="app-name">레포펀드 관리</div>
+              <div class="app-desc">여러 운용사의 레포펀드 채권·CD 명세를 입력받아 실시간으로 통합 집계하는 도구예요</div>
+            </div>
+            <span class="case-app-arrow">▾</span>
+          </div>
+          <div class="case-app-modes">
+            <a class="case-mode-btn" href="fund-demo/manager.html" id="repo-manager-link">운용사 모드 체험하기</a>
+            <a class="case-mode-btn primary" href="fund-demo/admin.html" id="repo-admin-link">관리자 모드 체험하기</a>
+          </div>
+          <div class="case-app-note">
+            🧪 더미 데이터로 동작하는 체험판이라 별도 로그인은 없어요. 실제 서비스에서는 관리자가 운용사별로 아이디·비밀번호를 발급해서 씁니다.
+          </div>
+        </div>
+      </div>
+
+
       <!-- [수정 13] "유용한 앱" 패널과는 별도로, 아이디어 제안함으로 가는 독립 패널 추가 -->
       <div class="panel suggestion-panel">
         <div class="panel-head">
@@ -609,6 +701,25 @@
   });
   // [수정 14] "AI에게 물어보기"는 main.js의 loadAiInsights()에서 이미 팝업으로 처리하므로
   // (거기서도 이제 동일한 popupSize()를 씀) 여기서 별도로 다시 바인딩하지 않는다.
+
+  // [신규] "레포펀드 관리" 카드 클릭 시 운용사/관리자 모드 버튼 펼치기
+  const repoFundCard = document.getElementById('repoFundCard');
+  document.getElementById('repoFundCardHead').addEventListener('click', () => {
+    repoFundCard.classList.toggle('open');
+  });
+
+  // [신규] 실무 적용 사례 (운용사 모드 / 관리자 모드 체험) 팝업도 다른 팝업들과 동일하게 연다.
+  ['repo-manager-link', 'repo-admin-link'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const w = Math.min(1100, screen.availWidth - 40);
+      const h = Math.min(950, screen.availHeight - 60);
+      openCentered(this.href, id, w, h);
+    });
+  });
 </script>
 </body>
 </html>

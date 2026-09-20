@@ -218,8 +218,16 @@
     th.opener, td.opener {
       display: table-cell;
     }
-    tbody td { padding: 12px 8px; }
-    thead th { padding: 10px 8px; font-size: 12.5px; }
+    tbody td { padding: 12px 6px; }
+    thead th { padding: 10px 6px; font-size: 12px; }
+
+    /* 상품명에 더 많은 폭을 주고, 금리 열은 짧은 숫자만 담으니 좁게 */
+    table { table-layout: fixed; }
+    th:nth-child(1), td:nth-child(1) { width: 21%; font-size: 12.5px; }
+    th:nth-child(2), td:nth-child(2) { width: 44%; }
+    th:nth-child(3), td:nth-child(3) { width: 13%; padding-left: 4px; padding-right: 4px; }
+    th:nth-child(4), td:nth-child(4) { width: 13%; padding-left: 4px; padding-right: 4px; }
+    th.opener, td.opener { width: 9%; }
   }
 </style>
 </head>

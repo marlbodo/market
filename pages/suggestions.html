@@ -56,7 +56,10 @@
     font-weight: 700;
     margin: 0 0 8px;
     letter-spacing: -0.01em;
+    cursor: pointer;
+    width: fit-content;
   }
+  h1.title-row:hover { opacity: 0.8; }
   .title-icon { width: 26px; height: 26px; flex: none; }
 
   .close-btn {
@@ -405,7 +408,7 @@
 <div class="wrap">
   <header class="page-head">
     <button class="close-btn" onclick="window.close()">닫기</button>
-    <h1 class="title-row">
+    <h1 class="title-row" id="pageTitle" title="처음 화면으로">
       <svg class="title-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <circle cx="16" cy="14" r="9.2" fill="#F4E9CE" stroke="#B8860B" stroke-width="1.6"/>
         <path d="M12 14.2c0-2.3 1.8-4.2 4-4.2s4 1.9 4 4.2c0 1.6-.9 2.5-1.7 3.3-.6.6-1 1.1-1.1 1.9h-2.4c-.1-.8-.5-1.3-1.1-1.9-.8-.8-1.7-1.7-1.7-3.3Z" fill="#B8860B"/>
@@ -500,7 +503,7 @@
 </div>
 
 <footer class="admin-foot">
-  AI 마켓 인사이트는 여러분의 의견을 반영하며 성장합니다.
+  AI 마켓 인사이트는 여러분의 의견을 반영하며 성장합니다
 </footer>
 
 <script>
@@ -660,6 +663,20 @@
     currentCategory = btn.dataset.cat;
     [...categoryTabs.children].forEach(c => c.classList.toggle("active", c === btn));
     renderList();
+  });
+
+  // 전체보기 · 최신순으로 되돌리고 맨 위로 스크롤 (글 등록 직후 / 타이틀 클릭 시 사용)
+  function resetToTop() {
+    currentCategory = "전체";
+    [...categoryTabs.children].forEach(c => c.classList.toggle("active", c.dataset.cat === "전체"));
+    sortByLikes = false;
+    sortToggle.textContent = "최신순";
+    renderList();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  document.getElementById("pageTitle").addEventListener("click", () => {
+    resetToTop();
   });
 
   sortToggle.addEventListener("click", () => {
@@ -850,6 +867,7 @@
     document.getElementById("w_title").value = "";
     document.getElementById("w_content").value = "";
     await loadList();
+    resetToTop();
   });
 
   // edit modal

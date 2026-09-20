@@ -57,6 +57,10 @@
 
   .opener-th, td.opener { display: none; }
 
+  /* 펼침 상세 행은 항상 숨김이 기본 — 실제로 펼쳐 보이는 동작은 모바일 미디어쿼리에서만 켠다.
+     (그렇지 않으면 웹 화면에서 행을 클릭했을 때도 이미 다 보이는 경쟁률이 중복으로 펼쳐져 버림) */
+  tr.detail-row { display: none; }
+
   /* 모바일: 경쟁률(기관/확약/개인) 칸을 숨기고, 탭하면 펼쳐지는 상세 행으로 대체 */
   @media (max-width: 640px) {
     .detail-table { min-width: 0; }
@@ -81,7 +85,6 @@
     tr.data-row.open td.opener { transform: rotate(180deg); }
     tr.data-row { cursor: pointer; }
 
-    tr.detail-row { display: none; }
     tr.detail-row.open { display: table-row; }
     tr.detail-row td {
       text-align: left;

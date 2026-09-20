@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>운용사 펀드 내역 입력 (데모) — AI 마켓 인사이트</title>
+<style>
+  :root {
+    --ink: #14171f; --ink-soft: #5b5f6b; --border: #e6e8ec; --border-strong: #d6dae1;
+    --bg: #ffffff; --bg-subtle: #f6f7f9; --accent: #16305c; --accent-soft: #eaf0fb;
+    --teal: #0f7a6b; --teal-soft: #e1f3ef; --danger: #b3432e; --danger-soft: #fbeae6;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg-subtle); color: var(--ink);
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px; line-height: 1.5;
+  }
+  .wrap { max-width: 1300px; margin: 0 auto; padding: 20px 24px 60px; }
+
+  .demo-banner {
+    background: #fff7e6; border: 1px solid #f0c869; color: #8a5a15;
+    border-radius: var(--radius); padding: 10px 16px; font-size: 12.5px;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .demo-banner a { color: #8a5a15; text-decoration: underline; }
+
+  .top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+  }
+  .top-bar h1 { font-size: 21px; margin: 0; display: flex; align-items: center; gap: 10px; }
+  .company-badge {
+    background: var(--accent); color: #fff; font-size: 13px; font-weight: 700;
+    padding: 5px 12px; border-radius: 999px;
+  }
+  .top-actions { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  select#companySwitch {
+    padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius);
+    font-size: 13px; background: #fff;
+  }
+  .btn { border: none; border-radius: var(--radius); padding: 8px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .btn-dark { background: var(--ink); color: #fff; }
+  .btn-ghost { background: var(--bg); border: 1px solid var(--border-strong); color: var(--ink-soft); }
+
+  .grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .card + .card { margin-top: 20px; }
+  .card h2 { font-size: 15px; margin: 0 0 16px; }
+  .card h2 .fund-chip { font-weight: 400; color: var(--accent); }
+
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 5px; font-weight: 600; }
+  .field input, .field textarea {
+    width: 100%; border: 1px solid var(--border-strong); border-radius: 6px;
+    padding: 8px 10px; font-size: 13px; font-family: inherit; background: #fff; color: var(--ink);
+  }
+  .field textarea { min-height: 130px; resize: vertical; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12.5px; line-height: 1.6; }
+
+  .fund-list { display: flex; flex-direction: column; gap: 8px; }
+  .fund-item {
+    display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
+    cursor: pointer; font-size: 13.5px; font-weight: 600;
+  }
+  .fund-item.active { border-color: var(--accent); background: var(--accent-soft); }
+  .fund-item .del-btn { color: var(--danger); font-size: 11.5px; font-weight: 700; }
+
+  .asset-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .asset-cols { grid-template-columns: 1fr; } }
+  .asset-cols h3 { font-size: 12.5px; color: var(--ink-soft); margin: 0 0 6px; }
+  .hint { font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+
+  .calc-row {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+    margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);
+  }
+  .calc-inputs { display: flex; align-items: center; gap: 8px; }
+  .calc-inputs input { width: 90px; }
+  .calc-metrics { display: flex; gap: 18px; font-size: 13px; }
+  .calc-metrics b { font-size: 15px; }
+  .metric-leverage b { color: #7f2fbf; }
+  .metric-yield b { color: var(--teal); }
+
+  table.spec-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12.5px; }
+  table.spec-table th, table.spec-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: center; }
+  table.spec-table thead th { background: var(--bg-subtle); font-weight: 700; color: var(--ink-soft); }
+  table.spec-table td:first-child { text-align: left; }
+  table.spec-table tfoot td { font-weight: 700; background: var(--bg-subtle); }
+
+  .save-msg { font-size: 12.5px; color: var(--teal); margin-left: 10px; opacity: 0; transition: opacity .3s; }
+  .save-msg.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="demo-banner">
+    🧪 <strong>이 화면은 데모입니다.</strong> 실제 서비스가 아니라 더미(가짜) 데이터로 동작하는 체험용 화면이에요.
+    입력한 내용은 이 브라우저에만 저장되며, <a href="admin.html">수익자 통합 집계 대시보드(데모)</a>에서 실시간으로 집계된 결과를 확인할 수 있어요.
+    <a href="../index.html" style="margin-left:auto;">← AI 마켓 인사이트로 돌아가기</a>
+  </div>
+
+  <div class="top-bar">
+    <h1>운용사 펀드 내역 입력 <span class="company-badge" id="companyBadge">-</span></h1>
+    <div class="top-actions">
+      체험할 운용사 전환:
+      <select id="companySwitch"></select>
+      <button class="btn btn-ghost" id="resetDemoBtn">데모 데이터 초기화</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>1. 신규 펀드 생성</h2>
+        <div class="field"><label>펀드명</label><input type="text" id="newFundName" placeholder="예: 라온3호"></div>
+        <div class="field"><label>펀드 규모(억)</label><input type="number" id="newFundEquity" placeholder="예: 500"></div>
+        <div class="field"><label>총보수(bp)</label><input type="number" id="newFundFee" placeholder="예: 8"></div>
+        <div class="field"><label>지분율(%)</label><input type="number" id="newFundShare" placeholder="예: 50"></div>
+        <button class="btn btn-dark" style="width:100%;" id="createFundBtn">펀드 개설</button>
+      </div>
+
+      <div class="card">
+        <h2>기존 펀드 리스트</h2>
+        <div class="fund-list" id="fundList"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. 자산명세 입력 <span class="fund-chip" id="activeFundLabel">[선택된 펀드 없음]</span></h2>
+
+      <div class="asset-cols">
+        <div>
+          <h3>채권 명세 (한 줄에 하나: 종목명 금액 금리 MD)</h3>
+          <textarea id="bondInput" placeholder="예: 산금25신이0200-0402-1 100 3.518 0.76"></textarea>
+          <div class="hint">종목명 / 금액(억) / 금리(%) / MD(듀레이션) 순서로 공백 구분</div>
+        </div>
+        <div>
+          <h3>CD 명세 (한 줄에 하나: 종목명 금액 금리 MD)</h3>
+          <textarea id="cdInput" placeholder="예: CD(KB국민자금부20260227-300-2) 400 2.97 0.48"></textarea>
+          <div class="hint">종목명 / 금액(억) / 금리(%) / MD 순서로 공백 구분</div>
+        </div>
+      </div>
+
+      <div class="calc-row">
+        <div class="calc-inputs">
+          <label style="font-size:12.5px;color:var(--ink-soft);">Repo 조달 금리(%, 중개수수료 포함)</label>
+          <input type="number" step="0.01" id="repoRateInput">
+        </div>
+        <div class="calc-metrics">
+          <div class="metric-leverage">레버리지비율: <b id="metricLeverage">-</b></div>
+          <div class="metric-yield">예상수익률: <b id="metricYield">-</b></div>
+        </div>
+        <div>
+          <button class="btn btn-dark" id="saveAssetsBtn">자산명세 저장하기</button>
+          <span class="save-msg" id="saveMsg">저장됐습니다 ✓</span>
+        </div>
+      </div>
+
+      <h3 style="margin-top:22px;">📊 채권 명세 현황</h3>
+      <table class="spec-table" id="bondSpecTable"></table>
+
+      <h3 style="margin-top:22px;">📊 CD 명세 현황</h3>
+      <table class="spec-table" id="cdSpecTable"></table>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'aimi_funddemo_v1';
+
+  function seedData() {
+    return {
+      companies: ['라온자산', '다인자산', '온새미로자산', '청람자산', '별빛자산'],
+      funds: [
+        {
+          id: 'raon-1', company: '라온자산', fundName: '라온1호', equity: 480.0, shareRatio: 50, feeBp: 8, repoRate: 2.55,
+          bonds: [
+            { name: '산금25신이0200-0402-1', amount: 100, rate: 3.518, md: 0.76 },
+            { name: '산금26신이0106-0112-1', amount: 100, rate: 3.707, md: 1.03 },
+            { name: '기업은행(신)25090|2A-17', amount: 150, rate: 3.778, md: 1.22 },
+            { name: '한국수출입금융2410마-이표-2', amount: 100, rate: 3.069, md: 0.28 },
+          ],
+          cds: [
+            { name: 'CD(KB국민자금부20260227-300-2)', amount: 300, rate: 2.97, md: 0.48 },
+          ],
+        },
+        {
+          id: 'raon-2', company: '라온자산', fundName: '라온2호', equity: 594.5, shareRatio: 50, feeBp: 8, repoRate: 2.55,
+          bonds: [
+            { name: '산금25신이0106-0403-2', amount: 100, rate: 3.052, md: 0.26 },
+            { name: '산금22신이0500-0915-3', amount: 100, rate: 3.776, md: 1.21 },
+            { name: '산금26신이0106-0223-1', amount: 400, rate: 3.751, md: 1.15 },
+          ],
+          cds: [
+            { name: 'CD(신한은행자금부20260501-200-1)', amount: 200, rate: 2.96, md: 0.35 },
+          ],
+        },
+        {
+          id: 'dain-1', company: '다인자산', fundName: '다인22호', equity: 998.3, shareRatio: 50, feeBp: 8, repoRate: 2.60,
+          bonds: [
+            { name: '국고03625-1503', amount: 800, rate: 3.66, md: 1.10 },
+            { name: '공사25신이0300-0512-2', amount: 737.5, rate: 3.71, md: 1.05 },
+          ],
+          cds: [
+            { name: 'CD(우리은행자금부20260315-199-1)', amount: 199.0, rate: 2.87, md: 0.22 },
+          ],
+        },
+        {
+          id: 'onsae-1', company: '온새미로자산', fundName: '온새미로8호', equity: 595.8, shareRatio: 50, feeBp: 15, repoRate: 2.86,
+          bonds: [
+            { name: '공모주브릿지25-0810-1', amount: 742.0, rate: 3.81, md: 1.28 },
+          ],
+          cds: [
+            { name: 'CD(하나은행자금부20260228-99-2)', amount: 99.5, rate: 2.86, md: 0.23 },
+          ],
+        },
+        {
+          id: 'cheongram-1', company: '청람자산', fundName: '청람19호', equity: 505.3, shareRatio: 50, feeBp: 8, repoRate: 2.91,
+          bonds: [
+            { name: '산금24신이0402-1102-1', amount: 647.4, rate: 3.58, md: 0.90 },
+          ],
+          cds: [
+            { name: 'CD(기업은행자금부20260410-99-2)', amount: 99.3, rate: 2.91, md: 0.24 },
+          ],
+        },
+        {
+          id: 'byeolbit-1', company: '별빛자산', fundName: 'BNK공모주2호', equity: 400.1, shareRatio: 50, feeBp: 15, repoRate: 2.86,
+          bonds: [
+            { name: '공모주브릿지25-0203-1', amount: 448.3, rate: 3.59, md: 0.78 },
+          ],
+          cds: [
+            { name: 'CD(부산은행자금부20260530-74-1)', amount: 74.7, rate: 2.86, md: 0.13 },
+          ],
+        },
+      ],
+    };
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) { console.warn('demo storage read failed', e); }
+    const seed = seedData();
+    saveState(seed);
+    return seed;
+  }
+  function saveState(state) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { console.warn('demo storage write failed', e); }
+  }
+
+  let STATE = loadState();
+  let currentCompany = STATE.companies[0];
+  let activeFundId = null;
+
+  function weightedAvg(items, field) {
+    const totalAmt = items.reduce((s, it) => s + it.amount, 0);
+    if (totalAmt === 0) return 0;
+    return items.reduce((s, it) => s + it.amount * it[field], 0) / totalAmt;
+  }
+  function pvbp(amount, md) {
+    return amount * md * 0.0001;
+  }
+  function computeFund(fund) {
+    const bondAmount = fund.bonds.reduce((s, b) => s + b.amount, 0);
+    const bondRate = weightedAvg(fund.bonds, 'rate');
+    const bondMD = weightedAvg(fund.bonds, 'md');
+    const bondPvbp = pvbp(bondAmount, bondMD);
+
+    const cdAmount = fund.cds.reduce((s, c) => s + c.amount, 0);
+    const cdRate = weightedAvg(fund.cds, 'rate');
+    const cdMD = weightedAvg(fund.cds, 'md');
+    const cdPvbp = pvbp(cdAmount, cdMD);
+
+    const totalAssets = bondAmount + cdAmount;
+    const leverage = fund.equity > 0 ? (totalAssets / fund.equity) * 100 : 0;
+
+    const assetIncome = bondAmount * bondRate / 100 + cdAmount * cdRate / 100;
+    const fundingCost = Math.max(totalAssets - fund.equity, 0) * fund.repoRate / 100;
+    const feeCost = fund.equity * fund.feeBp / 10000;
+    const netIncome = assetIncome - fundingCost - feeCost;
+    const expectedYield = fund.equity > 0 ? (netIncome / fund.equity) * 100 : 0;
+    const shareAmount = fund.equity * fund.shareRatio / 100;
+
+    return { bondAmount, bondRate, bondMD, bondPvbp, cdAmount, cdRate, cdMD, cdPvbp, totalAssets, leverage, netIncome, expectedYield, shareAmount };
+  }
+
+  function parseAssetLines(text) {
+    return text.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+      const parts = line.split(/\s+/);
+      const md = parseFloat(parts.pop());
+      const rate = parseFloat(parts.pop());
+      const amount = parseFloat(parts.pop());
+      const name = parts.join(' ');
+      return { name, amount: amount || 0, rate: rate || 0, md: md || 0 };
+    }).filter((it) => it.name);
+  }
+  function stringifyAssetLines(items) {
+    return items.map((it) => `${it.name} ${it.amount} ${it.rate} ${it.md}`).join('\n');
+  }
+
+  function renderCompanySwitch() {
+    const sel = document.getElementById('companySwitch');
+    sel.innerHTML = STATE.companies.map((c) => `<option value="${c}" ${c === currentCompany ? 'selected' : ''}>${c}</option>`).join('');
+  }
+
+  function renderFundList() {
+    const funds = STATE.funds.filter((f) => f.company === currentCompany);
+    const el = document.getElementById('fundList');
+    if (funds.length === 0) {
+      el.innerHTML = '<div style="font-size:12.5px;color:var(--ink-soft);">등록된 펀드가 없습니다.</div>';
+      return;
+    }
+    el.innerHTML = funds.map((f) => `
+      <div class="fund-item ${f.id === activeFundId ? 'active' : ''}" data-id="${f.id}">
+        <span>${f.fundName}</span>
+        <span class="del-btn" data-del="${f.id}">삭제</span>
+      </div>
+    `).join('');
+
+    el.querySelectorAll('.fund-item').forEach((row) => {
+      row.addEventListener('click', (e) => {
+        if (e.target.dataset.del) return;
+        activeFundId = row.dataset.id;
+        renderAll();
+      });
+    });
+    el.querySelectorAll('[data-del]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.del;
+        if (!confirm('이 펀드를 삭제할까요? (데모 데이터입니다)')) return;
+        STATE.funds = STATE.funds.filter((f) => f.id !== id);
+        if (activeFundId === id) activeFundId = null;
+        saveState(STATE);
+        renderAll();
+      });
+    });
+  }
+
+  function activeFund() {
+    return STATE.funds.find((f) => f.id === activeFundId) || null;
+  }
+
+  function renderAssetPanel() {
+    const fund = activeFund();
+    const label = document.getElementById('activeFundLabel');
+    const bondInput = document.getElementById('bondInput');
+    const cdInput = document.getElementById('cdInput');
+    const repoInput = document.getElementById('repoRateInput');
+
+    if (!fund) {
+      label.textContent = '[선택된 펀드 없음]';
+      bondInput.value = ''; cdInput.value = ''; repoInput.value = '';
+      document.getElementById('metricLeverage').textContent = '-';
+      document.getElementById('metricYield').textContent = '-';
+      document.getElementById('bondSpecTable').innerHTML = '';
+      document.getElementById('cdSpecTable').innerHTML = '';
+      return;
+    }
+
+    label.textContent = `[${fund.fundName}]`;
+    bondInput.value = stringifyAssetLines(fund.bonds);
+    cdInput.value = stringifyAssetLines(fund.cds);
+    repoInput.value = fund.repoRate;
+
+    updateMetricsLive();
+    renderSpecTables(fund);
+  }
+
+  function updateMetricsLive() {
+    const fund = activeFund();
+    if (!fund) return;
+    const draft = {
+      ...fund,
+      bonds: parseAssetLines(document.getElementById('bondInput').value),
+      cds: parseAssetLines(document.getElementById('cdInput').value),
+      repoRate: parseFloat(document.getElementById('repoRateInput').value) || 0,
+    };
+    const c = computeFund(draft);
+    document.getElementById('metricLeverage').textContent = `${c.leverage.toFixed(1)}%`;
+    document.getElementById('metricYield').textContent = `${c.expectedYield.toFixed(2)}%`;
+  }
+
+  function specRow(it) {
+    return `<tr><td>${it.name}</td><td>${it.amount}</td><td>${it.rate.toFixed(3)}%</td><td>${it.md.toFixed(2)}</td></tr>`;
+  }
+  function renderSpecTables(fund) {
+    const c = computeFund(fund);
+    document.getElementById('bondSpecTable').innerHTML = `
+      <thead><tr><th>종목명</th><th>금액(억)</th><th>금리</th><th>MD</th></tr></thead>
+      <tbody>${fund.bonds.map(specRow).join('') || '<tr><td colspan="4">데이터 없음</td></tr>'}</tbody>
+      <tfoot><tr><td>합계 / 가중평균</td><td>${c.bondAmount.toFixed(1)}</td><td>${c.bondRate.toFixed(3)}%</td><td>${c.bondMD.toFixed(2)}</td></tr></tfoot>
+    `;
+    document.getElementById('cdSpecTable').innerHTML = `
+      <thead><tr><th>종목명</th><th>금액(억)</th><th>금리</th><th>MD</th></tr></thead>
+      <tbody>${fund.cds.map(specRow).join('') || '<tr><td colspan="4">데이터 없음</td></tr>'}</tbody>
+      <tfoot><tr><td>합계 / 가중평균</td><td>${c.cdAmount.toFixed(1)}</td><td>${c.cdRate.toFixed(3)}%</td><td>${c.cdMD.toFixed(2)}</td></tr></tfoot>
+    `;
+  }
+
+  function renderAll() {
+    document.getElementById('companyBadge').textContent = currentCompany;
+    renderCompanySwitch();
+    renderFundList();
+    renderAssetPanel();
+  }
+
+  document.getElementById('companySwitch').addEventListener('change', (e) => {
+    currentCompany = e.target.value;
+    activeFundId = null;
+    renderAll();
+  });
+
+  document.getElementById('createFundBtn').addEventListener('click', () => {
+    const name = document.getElementById('newFundName').value.trim();
+    const equity = parseFloat(document.getElementById('newFundEquity').value);
+    const feeBp = parseFloat(document.getElementById('newFundFee').value) || 8;
+    const shareRatio = parseFloat(document.getElementById('newFundShare').value) || 50;
+    if (!name || !equity) { alert('펀드명과 펀드 규모를 입력해주세요.'); return; }
+
+    const id = `${currentCompany}-${Date.now()}`;
+    STATE.funds.push({ id, company: currentCompany, fundName: name, equity, shareRatio, feeBp, repoRate: 2.60, bonds: [], cds: [] });
+    saveState(STATE);
+    activeFundId = id;
+    document.getElementById('newFundName').value = '';
+    document.getElementById('newFundEquity').value = '';
+    document.getElementById('newFundFee').value = '';
+    document.getElementById('newFundShare').value = '';
+    renderAll();
+  });
+
+  document.getElementById('bondInput').addEventListener('input', updateMetricsLive);
+  document.getElementById('cdInput').addEventListener('input', updateMetricsLive);
+  document.getElementById('repoRateInput').addEventListener('input', updateMetricsLive);
+
+  document.getElementById('saveAssetsBtn').addEventListener('click', () => {
+    const fund = activeFund();
+    if (!fund) { alert('먼저 좌측에서 펀드를 선택하거나 새로 만들어주세요.'); return; }
+    fund.bonds = parseAssetLines(document.getElementById('bondInput').value);
+    fund.cds = parseAssetLines(document.getElementById('cdInput').value);
+    fund.repoRate = parseFloat(document.getElementById('repoRateInput').value) || 0;
+    saveState(STATE);
+    renderSpecTables(fund);
+
+    const msg = document.getElementById('saveMsg');
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 1500);
+  });
+
+  document.getElementById('resetDemoBtn').addEventListener('click', () => {
+    if (!confirm('데모 데이터를 초기 상태로 되돌릴까요? (admin.html 화면도 함께 초기화됩니다)')) return;
+    STATE = seedData();
+    saveState(STATE);
+    activeFundId = null;
+    renderAll();
+  });
+
+  renderAll();
+</script>
+</body>
+</html>

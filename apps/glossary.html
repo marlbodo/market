@@ -177,10 +177,16 @@
   .term-body{margin-top:12px; display:none;}
   .term.open .term-body{display:block;}
   .term.open .term-row .term-kr{color:var(--seal);}
-  .layer{display:flex; gap:12px; padding:10px 0; align-items:flex-start;}
+  .layer{display:flex; gap:12px; padding:8px 0; align-items:flex-start;}
   .layer-label{
     flex:0 0 96px; font-family:var(--sans); font-weight:700; font-size:13.5px;
     color:var(--ink-soft); padding-top:2px; letter-spacing:0.01em;
+  }
+  @media (max-width: 640px){
+    .layer{flex-direction:column; gap:2px; padding:6px 0;}
+    .layer-label{flex:none; margin-bottom:0;}
+    .deepdive{padding:10px 12px; margin-top:4px;}
+    .layer-text p{margin:0 0 10px;}
   }
   .layer-text{font-size:17px; line-height:1.8; color:var(--ink);}
   .layer-text p{margin:0 0 14px;}
@@ -378,7 +384,6 @@ function termHtml(t, highlight){
         <span class="term-kr">${hl(t.term_kr)}</span>
         ${t.term_en ? `<span class="term-en">${hl(t.term_en)}</span>` : ''}
         ${t.abbr ? `<span class="term-abbr">${hl(t.abbr)}</span>` : ''}
-        ${t.layer3_deepdive ? `<span class="term-deepdive-badge">딥다이브</span>` : ''}
         <span class="term-toggle">펼치기 ▾</span>
       </div>
       <div class="term-body">

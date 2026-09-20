@@ -3,530 +3,365 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>전문용어 해설집 — AI 마켓 인사이트</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<title>정기예금 금리 비교 — AI 마켓 인사이트</title>
 <style>
-  :root{
-    --bg:#ffffff;
-    --panel:#fafafa;
-    --ink:#1a1c16;
-    --ink-soft:#484c3d;
-    --rule:#e4e2d8;
-    --seal:#7a3230;
-    --seal-soft:#9a5250;
-    --gold:#96751f;
-    --deepdive-bg:#fbf6e8;
-    --mono:'IBM Plex Mono', ui-monospace, monospace;
-    --sans:'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  :root {
+    --ink: #12253f;
+    --ink-soft: #4c5c72;
+    --paper: #f2f5f7;
+    --line: #b9c4cd;
+    --line-soft: #d7dee4;
+    --accent: #1f7a5c;
+    --accent-soft: #e4f2ec;
+    --warn: #9c5a12;
+    --row-alt: #eef2f5;
+    --row-hover: #e4ecf1;
   }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--ink);
-    font-family:var(--sans);
-    font-size:16px;
-    min-height:100vh;
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo",
+                 "Malgun Gothic", sans-serif;
+    line-height: 1.5;
   }
-  a{color:inherit;}
+  .wrap {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+  header {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  .header-text {
+    text-align: center;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  h1.title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+  }
+  .title-icon { width: 26px; height: 26px; flex: none; }
+  .sub {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .close-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
+    border: 1px solid var(--line-soft);
+    background: #fff;
+    color: var(--ink-soft);
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .close-btn:hover { border-color: var(--ink-soft); color: var(--ink); }
 
-  header.masthead{
-    border-bottom:2px solid var(--ink);
-    padding:22px 18px 16px;
-    background:var(--bg);
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
   }
-  .masthead-inner{
-    max-width:1240px;
-    margin:0 auto;
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    flex-wrap:wrap;
-    gap:10px;
-  }
-  .masthead-title{
-    font-family:var(--sans);
-    font-weight:800;
-    font-size:26px;
-    letter-spacing:-0.01em;
-  }
-  .masthead-title .seal{color:var(--seal);}
-  .masthead-sub{
-    font-family:var(--mono);
-    font-size:12.5px;
-    color:var(--ink-soft);
-    margin-top:4px;
-  }
-  .masthead-count{
-    font-family:var(--mono);
-    font-size:12.5px;
-    color:var(--ink-soft);
-  }
-
-  .search-bar{
-    max-width:1240px;
-    margin:14px auto 0;
-  }
-  .search-bar input{
-    width:100%;
-    padding:13px 15px;
-    font-family:var(--sans);
-    font-size:16px;
-    background:var(--panel);
-    border:1px solid var(--rule);
-    color:var(--ink);
-    outline:none;
-    border-radius:6px;
-  }
-  .search-bar input:focus{border-color:var(--seal);}
-  .search-bar input::placeholder{color:var(--ink-soft);}
-
-  /* ---- Mobile-first layout: stacked by default ---- */
-  .layout{
-    max-width:1240px;
-    margin:0 auto;
-    display:block;
-  }
-  nav.toc{
-    border-right:none;
-    border-bottom:2px solid var(--ink);
-    padding:16px 16px 18px;
-    position:static;
-    max-height:none;
-    overflow-y:visible;
-  }
-  main.content{
-    padding:22px 18px 70px;
-    min-width:0;
+  .updated-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+    margin-right: 6px;
   }
 
-  /* ---- Desktop: two columns, sticky sidebar ---- */
-  @media (min-width: 861px){
-    .layout{
-      display:grid;
-      grid-template-columns:270px 1fr;
-    }
-    nav.toc{
-      border-right:2px solid var(--ink);
-      border-bottom:none;
-      padding:22px 18px 40px;
-      position:sticky;
-      top:0;
-      align-self:start;
-      max-height:100vh;
-      overflow-y:auto;
-    }
-    main.content{
-      padding:32px 32px 90px;
-    }
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .filters select, .filters label {
+    font-size: 13px;
+  }
+  .filters select {
+    padding: 7px 10px;
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .chip-group {
+    display: flex;
+    gap: 6px;
+  }
+  .chip {
+    border: 1px solid var(--line-soft);
+    background: #fff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .chip.active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
   }
 
-  .toc-section{margin-bottom:22px;}
-  .toc-section-title{
-    font-family:var(--sans);
-    font-weight:800;
-    font-size:15px;
-    color:var(--seal);
-    margin:0 0 8px;
-    padding-bottom:6px;
-    border-bottom:1px solid var(--rule);
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 13.5px;
+    border: 1px solid var(--line);
   }
-  .toc-cat{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    justify-content:space-between;
-    padding:9px 6px;
-    font-size:15px;
-    cursor:pointer;
-    color:var(--ink-soft);
-    border-radius:5px;
+  thead th {
+    text-align: center;
+    font-weight: 700;
+    color: #fff;
+    background: var(--ink);
+    border-bottom: 2px solid var(--ink);
+    padding: 11px 10px;
+    white-space: nowrap;
   }
-  .toc-cat .label{display:flex; align-items:center; gap:8px;}
-  .toc-cat .icon{font-size:17px; width:22px; text-align:center;}
-  .toc-cat:hover{color:var(--ink); background:var(--panel);}
-  .toc-cat.active{color:var(--ink); font-weight:700; background:var(--panel);}
-  .toc-cat .n{font-family:var(--mono); font-size:12px; color:var(--ink-soft);}
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  thead th.num { text-align: center; }
+  tbody td {
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+    color: var(--ink);
+  }
+  tbody tr:nth-child(even) { background: var(--row-alt); }
+  tbody tr:hover { background: var(--row-hover); }
+  td.cond {
+    max-width: 260px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  @media (max-width: 640px) {
+    td.cond { max-width: 130px; }
+  }
+  .cond-arrow { color: var(--accent); margin-left: 4px; font-size: 10px; }
+  tr.data-row { cursor: pointer; }
+  tr.detail-row { display: none; background: var(--accent-soft); }
+  tr.detail-row.open { display: table-row; }
+  tr.detail-row td {
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    white-space: normal;
+  }
+  .best { color: var(--accent); font-weight: 800; }
 
-  .cat-header{margin-bottom:22px; padding-bottom:14px; border-bottom:1px solid var(--rule);}
-  .cat-header .section-label{
-    font-family:var(--mono); font-size:11.5px; color:var(--seal); letter-spacing:0.06em;
+  .empty, .loading {
+    padding: 40px 0;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 14px;
   }
-  .cat-header h2{
-    font-family:var(--sans); font-weight:800; font-size:26px; margin:6px 0 8px;
-    display:flex; align-items:center; gap:10px;
+  .disclaimer {
+    margin-top: 22px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--line-soft);
+    padding-top: 14px;
   }
-  .cat-header h2 .icon{font-size:26px;}
-  .cat-header p{margin:0; color:var(--ink-soft); font-size:14.5px; line-height:1.75; max-width:72ch;}
-
-  .term{border-bottom:1px solid var(--rule); padding:16px 0;}
-  .term:first-of-type{padding-top:0;}
-  .term-row{display:flex; align-items:baseline; gap:10px; cursor:pointer; flex-wrap:wrap;}
-  .term-kr{font-family:var(--sans); font-weight:700; font-size:17px;}
-  .term-en{font-family:var(--mono); font-size:15px; color:var(--ink-soft);}
-  .term-abbr{
-    font-family:var(--mono); font-size:13px; color:var(--seal-soft);
-    border:1px solid var(--seal-soft); padding:1px 7px; border-radius:4px;
-  }
-  .term-toggle{margin-left:auto; font-family:var(--mono); font-size:11.5px; color:var(--ink-soft);}
-  .term-body{margin-top:12px; display:none;}
-  .term.open .term-body{display:block;}
-  .term.open .term-row .term-kr{color:var(--seal);}
-  .layer{display:flex; gap:12px; padding:10px 0; align-items:flex-start;}
-  .layer-label{
-    flex:0 0 96px; font-family:var(--sans); font-weight:700; font-size:13.5px;
-    color:var(--ink-soft); padding-top:2px; letter-spacing:0.01em;
-  }
-  .layer-text{font-size:17px; line-height:1.8; color:var(--ink);}
-  .layer-text p{margin:0 0 14px;}
-  .layer-text p:last-child{margin-bottom:0;}
-  .layer1 .layer-text{color:var(--ink-soft); font-size:16.5px;}
-  .deepdive{margin-top:8px; background:var(--deepdive-bg); border-left:3px solid var(--gold); padding:13px 15px; border-radius:4px;}
-  .deepdive .layer-label{color:var(--gold);}
-  .historical-note{margin-top:10px; padding:10px 14px; border-top:1px dashed var(--rule); font-size:13px; color:var(--ink-soft); line-height:1.7; font-style:italic;}
-  .related{margin-top:10px; font-family:var(--mono); font-size:12px; color:var(--ink-soft);}
-  .related span{display:inline-block; border:1px solid var(--rule); padding:3px 8px; margin:2px 4px 2px 0; cursor:pointer; border-radius:4px;}
-  .related span:hover{border-color:var(--seal); color:var(--seal);}
-
-  .chart-wrap{margin-top:14px; padding:14px; background:var(--panel); border:1px solid var(--rule); border-radius:6px;}
-  .chart-legend{display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
-  .chart-legend .sw{display:inline-block; width:16px; height:2px; margin-right:5px; vertical-align:middle;}
-  .chart-canvas-box{position:relative; width:100%; height:260px;}
-  .chart-caption{margin-top:10px; font-size:12px; color:var(--ink-soft); line-height:1.7;}
-
-  .empty, .loading{padding:60px 0; text-align:center; color:var(--ink-soft); font-family:var(--mono); font-size:13.5px;}
-  .search-results-label{font-family:var(--mono); font-size:12.5px; color:var(--seal); margin-bottom:16px;}
-  mark{background:var(--gold); color:#fff; padding:0 2px; border-radius:2px;}
 </style>
 </head>
 <body>
-
-<header class="masthead">
-  <div class="masthead-inner">
-    <div>
-      <div class="masthead-title" id="masthead-title" style="cursor:pointer;" title="처음 화면으로"><span class="seal">§</span> 전문용어 해설집</div>
-      <div class="masthead-sub">정의 → 실무적 의미 → 딥다이브. AI 마켓 인사이트 부속 사전.</div>
+<div class="wrap">
+  <header>
+    <div class="header-text">
+      <h1 class="title-row">
+        <svg class="title-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M16 4 L28 11 H4 Z" fill="#1F7A5C"/>
+          <rect x="5" y="13" width="3.4" height="12" fill="#1F7A5C"/>
+          <rect x="11.3" y="13" width="3.4" height="12" fill="#1F7A5C"/>
+          <rect x="17.3" y="13" width="3.4" height="12" fill="#1F7A5C"/>
+          <rect x="23.6" y="13" width="3.4" height="12" fill="#1F7A5C"/>
+          <rect x="3.5" y="26" width="25" height="3" rx="1" fill="#1F7A5C"/>
+        </svg>
+        정기예금 금리 비교
+      </h1>
+      <p class="sub">금융감독원 금융상품통합비교공시(finlife) 오픈API 기준 · 매시간 자동 갱신</p>
     </div>
-    <div class="masthead-count" id="term-count"></div>
-  </div>
-  <div class="search-bar">
-    <input id="search-input" type="text" placeholder="용어 검색 (한글, 영문, 약어 — 예: PCE, 듀레이션, IRS)">
-  </div>
-</header>
+    <button class="close-btn" onclick="window.close()">닫기</button>
+  </header>
 
-<div class="layout">
-  <nav class="toc" id="toc"></nav>
-  <main class="content" id="content">
-    <div class="loading">불러오는 중…</div>
-  </main>
+  <div class="meta-row">
+    <span id="updated-text"><span class="updated-dot"></span>업데이트 확인 중…</span>
+    <span id="count-text"></span>
+  </div>
+
+  <div class="filters">
+    <select id="term-select">
+      <option value="1">1개월</option>
+      <option value="3">3개월</option>
+      <option value="6">6개월</option>
+      <option value="12" selected>12개월</option>
+      <option value="24">24개월</option>
+      <option value="36">36개월</option>
+    </select>
+
+    <div class="chip-group" id="group-chip">
+      <button class="chip" data-grp="all">전체</button>
+      <button class="chip active" data-grp="020000">은행</button>
+      <button class="chip" data-grp="030300">저축은행</button>
+    </div>
+  </div>
+
+  <div id="table-area" class="loading">데이터를 불러오는 중…</div>
+
+  <p class="disclaimer">
+    본 표는 금융감독원 금융상품통합비교공시 오픈API를 기반으로 자동 수집됩니다.
+    선착순·한정기간 특판 상품, 파킹통장(수시입출금), 신협·새마을금고·농축협 상품은
+    포함되지 않을 수 있으니 최종 조건은 반드시 해당 금융회사에서 확인하세요.
+    투자 판단의 참고 자료이며, 투자 권유가 아닙니다.
+  </p>
 </div>
 
 <script>
-const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_1_9-bKTcV3sBQkv10ru__w_iW-51pKt";
 
-const CATEGORY_ICONS = {
-  basic: '📏',
-  monetary: '🏛️',
-  inflation: '🛒',
-  employment: '👷',
-  growth: '📊',
-  macro_global: '🌐',
-  bond: '📜',
-  swap: '🔄',
-  credit: '🛡️',
-  liquidity_market: '💧',
-  fx: '💱',
-  equity: '📈',
-  ipo: '🎟️',
-  derivatives: '🎲',
-  bank_profitability: '💰',
-  bank_asset_quality: '🩺',
-  bank_capital: '🧱',
-  bank_liquidity: '🌊',
-  bank_risk: '⚠️'
-};
+  let currentGroup = "020000";
+  let allRows = [];
 
-const BOND_CHART_TERMS = { '수정듀레이션': true, '컨벡시티': true };
-
-let categories = [];
-let terms = [];
-let activeCategoryCode = null;
-
-const tocEl = document.getElementById('toc');
-const contentEl = document.getElementById('content');
-const countEl = document.getElementById('term-count');
-const searchInput = document.getElementById('search-input');
-
-async function loadData(){
-  try{
-    const [{ data: catData, error: catErr }, { data: termData, error: termErr }] = await Promise.all([
-      sb.from('glossary_categories').select('*').order('order_index'),
-      sb.from('glossary_terms').select('*').order('order_index')
-    ]);
-    if(catErr) throw catErr;
-    if(termErr) throw termErr;
-    categories = catData || [];
-    terms = termData || [];
-    countEl.textContent = `${categories.length}개 섹션 · ${terms.length}개 용어`;
-    renderToc();
-    if(categories.length) selectCategory(categories[0].code);
-  }catch(e){
-    contentEl.innerHTML = `<div class="empty">데이터를 불러오지 못했습니다.<br>${(e && e.message) ? e.message : e}</div>`;
-    console.error(e);
+  function fmtJoinWay(joinWay) {
+    if (!joinWay) return "-";
+    return joinWay;
   }
-}
 
-function renderToc(){
-  const sections = {};
-  categories.forEach(c => {
-    if(!sections[c.section]) sections[c.section] = [];
-    sections[c.section].push(c);
-  });
-  tocEl.innerHTML = Object.entries(sections).map(([section, cats]) => `
-    <div class="toc-section">
-      <div class="toc-section-title">${escapeHtml(section)}</div>
-      ${cats.map(c => {
-        const count = terms.filter(t => t.category_id === c.id).length;
-        const icon = CATEGORY_ICONS[c.code] || '•';
-        return `<div class="toc-cat" data-code="${c.code}">
-          <span class="label"><span class="icon">${icon}</span>${escapeHtml(c.name)}</span><span class="n">${count}</span>
-        </div>`;
-      }).join('')}
-    </div>
-  `).join('');
+  async function fetchByTerm(term) {
+    const url = `${SUPABASE_URL}/rest/v1/finlife_deposit_rates`
+      + `?save_trm=eq.${term}`
+      + `&select=kor_co_nm,fin_prdt_nm,join_way,spcl_cnd,intr_rate,intr_rate2,top_fin_grp_no,collected_at`
+      + `&order=intr_rate2.desc.nullslast`;
 
-  tocEl.querySelectorAll('.toc-cat').forEach(el => {
-    el.addEventListener('click', () => {
-      searchInput.value = '';
-      selectCategory(el.dataset.code);
-      if(window.innerWidth <= 860){
-        contentEl.scrollIntoView({behavior:'smooth', block:'start'});
-      }
+    const resp = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
     });
-  });
-}
-
-function selectCategory(code){
-  activeCategoryCode = code;
-  tocEl.querySelectorAll('.toc-cat').forEach(el => {
-    el.classList.toggle('active', el.dataset.code === code);
-  });
-  const cat = categories.find(c => c.code === code);
-  if(!cat) return;
-  const icon = CATEGORY_ICONS[cat.code] || '•';
-  const catTerms = terms.filter(t => t.category_id === cat.id).sort((a,b) => a.order_index - b.order_index);
-  contentEl.innerHTML = `
-    <div class="cat-header">
-      <div class="section-label">${escapeHtml(cat.section)}</div>
-      <h2><span class="icon">${icon}</span>${escapeHtml(cat.name)}</h2>
-      ${cat.intro ? `<p>${escapeHtml(cat.intro)}</p>` : ''}
-    </div>
-    <div id="term-list"></div>
-  `;
-  renderTerms(catTerms, document.getElementById('term-list'));
-}
-
-function renderTerms(list, container, highlight){
-  if(!list.length){
-    container.innerHTML = `<div class="empty">해당하는 용어가 없습니다.</div>`;
-    return;
+    if (!resp.ok) throw new Error(`조회 실패 (${resp.status})`);
+    return resp.json();
   }
-  container.innerHTML = list.map(t => termHtml(t, highlight)).join('');
-  container.querySelectorAll('.term').forEach(el => {
-    el.querySelector('.term-row').addEventListener('click', () => {
-      const wasOpen = el.classList.contains('open');
-      el.classList.toggle('open');
-      if(!wasOpen){
-        const chartCanvas = el.querySelector('canvas[data-chart-term]');
-        if(chartCanvas && !chartCanvas.dataset.rendered){
-          chartCanvas.dataset.rendered = '1';
-          renderBondChart(chartCanvas);
-        }
-      }
-    });
-  });
-  container.querySelectorAll('.related span').forEach(el => {
-    el.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      const target = terms.find(t => t.term_kr === el.dataset.term);
-      if(target){
-        searchInput.value = '';
-        const cat = categories.find(c => c.id === target.category_id);
-        if(cat) selectCategory(cat.code);
-        setTimeout(() => {
-          const termEl = [...document.querySelectorAll('.term')].find(e => e.dataset.id == target.id);
-          if(termEl){
-            termEl.classList.add('open');
-            const c = termEl.querySelector('canvas[data-chart-term]');
-            if(c && !c.dataset.rendered){ c.dataset.rendered = '1'; renderBondChart(c); }
-            termEl.scrollIntoView({behavior:'smooth', block:'center'});
-          }
-        }, 30);
-      }
-    });
-  });
-}
 
-function termHtml(t, highlight){
-  const hl = (s) => highlight ? highlightText(s, highlight) : escapeHtml(s || '');
-  const showChart = !!BOND_CHART_TERMS[t.term_kr];
-  return `
-    <div class="term" data-id="${t.id}">
-      <div class="term-row">
-        <span class="term-kr">${hl(t.term_kr)}</span>
-        ${t.term_en ? `<span class="term-en">${hl(t.term_en)}</span>` : ''}
-        ${t.abbr ? `<span class="term-abbr">${hl(t.abbr)}</span>` : ''}
-        <span class="term-toggle">펼치기 ▾</span>
-      </div>
-      <div class="term-body">
-        <div class="layer layer1">
-          <div class="layer-label">1. 정의</div>
-          <div class="layer-text">${escapeHtml(t.layer1_definition)}</div>
-        </div>
-        <div class="layer layer2">
-          <div class="layer-label">2. 실무 의미</div>
-          <div class="layer-text">${escapeHtml(t.layer2_meaning)}</div>
-        </div>
-        ${t.layer3_deepdive ? `
-        <div class="deepdive">
-          <div class="layer">
-            <div class="layer-label">3. 딥다이브</div>
-            <div class="layer-text">${formatMultiParagraph(t.layer3_deepdive)}</div>
-          </div>
-          ${showChart ? `
-          <div class="chart-wrap">
-            <div class="chart-legend">
-              <span><span class="sw" style="background:#2a78d6;"></span>실제 가격 P(y)</span>
-              <span><span class="sw" style="background:#eb6834; border-top:2px dashed #eb6834; height:0;"></span>1차(듀레이션)</span>
-              <span><span class="sw" style="background:#1baf7a;"></span>1+2차(듀레이션+컨벡시티)</span>
-              <span><span class="sw" style="background:#9b59b6;"></span>1+2+3차</span>
-            </div>
-            <div class="chart-canvas-box">
-              <canvas data-chart-term="${escapeHtml(t.term_kr)}" role="img" aria-label="10년 만기 표면금리 5% 채권의 가격-금리 곡선과 1차, 2차, 3차 테일러근사 비교"></canvas>
-            </div>
-            <div class="chart-caption">10년물 / 표면금리 5% / 최초금리 5% 채권. 5%에서 15%(1,000bp)로 갈수록 1차(직선) 근사와 실제 곡선의 간극이 커지고, 2차(컨벡시티)가 그 간극을 크게 좁혀준다.</div>
-          </div>` : ''}
-          ${t.historical_note ? `<div class="historical-note">${escapeHtml(t.historical_note)}</div>` : ''}
-        </div>` : ''}
-        ${t.related_terms && t.related_terms.length ? `
-        <div class="related">관련 용어: ${t.related_terms.map(r => `<span data-term="${escapeHtml(r)}">${escapeHtml(r)}</span>`).join('')}</div>
-        ` : ''}
-      </div>
-    </div>
-  `;
-}
+  function render() {
+    const area = document.getElementById("table-area");
+    const rows = currentGroup === "all"
+      ? allRows
+      : allRows.filter(r => r.top_fin_grp_no === currentGroup);
 
-function renderBondChart(canvas){
-  const n = 10, C = 500, F = 10000, y0 = 0.05;
-  function price(y){
-    if (Math.abs(y) < 1e-9) return C*n + F;
-    const df = Math.pow(1+y, -n);
-    return C*(1-df)/y + F*df;
-  }
-  const h = 0.0001;
-  const P0 = price(y0);
-  const dP = (price(y0+h) - price(y0-h)) / (2*h);
-  const d2P = (price(y0+h) - 2*P0 + price(y0-h)) / (h*h);
-  const d3P = (price(y0+2*h) - 2*price(y0+h) + 2*price(y0-h) - price(y0-2*h)) / (2*h*h*h);
-
-  const pts = [];
-  for (let y = 0; y <= 0.15 + 1e-9; y += 0.0025) pts.push(Math.round(y*10000)/10000);
-
-  const actual = pts.map(y => ({x: y*100, y: Math.round(price(y))}));
-  const linear = pts.map(y => ({x: y*100, y: Math.round(P0 + dP*(y-y0))}));
-  const quad = pts.map(y => ({x: y*100, y: Math.round(P0 + dP*(y-y0) + 0.5*d2P*Math.pow(y-y0,2))}));
-  const cubic = pts.map(y => ({x: y*100, y: Math.round(P0 + dP*(y-y0) + 0.5*d2P*Math.pow(y-y0,2) + (1/6)*d3P*Math.pow(y-y0,3))}));
-
-  new Chart(canvas, {
-    type: 'line',
-    data: {
-      datasets: [
-        { label: '실제 가격', data: actual, borderColor: '#2a78d6', borderWidth: 2.5, pointRadius: 0, tension: 0.1, parsing:false },
-        { label: '1차(듀레이션)', data: linear, borderColor: '#eb6834', borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, parsing:false },
-        { label: '1+2차(컨벡시티)', data: quad, borderColor: '#1baf7a', borderWidth: 1.5, pointRadius: 0, parsing:false },
-        { label: '1+2+3차', data: cubic, borderColor: '#9b59b6', borderWidth: 1.5, borderDash: [2,3], pointRadius: 0, parsing:false }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: {
-          type: 'linear',
-          min: 0, max: 15,
-          title: { display: true, text: '만기수익률 (%)', color: '#484c3d', font: { size: 12 } },
-          ticks: { stepSize: 5, color: '#484c3d', font: { size: 11 }, callback: (v) => Math.round(v) },
-          grid: { color: '#eeece2' }
-        },
-        y: {
-          title: { display: true, text: '가격 (원)', color: '#484c3d', font: { size: 12 } },
-          ticks: { color: '#484c3d', font: { size: 11 } },
-          grid: { color: '#eeece2' }
-        }
-      }
-    }
-  });
-}
-
-function highlightText(s, q){
-  if(!s) return '';
-  const escaped = escapeHtml(s);
-  if(!q) return escaped;
-  const idx = escaped.toLowerCase().indexOf(q.toLowerCase());
-  if(idx === -1) return escaped;
-  return escaped.slice(0, idx) + '<mark>' + escaped.slice(idx, idx+q.length) + '</mark>' + escaped.slice(idx+q.length);
-}
-
-function formatMultiParagraph(s){
-  if(!s) return '';
-  return s.split(/\n\s*\n/).map(p => `<p>${escapeHtml(p.trim())}</p>`).join('');
-}
-
-function escapeHtml(s){
-  if(s === null || s === undefined) return '';
-  return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-}
-
-let searchTimeout;
-searchInput.addEventListener('input', () => {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    const q = searchInput.value.trim();
-    if(!q){
-      if(activeCategoryCode) selectCategory(activeCategoryCode);
+    if (rows.length === 0) {
+      area.innerHTML = '<div class="empty">해당 조건의 데이터가 아직 없습니다. 잠시 후 다시 확인해주세요.</div>';
       return;
     }
-    const ql = q.toLowerCase();
-    const matches = terms.filter(t =>
-      (t.term_kr && t.term_kr.toLowerCase().includes(ql)) ||
-      (t.term_en && t.term_en.toLowerCase().includes(ql)) ||
-      (t.abbr && t.abbr.toLowerCase().includes(ql)) ||
-      (t.layer1_definition && t.layer1_definition.toLowerCase().includes(ql)) ||
-      (t.layer2_meaning && t.layer2_meaning.toLowerCase().includes(ql))
-    );
-    tocEl.querySelectorAll('.toc-cat').forEach(el => el.classList.remove('active'));
-    contentEl.innerHTML = `
-      <div class="search-results-label">"${escapeHtml(q)}" 검색 결과 ${matches.length}건</div>
-      <div id="term-list"></div>
+
+    const maxRate = Math.max(...rows.map(r => r.intr_rate2 ?? 0));
+
+    // 표시 순서: 금융회사 · 상품명 · 기본금리 · 최고금리 · 가입방법 · 우대조건(클릭 시 펼침)
+    const bodyHtml = rows.slice(0, 100).map((r, i) => {
+      const isBest = r.intr_rate2 !== null && r.intr_rate2 === maxRate;
+      const rateCell = `${(r.intr_rate2 ?? 0).toFixed(2)}%`;
+      const cond = r.spcl_cnd ?? "-";
+
+      return `<tr class="data-row" data-idx="${i}">
+        <td>${r.kor_co_nm}</td>
+        <td>${r.fin_prdt_nm ?? ""}</td>
+        <td class="num">${(r.intr_rate ?? 0).toFixed(2)}%</td>
+        <td class="num ${isBest ? "best" : ""}">${rateCell}</td>
+        <td>${fmtJoinWay(r.join_way)}</td>
+        <td class="cond" title="클릭해서 전체 보기">${cond}<span class="cond-arrow">▾</span></td>
+      </tr>
+      <tr class="detail-row" id="detail-${i}"><td colspan="6"><strong>우대조건:</strong> ${cond}</td></tr>`;
+    }).join("");
+
+    area.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>금융회사</th>
+            <th>상품명</th>
+            <th class="num">기본금리</th>
+            <th class="num">최고금리</th>
+            <th>가입방법</th>
+            <th>우대조건</th>
+          </tr>
+        </thead>
+        <tbody>${bodyHtml}</tbody>
+      </table>
     `;
-    renderTerms(matches, document.getElementById('term-list'), q);
-  }, 150);
-});
 
-document.getElementById('masthead-title').addEventListener('click', () => {
-  searchInput.value = '';
-  if(categories.length) selectCategory(categories[0].code);
-  window.scrollTo({top: 0, behavior: 'smooth'});
-});
+    area.querySelectorAll("tr.data-row").forEach((tr) => {
+      tr.addEventListener("click", () => {
+        const detail = document.getElementById(`detail-${tr.dataset.idx}`);
+        if (detail) detail.classList.toggle("open");
+      });
+    });
+  }
 
-loadData();
+  async function load(term) {
+    const area = document.getElementById("table-area");
+    area.className = "loading";
+    area.textContent = "데이터를 불러오는 중…";
+    try {
+      allRows = await fetchByTerm(term);
+      document.getElementById("count-text").textContent = `총 ${allRows.length}개 상품`;
+
+      if (allRows.length > 0) {
+        const latest = allRows.reduce((a, b) =>
+          new Date(a.collected_at) > new Date(b.collected_at) ? a : b
+        );
+        const d = new Date(latest.collected_at);
+        document.getElementById("updated-text").innerHTML =
+          `<span class="updated-dot"></span>마지막 업데이트: ${d.toLocaleString("ko-KR")}`;
+      }
+      render();
+    } catch (e) {
+      area.innerHTML = `<div class="empty">데이터를 불러오지 못했습니다: ${e.message}</div>`;
+    }
+  }
+
+  document.getElementById("term-select").addEventListener("change", (e) => {
+    load(e.target.value);
+  });
+
+  document.getElementById("group-chip").addEventListener("click", (e) => {
+    if (!e.target.dataset.grp) return;
+    currentGroup = e.target.dataset.grp;
+    document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+    e.target.classList.add("active");
+    render();
+  });
+
+  load(document.getElementById("term-select").value);
 </script>
 </body>
 </html>

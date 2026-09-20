@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>아이디어 제안함 · AI 마켓 인사이트</title>
+<meta name="description" content="AI 마켓 인사이트를 함께 키워가는 아이디어·건의 제안 게시판" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --panel: #FFFFFF;
+    --ink: #16181D;
+    --ink-soft: #5B5F6B;
+    --border: #E7E4DC;
+    --navy: #1E3A5F;
+    --gold: #B8860B;
+    --gold-soft: #F4E9CE;
+    --green: #2F6B4F;
+    --green-soft: #E3EFE7;
+    --amber: #9A6B12;
+    --amber-soft: #FBF1DE;
+    --gray: #EFEDE7;
+    --danger: #B3432E;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(22,24,29,0.06), 0 6px 20px rgba(22,24,29,0.05);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    padding-bottom: 80px;
+  }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 0;
+  }
+
+  header.page-head {
+    margin-bottom: 24px;
+  }
+
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+
+  .lede {
+    font-size: 15px;
+    color: var(--ink-soft);
+    margin: 0 0 4px;
+    max-width: 56ch;
+  }
+
+  .growth-strip {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 14px;
+  }
+  .growth-strip .stage {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px 4px 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+  }
+  .growth-strip .arrow { color: #C7C3B8; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 28px 0 14px;
+    flex-wrap: wrap;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    font-size: 13px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tab.active {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+  }
+
+  .sortbtn {
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 4px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .write-btn {
+    position: fixed;
+    right: 20px;
+    bottom: 24px;
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 14px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(30,58,95,0.35);
+    cursor: pointer;
+    z-index: 20;
+  }
+  .write-btn:hover { background: #16304d; }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+  .badge-cat {
+    background: var(--gray);
+    color: var(--ink-soft);
+  }
+  .badge-status-검토중 { background: var(--amber-soft); color: var(--amber); }
+  .badge-status-개발중 { background: var(--gold-soft); color: var(--gold); }
+  .badge-status-반영완료 { background: var(--green-soft); color: var(--green); }
+  .badge-status-보류 { background: var(--gray); color: var(--ink-soft); }
+
+  .card h3 {
+    font-size: 16px;
+    margin: 0 0 6px;
+    font-weight: 700;
+  }
+
+  .card p.content {
+    font-size: 14px;
+    color: #33363E;
+    margin: 0 0 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  .meta { display: flex; gap: 8px; align-items: center; }
+  .dot::before { content: "·"; margin: 0 2px; }
+
+  .actions { display: flex; align-items: center; gap: 10px; }
+
+  .like-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--gray);
+    border: none;
+    border-radius: 999px;
+    padding: 5px 11px;
+    font-size: 12.5px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .like-btn:hover { background: #E4E1D8; }
+  .like-btn.liked { background: var(--gold-soft); color: var(--gold); }
+
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    padding: 0;
+  }
+  .link-btn.danger { color: var(--danger); }
+
+  .empty, .loading {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 14px;
+    padding: 60px 20px;
+  }
+
+  /* modal */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(22,24,29,0.45);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 50;
+  }
+  .overlay.open { display: flex; }
+
+  @media (min-width: 640px) {
+    .overlay { align-items: center; }
+  }
+
+  .modal {
+    background: var(--panel);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 16px 16px 0 0;
+    padding: 22px 20px 24px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  @media (min-width: 640px) {
+    .modal { border-radius: 16px; }
+  }
+
+  .modal h2 {
+    font-size: 18px;
+    margin: 0 0 16px;
+  }
+
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+    color: var(--ink);
+  }
+  .field textarea { min-height: 100px; resize: vertical; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .btn {
+    flex: 1;
+    padding: 11px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--navy); color: #fff; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost { background: var(--gray); color: var(--ink); }
+
+  .form-msg {
+    font-size: 13px;
+    color: var(--danger);
+    margin-top: 8px;
+    min-height: 1em;
+  }
+
+  footer.admin-foot {
+    text-align: center;
+    padding: 40px 20px 20px;
+    font-size: 12px;
+    color: #B5B2A9;
+  }
+  footer.admin-foot button {
+    background: none;
+    border: none;
+    color: #B5B2A9;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="page-head">
+    <div class="breadcrumb"><a href="../index.html">AI 마켓 인사이트</a> / 아이디어 제안함</div>
+    <h1>같이 키워가는 아이디어 제안함</h1>
+    <p class="lede">사이트에 필요한 기능이나 데이터, 불편한 점을 자유롭게 남겨주세요. 반영 진행 상황을 여기서 그대로 공유합니다.</p>
+    <div class="growth-strip">
+      <span class="stage">💡 검토중</span>
+      <span class="arrow">→</span>
+      <span class="stage">🌱 개발중</span>
+      <span class="arrow">→</span>
+      <span class="stage">🌳 반영완료</span>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="tabs" id="categoryTabs">
+      <button class="tab active" data-cat="전체">전체</button>
+      <button class="tab" data-cat="새기능 제안">새기능 제안</button>
+      <button class="tab" data-cat="버그·오류 신고">버그·오류 신고</button>
+      <button class="tab" data-cat="데이터 요청">데이터 요청</button>
+      <button class="tab" data-cat="자유의견">자유의견</button>
+    </div>
+    <button class="sortbtn" id="sortToggle">최신순</button>
+  </div>
+
+  <div class="list" id="list">
+    <div class="loading">불러오는 중…</div>
+  </div>
+</div>
+
+<button class="write-btn" id="openWrite">✏️ 글쓰기</button>
+
+<!-- write modal -->
+<div class="overlay" id="writeOverlay">
+  <div class="modal">
+    <h2>아이디어 · 건의 남기기</h2>
+    <div class="field-row">
+      <div class="field">
+        <label>닉네임</label>
+        <input type="text" id="w_nickname" maxlength="20" placeholder="예: 채권초보" />
+      </div>
+      <div class="field">
+        <label>비밀번호</label>
+        <input type="password" id="w_password" maxlength="50" placeholder="수정·삭제용, 4자 이상" />
+      </div>
+    </div>
+    <div class="field">
+      <label>카테고리</label>
+      <select id="w_category">
+        <option value="새기능 제안">새기능 제안</option>
+        <option value="버그·오류 신고">버그·오류 신고</option>
+        <option value="데이터 요청">데이터 요청</option>
+        <option value="자유의견" selected>자유의견</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>제목</label>
+      <input type="text" id="w_title" maxlength="100" placeholder="한 줄로 요약해주세요" />
+    </div>
+    <div class="field">
+      <label>내용</label>
+      <textarea id="w_content" maxlength="2000" placeholder="어떤 게 필요하신지, 어떤 점이 불편하신지 적어주세요"></textarea>
+    </div>
+    <div class="form-msg" id="w_msg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="w_cancel">취소</button>
+      <button class="btn btn-primary" id="w_submit">등록하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- edit modal -->
+<div class="overlay" id="editOverlay">
+  <div class="modal">
+    <h2>수정하기</h2>
+    <div class="field">
+      <label>비밀번호</label>
+      <input type="password" id="e_password" maxlength="50" placeholder="작성 시 입력한 비밀번호" />
+    </div>
+    <div class="field">
+      <label>제목</label>
+      <input type="text" id="e_title" maxlength="100" />
+    </div>
+    <div class="field">
+      <label>내용</label>
+      <textarea id="e_content" maxlength="2000"></textarea>
+    </div>
+    <div class="form-msg" id="e_msg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="e_cancel">취소</button>
+      <button class="btn btn-primary" id="e_submit">저장하기</button>
+    </div>
+  </div>
+</div>
+
+<footer class="admin-foot">
+  AI 마켓 인사이트는 여러분의 의견을 반영하며 성장합니다 · <button id="adminOpen">관리자</button>
+</footer>
+
+<script>
+  const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_1_9-bKTcV3sBQkv10ru__w_iW-51pKt";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const listEl = document.getElementById("list");
+  const categoryTabs = document.getElementById("categoryTabs");
+  const sortToggle = document.getElementById("sortToggle");
+
+  let currentCategory = "전체";
+  let sortByLikes = false;
+  let cachedRows = [];
+
+  const LIKED_KEY = "suggestions_liked_ids";
+  function getLikedIds() {
+    try { return JSON.parse(localStorage.getItem(LIKED_KEY) || "[]"); }
+    catch { return []; }
+  }
+  function markLiked(id) {
+    const ids = getLikedIds();
+    if (!ids.includes(id)) {
+      ids.push(id);
+      try { localStorage.setItem(LIKED_KEY, JSON.stringify(ids)); } catch {}
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`;
+  }
+
+  async function loadList() {
+    listEl.innerHTML = '<div class="loading">불러오는 중…</div>';
+    const { data, error } = await sb
+      .from("suggestions")
+      .select("id, nickname, category, title, content, status, likes, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      listEl.innerHTML = '<div class="empty">목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>';
+      console.error(error);
+      return;
+    }
+    cachedRows = data || [];
+    renderList();
+  }
+
+  function renderList() {
+    let rows = cachedRows;
+    if (currentCategory !== "전체") {
+      rows = rows.filter(r => r.category === currentCategory);
+    }
+    if (sortByLikes) {
+      rows = [...rows].sort((a, b) => b.likes - a.likes);
+    }
+
+    if (rows.length === 0) {
+      listEl.innerHTML = '<div class="empty">아직 등록된 글이 없습니다.<br />첫 번째 아이디어를 남겨주세요.</div>';
+      return;
+    }
+
+    const likedIds = getLikedIds();
+
+    listEl.innerHTML = rows.map(r => `
+      <div class="card" data-id="${r.id}">
+        <div class="card-top">
+          <span class="badge badge-cat">${escapeHtml(r.category)}</span>
+          <span class="badge badge-status-${escapeHtml(r.status)}">${escapeHtml(r.status)}</span>
+        </div>
+        <h3>${escapeHtml(r.title)}</h3>
+        <p class="content">${escapeHtml(r.content)}</p>
+        <div class="card-bottom">
+          <div class="meta">
+            <span>${escapeHtml(r.nickname)}</span>
+            <span class="dot"></span>
+            <span>${formatDate(r.created_at)}</span>
+          </div>
+          <div class="actions">
+            <button class="like-btn ${likedIds.includes(r.id) ? "liked" : ""}" data-action="like" data-id="${r.id}" ${likedIds.includes(r.id) ? "disabled" : ""}>
+              👍 <span class="like-count">${r.likes}</span>
+            </button>
+            <button class="link-btn" data-action="edit" data-id="${r.id}">수정</button>
+            <button class="link-btn danger" data-action="delete" data-id="${r.id}">삭제</button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  categoryTabs.addEventListener("click", (e) => {
+    const btn = e.target.closest(".tab");
+    if (!btn) return;
+    currentCategory = btn.dataset.cat;
+    [...categoryTabs.children].forEach(c => c.classList.toggle("active", c === btn));
+    renderList();
+  });
+
+  sortToggle.addEventListener("click", () => {
+    sortByLikes = !sortByLikes;
+    sortToggle.textContent = sortByLikes ? "인기순" : "최신순";
+    renderList();
+  });
+
+  listEl.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+
+    if (action === "like") {
+      btn.disabled = true;
+      const { data, error } = await sb.rpc("like_suggestion", { p_id: id });
+      if (error) {
+        alert("좋아요 처리에 실패했습니다.");
+        btn.disabled = false;
+        return;
+      }
+      markLiked(id);
+      btn.classList.add("liked");
+      btn.querySelector(".like-count").textContent = data;
+      const row = cachedRows.find(r => r.id === id);
+      if (row) row.likes = data;
+    }
+
+    if (action === "delete") {
+      const pw = prompt("삭제하려면 비밀번호를 입력해주세요.");
+      if (pw === null) return;
+      const { error } = await sb.rpc("delete_suggestion", { p_id: id, p_password: pw });
+      if (error) {
+        alert(error.message.includes("일치") ? "비밀번호가 일치하지 않습니다." : "삭제에 실패했습니다.");
+        return;
+      }
+      cachedRows = cachedRows.filter(r => r.id !== id);
+      renderList();
+    }
+
+    if (action === "edit") {
+      openEdit(id);
+    }
+  });
+
+  // write modal
+  const writeOverlay = document.getElementById("writeOverlay");
+  document.getElementById("openWrite").addEventListener("click", () => {
+    document.getElementById("w_msg").textContent = "";
+    writeOverlay.classList.add("open");
+  });
+  document.getElementById("w_cancel").addEventListener("click", () => writeOverlay.classList.remove("open"));
+
+  document.getElementById("w_submit").addEventListener("click", async () => {
+    const nickname = document.getElementById("w_nickname").value.trim();
+    const password = document.getElementById("w_password").value;
+    const category = document.getElementById("w_category").value;
+    const title = document.getElementById("w_title").value.trim();
+    const content = document.getElementById("w_content").value.trim();
+    const msgEl = document.getElementById("w_msg");
+
+    if (!nickname || !password || !title || !content) {
+      msgEl.textContent = "모든 항목을 입력해주세요.";
+      return;
+    }
+    if (password.length < 4) {
+      msgEl.textContent = "비밀번호는 4자 이상이어야 합니다.";
+      return;
+    }
+
+    const submitBtn = document.getElementById("w_submit");
+    submitBtn.disabled = true;
+    msgEl.textContent = "";
+
+    const { error } = await sb.rpc("create_suggestion", {
+      p_nickname: nickname,
+      p_password: password,
+      p_category: category,
+      p_title: title,
+      p_content: content
+    });
+
+    submitBtn.disabled = false;
+
+    if (error) {
+      msgEl.textContent = "등록에 실패했습니다. 다시 시도해주세요.";
+      console.error(error);
+      return;
+    }
+
+    writeOverlay.classList.remove("open");
+    document.getElementById("w_nickname").value = "";
+    document.getElementById("w_password").value = "";
+    document.getElementById("w_title").value = "";
+    document.getElementById("w_content").value = "";
+    await loadList();
+  });
+
+  // edit modal
+  const editOverlay = document.getElementById("editOverlay");
+  let editingId = null;
+
+  function openEdit(id) {
+    const row = cachedRows.find(r => r.id === id);
+    if (!row) return;
+    editingId = id;
+    document.getElementById("e_password").value = "";
+    document.getElementById("e_title").value = row.title;
+    document.getElementById("e_content").value = row.content;
+    document.getElementById("e_msg").textContent = "";
+    editOverlay.classList.add("open");
+  }
+
+  document.getElementById("e_cancel").addEventListener("click", () => editOverlay.classList.remove("open"));
+
+  document.getElementById("e_submit").addEventListener("click", async () => {
+    const password = document.getElementById("e_password").value;
+    const title = document.getElementById("e_title").value.trim();
+    const content = document.getElementById("e_content").value.trim();
+    const msgEl = document.getElementById("e_msg");
+
+    if (!password || !title || !content) {
+      msgEl.textContent = "모든 항목을 입력해주세요.";
+      return;
+    }
+
+    const submitBtn = document.getElementById("e_submit");
+    submitBtn.disabled = true;
+
+    const { error } = await sb.rpc("update_suggestion", {
+      p_id: editingId,
+      p_password: password,
+      p_title: title,
+      p_content: content
+    });
+
+    submitBtn.disabled = false;
+
+    if (error) {
+      msgEl.textContent = error.message.includes("일치") ? "비밀번호가 일치하지 않습니다." : "수정에 실패했습니다.";
+      return;
+    }
+
+    editOverlay.classList.remove("open");
+    await loadList();
+  });
+
+  // admin: change status
+  document.getElementById("adminOpen").addEventListener("click", async () => {
+    const id = prompt("상태를 변경할 글의 ID를 입력해주세요.\n(각 글 카드를 길게 눌러 확인하거나, 목록 순서로 유추해주세요)");
+    if (!id) return;
+    const status = prompt("변경할 상태를 입력해주세요: 검토중 / 개발중 / 반영완료 / 보류");
+    if (!status) return;
+    const adminKey = prompt("관리자 키를 입력해주세요.");
+    if (!adminKey) return;
+
+    const { error } = await sb.rpc("set_suggestion_status", {
+      p_id: id.trim(),
+      p_admin_key: adminKey,
+      p_status: status.trim()
+    });
+
+    if (error) {
+      alert("실패: " + error.message);
+      return;
+    }
+    alert("상태가 변경되었습니다.");
+    await loadList();
+  });
+
+  loadList();
+</script>
+</body>
+</html>

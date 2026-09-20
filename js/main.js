@@ -28,6 +28,14 @@ function showError(el, label, err) {
   el.innerHTML = `<div class="list-empty">⚠ ${label} 실패: ${escapeHtml(msg)}</div>`;
 }
 
+// ---------- 팝업 창 크기 (다른 팝업들과 동일하게 통일: 최대 1100×950, 화면이 작으면 화면에 맞춤) ----------
+function popupSize() {
+  return {
+    w: Math.min(1100, screen.availWidth - 40),
+    h: Math.min(950, screen.availHeight - 60),
+  };
+}
+
 // ---------- 마지막 업데이트 표시 ----------
 function getMaxTimestamp(rows, fields = ['updated_at', 'created_at']) {
   if (!rows || rows.length === 0) return null;
@@ -452,11 +460,13 @@ async function loadAiInsights() {
       updatedEl.textContent = latestTs ? `${formatDateTimeDot(latestTs)} AI 자동 생성` : '';
     }
 
+    // [수정] 팝업 크기를 다른 팝업들과 동일하게 통일 (기존 760x900 고정값 -> popupSize()로 계산)
     el.querySelectorAll('.ai-insight-title').forEach((link) => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const type = link.getAttribute('data-type');
-        openCentered(`pages/ai-article.html?type=${type}`, 'aiInsight-' + type, 760, 900);
+        const { w, h } = popupSize();
+        openCentered(`pages/ai-article.html?type=${type}`, 'aiInsight-' + type, w, h);
       });
     });
 
@@ -465,7 +475,8 @@ async function loadAiInsights() {
       askBtn.dataset.bound = '1';
       askBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        openCentered(askBtn.getAttribute('href'), 'aiAsk', 760, 900);
+        const { w, h } = popupSize();
+        openCentered(askBtn.getAttribute('href'), 'aiAsk', w, h);
       });
     }
   } catch (err) {

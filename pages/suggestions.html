@@ -17,10 +17,6 @@
     --navy: #1E3A5F;
     --gold: #B8860B;
     --gold-soft: #F4E9CE;
-    --green: #2F6B4F;
-    --green-soft: #E3EFE7;
-    --amber: #9A6B12;
-    --amber-soft: #FBF1DE;
     --gray: #EFEDE7;
     --danger: #B3432E;
     --radius: 10px;
@@ -52,7 +48,6 @@
     padding-right: 76px;
   }
 
-  /* [수정] 브레드크럼 제거, 대신 제목 줄에 아이콘 + 오른쪽 끝 닫기 버튼 */
   h1.title-row {
     display: flex;
     align-items: center;
@@ -81,28 +76,9 @@
   .lede {
     font-size: 15px;
     color: var(--ink-soft);
-    margin: 0 0 4px;
+    margin: 0;
     max-width: 56ch;
   }
-
-  .growth-strip {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    font-size: 13px;
-    color: var(--ink-soft);
-    margin-top: 14px;
-  }
-  .growth-strip .stage {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px 4px 8px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-  }
-  .growth-strip .arrow { color: #C7C3B8; }
 
   .toolbar {
     display: flex;
@@ -194,10 +170,6 @@
     background: var(--gray);
     color: var(--ink-soft);
   }
-  .badge-status-검토중 { background: var(--amber-soft); color: var(--amber); }
-  .badge-status-개발중 { background: var(--gold-soft); color: var(--gold); }
-  .badge-status-반영완료 { background: var(--green-soft); color: var(--green); }
-  .badge-status-보류 { background: var(--gray); color: var(--ink-soft); }
 
   .card h3 {
     font-size: 16px;
@@ -219,14 +191,16 @@
     justify-content: space-between;
     font-size: 12.5px;
     color: var(--ink-soft);
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .meta { display: flex; gap: 8px; align-items: center; }
   .dot::before { content: "·"; margin: 0 2px; }
 
-  .actions { display: flex; align-items: center; gap: 10px; }
+  .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-  .like-btn {
+  .like-btn, .comment-toggle-btn {
     display: flex;
     align-items: center;
     gap: 5px;
@@ -238,7 +212,7 @@
     cursor: pointer;
     color: var(--ink);
   }
-  .like-btn:hover { background: #E4E1D8; }
+  .like-btn:hover, .comment-toggle-btn:hover { background: #E4E1D8; }
   .like-btn.liked { background: var(--gold-soft); color: var(--gold); }
 
   .link-btn {
@@ -252,6 +226,72 @@
     padding: 0;
   }
   .link-btn.danger { color: var(--danger); }
+
+  /* 댓글 영역 */
+  .comments {
+    display: none;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .comments.open { display: block; }
+
+  .comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .comment-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .comment-item .comment-head {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    margin-bottom: 3px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .comment-item .comment-nick { font-weight: 700; color: var(--ink); }
+  .comment-item .comment-body { white-space: pre-wrap; word-break: break-word; }
+  .comment-empty { font-size: 12.5px; color: var(--ink-soft); padding: 4px 0 10px; }
+
+  .comment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .comment-form-row {
+    display: flex;
+    gap: 6px;
+  }
+  .comment-form input[type="text"] {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .comment-form input.c-nick { width: 90px; flex: none; }
+  .comment-form input.c-content { flex: 1; min-width: 0; }
+  .comment-form button {
+    border: none;
+    background: var(--navy);
+    color: #fff;
+    border-radius: 8px;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: none;
+  }
+  .comment-form button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .comment-msg { font-size: 12px; color: var(--danger); min-height: 1em; }
 
   .empty, .loading {
     text-align: center;
@@ -347,14 +387,6 @@
     font-size: 12px;
     color: #B5B2A9;
   }
-  footer.admin-foot button {
-    background: none;
-    border: none;
-    color: #B5B2A9;
-    font-size: 12px;
-    cursor: pointer;
-    text-decoration: underline;
-  }
 </style>
 </head>
 <body>
@@ -372,14 +404,7 @@
       </svg>
       함께 만들어 가는 AI 마켓 인사이트
     </h1>
-    <p class="lede">사이트에 필요한 기능이나, 불편한 점을 자유롭게 남겨주세요.</p>
-    <div class="growth-strip">
-      <span class="stage">💡 검토중</span>
-      <span class="arrow">→</span>
-      <span class="stage">🌱 개발중</span>
-      <span class="arrow">→</span>
-      <span class="stage">🌳 반영완료</span>
-    </div>
+    <p class="lede">사이트에 필요한 기능이나 데이터, 불편한 점을 자유롭게 남겨주세요. 댓글로 서로 의견도 나눌 수 있어요.</p>
   </header>
 
   <div class="toolbar">
@@ -407,7 +432,7 @@
     <div class="field-row">
       <div class="field">
         <label>닉네임</label>
-        <input type="text" id="w_nickname" maxlength="20" placeholder="예: 마포갈매기" />
+        <input type="text" id="w_nickname" maxlength="20" placeholder="예: 채권초보" />
       </div>
       <div class="field">
         <label>비밀번호</label>
@@ -464,7 +489,7 @@
 </div>
 
 <footer class="admin-foot">
-  AI 마켓 인사이트는 여러분의 의견을 반영하며 성장합니다 · <button id="adminOpen">관리자</button>
+  AI 마켓 인사이트는 여러분의 의견을 반영하며 성장합니다
 </footer>
 
 <script>
@@ -479,19 +504,21 @@
   let currentCategory = "전체";
   let sortByLikes = false;
   let cachedRows = [];
+  let commentsBySuggestion = {}; // { suggestion_id: [ {nickname, content, created_at}, ... ] }
+  let likedIds = new Set();      // 이 기기가 좋아요 누른 글 id들
+  const openCommentIds = new Set(); // 현재 펼쳐진 댓글 영역
 
-  const LIKED_KEY = "suggestions_liked_ids";
-  function getLikedIds() {
-    try { return JSON.parse(localStorage.getItem(LIKED_KEY) || "[]"); }
-    catch { return []; }
-  }
-  function markLiked(id) {
-    const ids = getLikedIds();
-    if (!ids.includes(id)) {
-      ids.push(id);
-      try { localStorage.setItem(LIKED_KEY, JSON.stringify(ids)); } catch {}
+  // 좋아요 취소가 가능하도록, 브라우저마다 고유한 device id를 하나 만들어 재사용
+  const DEVICE_KEY = "suggestions_device_id";
+  function getDeviceId() {
+    let id = localStorage.getItem(DEVICE_KEY);
+    if (!id) {
+      id = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+      try { localStorage.setItem(DEVICE_KEY, id); } catch {}
     }
+    return id;
   }
+  const deviceId = getDeviceId();
 
   function escapeHtml(str) {
     return String(str)
@@ -505,21 +532,67 @@
     const d = new Date(iso);
     return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`;
   }
+  function formatDateTime(iso) {
+    const d = new Date(iso);
+    return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  }
 
   async function loadList() {
     listEl.innerHTML = '<div class="loading">불러오는 중…</div>';
-    const { data, error } = await sb
-      .from("suggestions")
-      .select("id, nickname, category, title, content, status, likes, created_at")
-      .order("created_at", { ascending: false });
+
+    const [{ data: rows, error }, { data: myLikes }, { data: comments }] = await Promise.all([
+      sb.from("suggestions")
+        .select("id, nickname, category, title, content, likes, created_at")
+        .order("created_at", { ascending: false }),
+      sb.from("suggestion_likes").select("suggestion_id").eq("device_id", deviceId),
+      sb.from("suggestion_comments").select("id, suggestion_id, nickname, content, created_at").order("created_at", { ascending: true }),
+    ]);
 
     if (error) {
       listEl.innerHTML = '<div class="empty">목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>';
       console.error(error);
       return;
     }
-    cachedRows = data || [];
+
+    cachedRows = rows || [];
+    likedIds = new Set((myLikes || []).map(r => r.suggestion_id));
+
+    commentsBySuggestion = {};
+    (comments || []).forEach(c => {
+      (commentsBySuggestion[c.suggestion_id] ||= []).push(c);
+    });
+
     renderList();
+  }
+
+  function renderComments(id) {
+    const list = commentsBySuggestion[id] || [];
+    const isOpen = openCommentIds.has(id);
+    const listHtml = list.length
+      ? `<div class="comment-list">${list.map(c => `
+          <div class="comment-item">
+            <div class="comment-head">
+              <span class="comment-nick">${escapeHtml(c.nickname)}</span>
+              <span>${formatDateTime(c.created_at)}</span>
+            </div>
+            <div class="comment-body">${escapeHtml(c.content)}</div>
+          </div>
+        `).join("")}</div>`
+      : `<div class="comment-empty">아직 댓글이 없습니다. 첫 댓글을 남겨보세요.</div>`;
+
+    return `
+      <div class="comments ${isOpen ? "open" : ""}" data-comments-for="${id}">
+        ${listHtml}
+        <div class="comment-form">
+          <div class="comment-form-row">
+            <input type="text" class="c-nick" maxlength="20" placeholder="닉네임" />
+            <input type="text" class="c-content" maxlength="500" placeholder="댓글을 남겨주세요" />
+            <button type="button" class="c-submit" data-id="${id}">등록</button>
+          </div>
+          <div class="comment-msg"></div>
+        </div>
+      </div>
+    `;
   }
 
   function renderList() {
@@ -536,13 +609,12 @@
       return;
     }
 
-    const likedIds = getLikedIds();
-
-    listEl.innerHTML = rows.map(r => `
+    listEl.innerHTML = rows.map(r => {
+      const commentCount = (commentsBySuggestion[r.id] || []).length;
+      return `
       <div class="card" data-id="${r.id}">
         <div class="card-top">
           <span class="badge badge-cat">${escapeHtml(r.category)}</span>
-          <span class="badge badge-status-${escapeHtml(r.status)}">${escapeHtml(r.status)}</span>
         </div>
         <h3>${escapeHtml(r.title)}</h3>
         <p class="content">${escapeHtml(r.content)}</p>
@@ -553,15 +625,20 @@
             <span>${formatDate(r.created_at)}</span>
           </div>
           <div class="actions">
-            <button class="like-btn ${likedIds.includes(r.id) ? "liked" : ""}" data-action="like" data-id="${r.id}" ${likedIds.includes(r.id) ? "disabled" : ""}>
+            <button class="like-btn ${likedIds.has(r.id) ? "liked" : ""}" data-action="like" data-id="${r.id}">
               👍 <span class="like-count">${r.likes}</span>
+            </button>
+            <button class="comment-toggle-btn" data-action="toggle-comments" data-id="${r.id}">
+              💬 댓글 <span class="comment-count">${commentCount}</span>개
             </button>
             <button class="link-btn" data-action="edit" data-id="${r.id}">수정</button>
             <button class="link-btn danger" data-action="delete" data-id="${r.id}">삭제</button>
           </div>
         </div>
+        ${renderComments(r.id)}
       </div>
-    `).join("");
+    `;
+    }).join("");
   }
 
   categoryTabs.addEventListener("click", (e) => {
@@ -579,24 +656,82 @@
   });
 
   listEl.addEventListener("click", async (e) => {
+    // 댓글 등록 버튼
+    const commentBtn = e.target.closest(".c-submit");
+    if (commentBtn) {
+      const id = commentBtn.dataset.id;
+      const wrapEl = commentBtn.closest(".comments");
+      const nickInput = wrapEl.querySelector(".c-nick");
+      const contentInput = wrapEl.querySelector(".c-content");
+      const msgEl = wrapEl.querySelector(".comment-msg");
+      const nickname = nickInput.value.trim();
+      const content = contentInput.value.trim();
+
+      if (!nickname || !content) {
+        msgEl.textContent = "닉네임과 댓글 내용을 모두 입력해주세요.";
+        return;
+      }
+
+      commentBtn.disabled = true;
+      const { error } = await sb.rpc("create_suggestion_comment", {
+        p_suggestion_id: id,
+        p_nickname: nickname,
+        p_content: content,
+      });
+      commentBtn.disabled = false;
+
+      if (error) {
+        msgEl.textContent = "댓글 등록에 실패했습니다.";
+        console.error(error);
+        return;
+      }
+
+      contentInput.value = "";
+      openCommentIds.add(id);
+
+      const { data: newComments } = await sb
+        .from("suggestion_comments")
+        .select("id, suggestion_id, nickname, content, created_at")
+        .eq("suggestion_id", id)
+        .order("created_at", { ascending: true });
+      commentsBySuggestion[id] = newComments || [];
+      renderList();
+      return;
+    }
+
     const btn = e.target.closest("button[data-action]");
     if (!btn) return;
     const id = btn.dataset.id;
     const action = btn.dataset.action;
 
+    if (action === "toggle-comments") {
+      if (openCommentIds.has(id)) openCommentIds.delete(id);
+      else openCommentIds.add(id);
+      renderList();
+      return;
+    }
+
     if (action === "like") {
+      // 실수로 누르는 경우가 있어, 한 번 더 누르면 좋아요가 취소되도록 토글 방식으로 동작
       btn.disabled = true;
-      const { data, error } = await sb.rpc("like_suggestion", { p_id: id });
-      if (error) {
+      const { data, error } = await sb.rpc("toggle_suggestion_like", {
+        p_id: id,
+        p_device_id: deviceId,
+      });
+      btn.disabled = false;
+
+      if (error || !data || !data[0]) {
         alert("좋아요 처리에 실패했습니다.");
-        btn.disabled = false;
+        console.error(error);
         return;
       }
-      markLiked(id);
-      btn.classList.add("liked");
-      btn.querySelector(".like-count").textContent = data;
+
+      const { likes, liked } = data[0];
+      if (liked) likedIds.add(id); else likedIds.delete(id);
+      btn.classList.toggle("liked", liked);
+      btn.querySelector(".like-count").textContent = likes;
       const row = cachedRows.find(r => r.id === id);
-      if (row) row.likes = data;
+      if (row) row.likes = likes;
     }
 
     if (action === "delete") {
@@ -715,29 +850,6 @@
     }
 
     editOverlay.classList.remove("open");
-    await loadList();
-  });
-
-  // admin: change status
-  document.getElementById("adminOpen").addEventListener("click", async () => {
-    const id = prompt("상태를 변경할 글의 ID를 입력해주세요.\n(각 글 카드를 길게 눌러 확인하거나, 목록 순서로 유추해주세요)");
-    if (!id) return;
-    const status = prompt("변경할 상태를 입력해주세요: 검토중 / 개발중 / 반영완료 / 보류");
-    if (!status) return;
-    const adminKey = prompt("관리자 키를 입력해주세요.");
-    if (!adminKey) return;
-
-    const { error } = await sb.rpc("set_suggestion_status", {
-      p_id: id.trim(),
-      p_admin_key: adminKey,
-      p_status: status.trim()
-    });
-
-    if (error) {
-      alert("실패: " + error.message);
-      return;
-    }
-    alert("상태가 변경되었습니다.");
     await loadList();
   });
 

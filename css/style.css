@@ -322,13 +322,17 @@ img { max-width: 100%; display: block; }
   font-weight: 800;
 }
 
-/* 표 안 글자 크기 통일: 이름/값 컬럼 모두 12px로 맞춤 (굵기 차이로만 강조) */
+/* 표 안 글자 크기 통일: 이름/값 컬럼 모두 12px로 맞춤.
+   [수정] 모든 행을 볼드로 두면 표 전체가 다 강조돼 보여 오히려 촌스럽고 답답한 느낌이 들어서
+   볼드를 빼고 일반 굵기 + 진한 검정(회색 아님)으로 차분하게 정리함. 등락 색상(위/아래 화살표)이
+   이미 강조 역할을 하므로 이름/값까지 볼드일 필요가 없음. */
 .rate-td-name {
   text-align: left !important;
-  font-weight: 700;
+  font-weight: 400;
   font-size: 12px;
+  color: var(--text);
 }
-.rate-td-value { font-weight: 700; font-size: 12px; }
+.rate-td-value { font-weight: 400; font-size: 12px; color: var(--text); }
 
 .rate-td-delta { color: var(--text-faint); }
 .rate-td-delta.up { color: var(--up); }
@@ -482,7 +486,8 @@ img { max-width: 100%; display: block; }
 .ipo-table tbody td[title] { cursor: help; }
 
 .ipo-td-date { font-size: 12px; color: var(--text-muted); white-space: nowrap; text-align: center; }
-.ipo-td-stock { font-weight: 700; font-size: 12px; word-break: keep-all; }
+/* [수정] 종목명도 위 금리 표와 같은 이유로 볼드 제거, 검정 유지 */
+.ipo-td-stock { font-weight: 400; font-size: 12px; color: var(--text); word-break: keep-all; }
 .ipo-td-amount { font-size: 12px; color: var(--text-muted); white-space: nowrap; text-align: right; }
 .ipo-td-type { text-align: center; }
 

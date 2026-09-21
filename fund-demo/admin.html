@@ -75,7 +75,7 @@
   <div class="demo-banner">
     🧪 <strong>이 화면은 데모입니다.</strong> 실제 운용사 데이터가 아니라 더미(가짜) 데이터로 동작하는 체험용 대시보드예요.
     <a href="manager.html">운용사 펀드 내역 입력(데모)</a>에서 펀드를 등록·수정하면 이 화면에 실시간으로 집계됩니다.
-    <a href="../index.html" style="margin-left:auto;">← AI 마켓 인사이트로 돌아가기</a>
+    <button class="btn btn-ghost" id="closeBtn" style="margin-left:auto;">✕ 닫기</button>
   </div>
 
   <div class="top-bar">
@@ -372,6 +372,11 @@
     document.getElementById('detailOverlay').classList.remove('open');
   });
   document.getElementById('refreshBtn').addEventListener('click', render);
+  document.getElementById('closeBtn').addEventListener('click', () => {
+    // 팝업창으로 열린 경우 창을 닫고, 그렇지 않으면(직접 주소로 들어온 탭 등) 이전 화면으로 이동
+    window.close();
+    setTimeout(() => { if (!window.closed) history.back(); }, 150);
+  });
 
   render();
   // 다른 탭(manager.html)에서 데이터를 바꾸면 이 화면도 자동으로 갱신

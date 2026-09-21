@@ -347,6 +347,48 @@
     return Math.max(0, Math.ceil(0.25 * (bondRatioVal - 100)));
   }
 
+  // ---------- [대시보드 연동] 수익자 통합 집계 대시보드(admin.html)에서 넘어온 값 적용 ----------
+  // admin.html의 "레포펀드 시뮬레이터로 가기" 버튼이 URL 쿼리스트링(?prefill=1&nav=...)과
+  // localStorage('aimi_repofund_prefill') 두 곳에 같은 값을 넣어두므로, 여기서는 그 중
+  // 있는 값을 읽어와 채울 수 있는 항목만 채운다.
+  //   - 채울 수 있는 것: NAV(수익자분 합계), 총보수, 채권/CD 편입비율(=레버리지), 채권/CD 수익률
+  //   - 채우지 않는 것: 기준금리(디폴트 3.00% 그대로 사용), 펀드가입일/환매예정일/채권만기일,
+  //     금통위 일정 — 대시보드에는 해당 정보가 없거나, 이 페이지의 실시간 조회·기본 가정과
+  //     맞물려 있어 굳이 덮어쓰지 않는 편이 낫다고 판단했다.
+  function readDashboardPrefill() {
+    let prefill = null;
+    try {
+      const params = new URLSearchParams(location.search);
+      if (params.get('prefill') === '1') {
+        const pick = (key) => (params.has(key) ? Number(params.get(key)) : undefined);
+        prefill = {
+          nav: pick('nav'), fee: pick('fee'),
+          bondRatio: pick('bondRatio'), cdRatio: pick('cdRatio'),
+          bondYield: pick('bondYield'), cdYield: pick('cdYield'),
+        };
+      }
+    } catch (e) { /* ignore */ }
+    if (!prefill) {
+      try {
+        const raw = localStorage.getItem('aimi_repofund_prefill');
+        if (raw) prefill = JSON.parse(raw);
+      } catch (e) { /* ignore */ }
+    }
+    return prefill;
+  }
+  const dashboardPrefill = readDashboardPrefill();
+
+  // 충돌 없는 항목(NAV/총보수/편입비율)은 바로 채운다.
+  if (dashboardPrefill) {
+    if (Number.isFinite(dashboardPrefill.nav)) document.getElementById('in-nav').value = dashboardPrefill.nav;
+    if (Number.isFinite(dashboardPrefill.fee)) document.getElementById('in-fee').value = dashboardPrefill.fee;
+    if (Number.isFinite(dashboardPrefill.bondRatio)) {
+      document.getElementById('in-bondratio').value = dashboardPrefill.bondRatio;
+      cdManuallyEdited = true; // 대시보드에서 넘어온 CD 편입비율을 자동 20%-제안 로직이 덮어쓰지 않게
+    }
+    if (Number.isFinite(dashboardPrefill.cdRatio)) document.getElementById('in-cdratio').value = dashboardPrefill.cdRatio;
+  }
+
   // ---------- 금통위 회차 행 관리 ----------
   // [수정 16] 2027년 말까지 전체 8회(연 8회, 2·4주차 목요일 패턴) 추정치로 확장.
   // 회차별 "기준금리"의 초기값은 loadLiveRates()에서 실시간으로 가져온 현재 기준금리로
@@ -688,6 +730,7 @@
 
   // 페이지 최초 진입 시 CD 편입비율도 채권 편입비율 기준 자동 제안값으로 맞춰 시작한다
   // (기본값끼리 우연히 일치하던 것을, 실제로 계산해서 채우도록 명시적으로 처리)
+  // ※ 대시보드에서 편입비율을 이미 넘겨받은 경우(cdManuallyEdited = true)에는 그 값을 덮어쓰지 않는다.
   if (!cdManuallyEdited) {
     const initialBondRatio = Number(document.getElementById('in-bondratio').value) || 0;
     document.getElementById('in-cdratio').value = suggestedCdRatio(initialBondRatio);
@@ -744,6 +787,18 @@
       // 실시간 금리 조회에 실패하면 화면에 입력된 기본값을 그대로 사용한다.
       console.error('실시간 금리 로딩 실패, 기본값 사용', err);
     } finally {
+      // [대시보드 연동] 실시간 조회가 채권/CD 현재금리를 방금 덮어썼을 수 있으므로,
+      // 대시보드에서 넘어온 값이 있다면 여기서 마지막으로 다시 덮어써서 우선순위를 준다.
+      // (기준금리는 대시보드 값으로 덮어쓰지 않고, 조회된 값 또는 기본값 3.00%를 그대로 둔다.)
+      if (dashboardPrefill) {
+        if (Number.isFinite(dashboardPrefill.bondYield)) {
+          document.getElementById('in-bondyield').value = dashboardPrefill.bondYield.toFixed(3);
+          document.getElementById('in-endyield').value = dashboardPrefill.bondYield.toFixed(3);
+        }
+        if (Number.isFinite(dashboardPrefill.cdYield)) {
+          document.getElementById('in-cdyield').value = dashboardPrefill.cdYield.toFixed(3);
+        }
+      }
       recalc();
     }
   }

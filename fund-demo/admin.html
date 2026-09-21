@@ -8,7 +8,8 @@
   :root {
     --ink: #14171f; --ink-soft: #5b5f6b; --border: #e6e8ec; --border-strong: #d6dae1;
     --bg: #ffffff; --bg-subtle: #f6f7f9; --accent: #16305c; --accent-soft: #eaf0fb;
-    --teal: #0f7a6b; --danger: #b3432e; --up: #d6483d; --down: #2d6fe0; --radius: 8px;
+    --teal: #0f7a6b; --teal-soft: #e1f3ef; --amber: #b7791f; --amber-soft: #fbf0dd;
+    --purple: #7f77dd; --danger: #b3432e; --danger-soft: #fbeae6; --radius: 8px;
   }
   * { box-sizing: border-box; }
   body {
@@ -16,7 +17,7 @@
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 14px; line-height: 1.5;
   }
-  .wrap { max-width: 1500px; margin: 0 auto; padding: 20px 24px 60px; }
+  .wrap { max-width: 1560px; margin: 0 auto; padding: 20px 24px 60px; }
 
   .demo-banner {
     background: #fff7e6; border: 1px solid #f0c869; color: #8a5a15;
@@ -29,16 +30,25 @@
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
   }
-  .top-bar h1 { font-size: 22px; margin: 0; }
-  .top-actions { display: flex; gap: 8px; }
-  .btn { border: none; border-radius: var(--radius); padding: 8px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
-  .btn-dark { background: var(--ink); color: #fff; }
+  .top-bar h1 { font-size: 21px; margin: 0; display: flex; align-items: center; gap: 8px; }
+  .top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* 사이트 톤에 맞춘 라인 아이콘 (검정 대신 브랜드 컬러) */
+  .section-icon { display: inline-flex; align-items: center; justify-content: center; color: var(--teal); flex: none; }
+  .section-icon svg { width: 19px; height: 19px; }
+
+  .btn { border: none; border-radius: var(--radius); padding: 8px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { background: #0b6357; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { background: #0f2247; }
   .btn-ghost { background: var(--bg); border: 1px solid var(--border-strong); color: var(--ink-soft); }
-  .btn-danger { background: #fbeae6; color: var(--danger); border: 1px solid #f0c1b4; }
+  .btn-ghost:hover { background: var(--bg-subtle); }
+  .btn-danger-outline { background: var(--danger-soft); color: var(--danger); border: 1px solid #f0c1b4; }
 
   .table-scroll { width: 100%; overflow-x: auto; background: #fff; border: 1px solid var(--border-strong); border-radius: 10px; }
   table.dash {
-    width: 100%; min-width: 1300px; border-collapse: collapse; font-size: 12.5px;
+    width: 100%; min-width: 1440px; border-collapse: collapse; font-size: 12.5px;
   }
   table.dash th, table.dash td {
     border: 1px solid var(--border); padding: 8px 7px; text-align: center; white-space: nowrap;
@@ -49,24 +59,38 @@
   table.dash td.left { text-align: left; }
   table.dash tbody tr:hover td { background: #f2f5fa; }
   table.dash tfoot td { font-weight: 700; background: var(--bg-subtle); }
+  table.dash tbody tr.excluded-row td { opacity: 0.45; text-decoration: line-through; }
 
-  .group-bond { background: #f2f8f6; }
-  .group-cd { background: #f2f6fb; }
+  .group-bond { background: var(--teal-soft); }
+  .group-cd { background: var(--accent-soft); }
 
   .link-btn { color: var(--accent); font-weight: 700; text-decoration: underline; cursor: pointer; font-size: 12px; background:none; border:none; }
   .del-link { color: var(--danger); font-weight: 700; text-decoration: underline; cursor: pointer; font-size: 12px; background:none; border:none; }
+  .restore-link { color: var(--teal); font-weight: 700; text-decoration: underline; cursor: pointer; font-size: 12px; background:none; border:none; }
 
-  .overlay {
-    position: fixed; inset: 0; background: rgba(20,23,31,0.5);
-    display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px;
+  .detail-row td { text-align: left; background: #fbfcfd; white-space: normal; padding: 16px 20px; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
+  .detail-grid h4 { font-size: 12.5px; margin: 0 0 8px; color: var(--ink-soft); }
+  table.mini { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.mini th, table.mini td { border: 1px solid var(--border); padding: 5px 7px; text-align: center; }
+  table.mini td:first-child { text-align: left; }
+  table.mini tfoot td { font-weight: 700; background: var(--bg-subtle); }
+  .detail-footnote { font-size: 11.5px; color: var(--ink-soft); margin-top: 10px; }
+
+  .excluded-panel {
+    margin-top: 16px; border: 1px dashed var(--border-strong); border-radius: 10px;
+    padding: 12px 16px; font-size: 12.5px; color: var(--ink-soft); background: #fbfbfc;
   }
-  .overlay.open { display: flex; }
-  .modal { background: #fff; border-radius: 12px; padding: 24px; width: 100%; max-width: 720px; max-height: 85vh; overflow-y: auto; }
-  .modal h2 { font-size: 16px; margin: 0 0 14px; }
-  .modal table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 16px; }
-  .modal table th, .modal table td { border: 1px solid var(--border); padding: 6px 8px; text-align: center; }
-  .modal table td:first-child { text-align: left; }
-  .modal-close { float: right; border: 1px solid var(--border-strong); background: #fff; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+  .excluded-panel strong { color: var(--ink); }
+  .excluded-chip {
+    display: inline-flex; align-items: center; gap: 8px; background: #fff;
+    border: 1px solid var(--border-strong); border-radius: 999px; padding: 4px 6px 4px 12px;
+    margin: 4px 6px 0 0; font-size: 12px;
+  }
+
+  .caption-note { font-size: 11.5px; color: var(--ink-soft); margin: 8px 2px 0; line-height: 1.6; }
+  .caption-note b { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -79,93 +103,87 @@
   </div>
 
   <div class="top-bar">
-    <h1>수익자 통합 집계 대시보드 <span style="font-size:13px;font-weight:400;color:var(--ink-soft);">(데모)</span></h1>
+    <h1>
+      <span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="9" width="3" height="6.5" rx="0.6"/><rect x="7.5" y="5.5" width="3" height="10" rx="0.6"/><rect x="12.5" y="2.5" width="3" height="13" rx="0.6"/></svg></span>
+      수익자 통합 집계 대시보드 <span style="font-size:13px;font-weight:400;color:var(--ink-soft);">(데모)</span>
+    </h1>
     <div class="top-actions">
-      <button class="btn btn-ghost" id="refreshBtn">새로고침</button>
-      <a class="btn btn-dark" href="manager.html">운용사 입력 화면으로 가기</a>
+      <button class="btn btn-ghost" id="refreshBtn">↻ 새로고침</button>
+      <button class="btn btn-ghost" id="exportExcelBtn">⬇ 엑셀로 저장</button>
+      <button class="btn btn-primary" id="gotoSimulatorBtn">🧮 레포펀드 시뮬레이터로 가기</button>
     </div>
   </div>
 
   <div class="table-scroll">
     <table class="dash" id="dashTable"></table>
   </div>
-</div>
 
-<div class="overlay" id="detailOverlay">
-  <div class="modal">
-    <button class="modal-close" id="detailClose">닫기</button>
-    <h2 id="detailTitle">펀드 명세</h2>
-    <div id="detailBody"></div>
+  <div class="caption-note">
+    ℹ️ 채권·CD 금액, 레버리지, 연간수익은 모두 <b>수익자 지분(수익자분) 기준</b>으로 계산됩니다. 레버리지 = (채권+CD 수익자분) ÷ 수익자분 × 100% − 100%.
   </div>
+
+  <div id="excludedPanel" class="excluded-panel" style="display:none;"></div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
   const STORAGE_KEY = 'aimi_funddemo_v1';
+  const EXCLUDED_KEY = 'aimi_funddemo_excluded_v1'; // 대시보드 전용 임시 제외 테스트 (운용사 데이터는 건드리지 않음)
+  const BOK_BASE_RATE = 2.50; // 데모용 기준금리 가정치 — 실제로는 사이트 상단 "주요금리" 값과 연동 필요
 
   function seedData() {
     return {
-      companies: ['라온자산', '다인자산', '온새미로자산', '청람자산', '별빛자산'],
+      companies: ['라온자산', '다인자산', '온새미로자산', '청람자산', '별빛자산', '하늘빛자산', '은하수자산', '미래솔자산', '태양자산', '청명자산'],
       funds: [
-        {
-          id: 'raon-1', company: '라온자산', fundName: '라온1호', equity: 480.0, shareRatio: 50, feeBp: 8, repoRate: 2.55,
+        { id: 'raon-1', company: '라온자산', fundName: '라온1호', equity: 480.0, shareRatio: 50, feeBp: 8, repoRate: 2.55,
           bonds: [
-            { name: '산금24신이0300-0913-2', amount: 800, rate: 3.969, md: 0.96 },
-            { name: '산금25신이0200-0812-1', amount: 99.5, rate: 3.955, md: 0.88 },
-            { name: '기업은행(신)2507이2A-04', amount: 500, rate: 3.939, md: 0.77 },
-            { name: '산금25신이0206-0114-2', amount: 400, rate: 3.944, md: 0.80 },
+            { name: '기업은행(신)2501이2.5A-20', amount: 300, rate: 3.945, md: 0.81 },
+            { name: '기업은행(신)2508이2A-26', amount: 400, rate: 3.961, md: 0.91 },
+            { name: '기업은행(신)2407이3A-22', amount: 99.5, rate: 3.947, md: 0.82 },
           ],
-          cds: [
-            { name: 'CD(NH농협은행자금부20260916-74.7-1)', amount: 74.7, rate: 3.28, md: 0.33 },
-          ],
-        },
-        {
-          id: 'raon-2', company: '라온자산', fundName: '라온2호', equity: 594.5, shareRatio: 50, feeBp: 8, repoRate: 2.55,
+          cds: [ { name: 'CD(경남은행자금부20260925-99.3-3)', amount: 99.3, rate: 3.86, md: 0.75 } ] },
+        { id: 'raon-2', company: '라온자산', fundName: '라온2호', equity: 594.5, shareRatio: 50, feeBp: 8, repoRate: 2.55,
           bonds: [
-            { name: '산금26신이0106-0121-1', amount: 200, rate: 3.947, md: 0.81 },
-            { name: '기업은행(신)2407이3A-22', amount: 99.3, rate: 3.947, md: 0.82 },
-            { name: '기업은행(신)2501이2.5A-20', amount: 647.4, rate: 3.945, md: 0.81 },
+            { name: '산금24신이0300-0814-3', amount: 100, rate: 3.956, md: 0.88 },
+            { name: '산금26신이0106-0121-1', amount: 99.3, rate: 3.947, md: 0.81 },
           ],
-          cds: [
-            { name: 'CD(경남은행자금부20260217-74.7-3)', amount: 74.7, rate: 3.84, md: 0.75 },
-          ],
-        },
-        {
-          id: 'dain-1', company: '다인자산', fundName: '다인22호', equity: 998.3, shareRatio: 50, feeBp: 8, repoRate: 2.60,
+          cds: [ { name: 'CD(스탠다드차타드은행자금부20260911-74.7-3)', amount: 74.7, rate: 3.30, md: 0.28 } ] },
+        { id: 'dain-1', company: '다인자산', fundName: '다인22호', equity: 998.3, shareRatio: 50, feeBp: 8, repoRate: 2.55,
           bonds: [
-            { name: '산금22신이0500-0715-2', amount: 200, rate: 3.945, md: 0.80 },
-            { name: '기업은행(신)2507이2A-16(사)', amount: 74.7, rate: 3.944, md: 0.80 },
+            { name: '기업은행(신)2307이4A-07(사)', amount: 500, rate: 3.940, md: 0.77 },
+            { name: '기업은행(신)2507이2A-23', amount: 400, rate: 3.947, md: 0.82 },
           ],
-          cds: [
-            { name: 'CD(스탠다드차타드은행자금부20260319-800-2)', amount: 800, rate: 3.25, md: 0.28 },
-          ],
-        },
-        {
-          id: 'onsae-1', company: '온새미로자산', fundName: '온새미로8호', equity: 595.8, shareRatio: 50, feeBp: 15, repoRate: 2.86,
+          cds: [ { name: 'CD(전북은행자금부20260310-448.3-3)', amount: 448.3, rate: 3.84, md: 0.78 } ] },
+        { id: 'onsae-1', company: '온새미로자산', fundName: '온새미로8호', equity: 595.8, shareRatio: 50, feeBp: 8, repoRate: 2.55,
+          bonds: [ { name: '산금22신이0500-0715-2', amount: 50, rate: 3.945, md: 0.80 } ],
+          cds: [ { name: 'CD(스탠다드차타드은행자금부20260410-99.5-2)', amount: 99.5, rate: 3.25, md: 0.28 } ] },
+        { id: 'cheongram-1', company: '청람자산', fundName: '청람19호', equity: 505.3, shareRatio: 50, feeBp: 8, repoRate: 2.55,
+          bonds: [ { name: '산금25신이0200-0917-2', amount: 400, rate: 3.971, md: 0.97 } ],
+          cds: [ { name: 'CD(경남은행자금부20260917-99.5-3)', amount: 99.5, rate: 3.51, md: 0.33 } ] },
+        { id: 'byeolbit-1', company: '별빛자산', fundName: '별빛3호', equity: 400.1, shareRatio: 50, feeBp: 8, repoRate: 2.55,
+          bonds: [ { name: '산금25신이0200-0912-2', amount: 50, rate: 3.968, md: 0.96 } ],
+          cds: [ { name: 'CD(기업은행자금부20260224-448.3-3)', amount: 448.3, rate: 3.28, md: 0.33 } ] },
+        { id: 'haneulbit-1', company: '하늘빛자산', fundName: '하늘빛5호', equity: 620.0, shareRatio: 50, feeBp: 8, repoRate: 2.55,
           bonds: [
-            { name: '산금25신이0200-0814-2', amount: 99.5, rate: 3.956, md: 0.88 },
+            { name: '산금22신이0500-0908-2', amount: 500, rate: 3.966, md: 0.94 },
+            { name: '기업은행(신)2507이2A-22', amount: 100, rate: 3.947, md: 0.82 },
           ],
-          cds: [
-            { name: 'CD(스탠다드차타드은행자금부20260915-400-1)', amount: 400, rate: 3.35, md: 0.33 },
-          ],
-        },
-        {
-          id: 'cheongram-1', company: '청람자산', fundName: '청람19호', equity: 505.3, shareRatio: 50, feeBp: 8, repoRate: 2.91,
+          cds: [ { name: 'CD(경남은행자금부20260426-150-2)', amount: 150, rate: 3.84, md: 0.75 } ] },
+        { id: 'eunhasu-1', company: '은하수자산', fundName: '은하수12호', equity: 450.7, shareRatio: 50, feeBp: 8, repoRate: 2.55,
+          bonds: [ { name: '산금25신이0200-0711-2', amount: 400, rate: 3.943, md: 0.79 } ],
+          cds: [ { name: 'CD(국민은행자금부20260713-74.7-2)', amount: 74.7, rate: 3.16, md: 0.25 } ] },
+        { id: 'miraesol-1', company: '미래솔자산', fundName: '미래솔7호', equity: 700.2, shareRatio: 50, feeBp: 8, repoRate: 2.55,
           bonds: [
-            { name: '산금22신이0500-0823-1', amount: 99.5, rate: 3.96, md: 0.90 },
+            { name: '기업은행(신)2507이2A-21', amount: 448.3, rate: 3.946, md: 0.82 },
+            { name: '산금25신이0206-0117-1', amount: 50, rate: 3.945, md: 0.80 },
           ],
-          cds: [
-            { name: 'CD(경남은행자금부20260228-800-1)', amount: 800, rate: 3.86, md: 0.75 },
-          ],
-        },
-        {
-          id: 'byeolbit-1', company: '별빛자산', fundName: 'BNK공모주2호', equity: 400.1, shareRatio: 50, feeBp: 15, repoRate: 2.86,
-          bonds: [
-            { name: '산금22신이0500-0830-2', amount: 800, rate: 3.963, md: 0.92 },
-          ],
-          cds: [
-            { name: 'CD(기업은행자금부20260624-647.4-3)', amount: 647.4, rate: 3.28, md: 0.33 },
-          ],
-        },
+          cds: [ { name: 'CD(국민은행자금부20260411-99.5-2)', amount: 99.5, rate: 3.25, md: 0.33 } ] },
+        { id: 'taeyang-1', company: '태양자산', fundName: '태양9호', equity: 380.5, shareRatio: 50, feeBp: 8, repoRate: 2.55,
+          bonds: [ { name: '산금22신이0500-0823-1', amount: 199, rate: 3.960, md: 0.90 } ],
+          cds: [ { name: 'CD(국민은행자금부20260228-199-3)', amount: 199, rate: 3.20, md: 0.25 } ] },
+        { id: 'cheongmyeong-1', company: '청명자산', fundName: '청명4호', equity: 512.9, shareRatio: 50, feeBp: 8, repoRate: 2.55,
+          bonds: [ { name: '산금25신이0206-0131-2', amount: 448.3, rate: 3.950, md: 0.84 } ],
+          cds: [ { name: 'CD(스탠다드차타드은행자금부20260612-100-2)', amount: 100, rate: 3.32, md: 0.28 } ] },
       ],
     };
   }
@@ -175,12 +193,22 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) return JSON.parse(raw);
     } catch (e) { console.warn('demo storage read failed', e); }
-    // manager.html을 먼저 방문하지 않고 admin.html로 바로 들어온 경우에도
-    // 비어있는 화면이 아니라 데모 데이터가 채워진 화면을 보여주기 위한 폴백
     const seed = seedData();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(seed)); } catch (e) {}
     return seed;
   }
+
+  function loadExcluded() {
+    try {
+      const raw = sessionStorage.getItem(EXCLUDED_KEY);
+      if (raw) return new Set(JSON.parse(raw));
+    } catch (e) {}
+    return new Set();
+  }
+  function saveExcluded(set) {
+    try { sessionStorage.setItem(EXCLUDED_KEY, JSON.stringify([...set])); } catch (e) {}
+  }
+  let excludedIds = loadExcluded();
 
   function weightedAvg(items, field) {
     const totalAmt = items.reduce((s, it) => s + it.amount, 0);
@@ -189,39 +217,54 @@
   }
   function pvbp(amount, md) { return amount * md * 0.0001; }
 
+  // 채권/CD 금액, 레버리지, 연간수익은 전부 "수익자분(지분)" 기준으로 계산한다.
+  //   scale = 지분율/100
+  //   수익자분 채권·CD금액 = 펀드 전체 채권·CD금액 × scale
+  //   레버리지 = (수익자분 채권+CD) / 수익자분 × 100% − 100%
+  //   연간수익(수익자분) = 펀드 전체 연간수익 × scale  (= 예상수익률은 기존과 동일)
   function computeFund(fund) {
-    const bondAmount = fund.bonds.reduce((s, b) => s + b.amount, 0);
+    const scale = fund.shareRatio / 100;
+    const shareAmount = fund.equity * scale;
+
+    const bondAmountRaw = fund.bonds.reduce((s, b) => s + b.amount, 0);
     const bondRate = weightedAvg(fund.bonds, 'rate');
     const bondMD = weightedAvg(fund.bonds, 'md');
+    const bondAmount = bondAmountRaw * scale;
     const bondPvbp = pvbp(bondAmount, bondMD);
 
-    const cdAmount = fund.cds.reduce((s, c) => s + c.amount, 0);
+    const cdAmountRaw = fund.cds.reduce((s, c) => s + c.amount, 0);
     const cdRate = weightedAvg(fund.cds, 'rate');
     const cdMD = weightedAvg(fund.cds, 'md');
+    const cdAmount = cdAmountRaw * scale;
     const cdPvbp = pvbp(cdAmount, cdMD);
 
+    const totalAssetsRaw = bondAmountRaw + cdAmountRaw;
     const totalAssets = bondAmount + cdAmount;
-    const leverage = fund.equity > 0 ? (totalAssets / fund.equity) * 100 : 0;
+    const leverage = shareAmount > 0 ? (totalAssets / shareAmount) * 100 - 100 : 0;
 
-    const assetIncome = bondAmount * bondRate / 100 + cdAmount * cdRate / 100;
-    const fundingCost = Math.max(totalAssets - fund.equity, 0) * fund.repoRate / 100;
-    const feeCost = fund.equity * fund.feeBp / 10000;
-    const netIncome = assetIncome - fundingCost - feeCost;
-    const expectedYield = fund.equity > 0 ? (netIncome / fund.equity) * 100 : 0;
-    const shareAmount = fund.equity * fund.shareRatio / 100;
+    const assetIncomeRaw = bondAmountRaw * bondRate / 100 + cdAmountRaw * cdRate / 100;
+    const fundingCostRaw = Math.max(totalAssetsRaw - fund.equity, 0) * fund.repoRate / 100;
+    const feeCostRaw = fund.equity * fund.feeBp / 10000;
+    const netIncomeRaw = assetIncomeRaw - fundingCostRaw - feeCostRaw;
+    const netIncome = netIncomeRaw * scale; // 수익자분 연간수익
+    const expectedYield = shareAmount > 0 ? (netIncome / shareAmount) * 100 : 0;
 
     return { bondAmount, bondRate, bondMD, bondPvbp, cdAmount, cdRate, cdMD, cdPvbp, totalAssets, leverage, netIncome, expectedYield, shareAmount };
   }
 
   function fmt(n, d = 1) { return Number(n).toLocaleString('ko-KR', { minimumFractionDigits: d, maximumFractionDigits: d }); }
 
+  let openDetailId = null;
+
   function render() {
     const state = loadState();
-    const funds = state.funds || [];
+    const allFunds = state.funds || [];
+    const funds = allFunds.filter((f) => !excludedIds.has(f.id));
     const table = document.getElementById('dashTable');
 
-    if (funds.length === 0) {
+    if (allFunds.length === 0) {
       table.innerHTML = `<tbody><tr><td style="padding:40px;color:var(--ink-soft);">등록된 펀드가 없습니다. <a href="manager.html">운용사 펀드 내역 입력</a>에서 펀드를 만들어보세요.</td></tr></tbody>`;
+      renderExcludedPanel(allFunds);
       return;
     }
 
@@ -229,8 +272,8 @@
 
     const sums = {
       equity: 0, shareAmount: 0,
-      bondAmount: 0, bondRateWeighted: 0, bondMdWeighted: 0, bondPvbp: 0,
-      cdAmount: 0, cdRateWeighted: 0, cdMdWeighted: 0, cdPvbp: 0,
+      bondAmount: 0, bondRateWeighted: 0, bondPvbp: 0,
+      cdAmount: 0, cdRateWeighted: 0, cdPvbp: 0,
       totalAssets: 0, feeWeighted: 0, repoWeighted: 0, netIncome: 0,
     };
     rows.forEach(({ fund, c }) => {
@@ -249,10 +292,10 @@
     });
     const avgBondRate = sums.bondAmount > 0 ? sums.bondRateWeighted / sums.bondAmount : 0;
     const avgCdRate = sums.cdAmount > 0 ? sums.cdRateWeighted / sums.cdAmount : 0;
-    const avgLeverage = sums.equity > 0 ? (sums.totalAssets / sums.equity) * 100 : 0;
+    const avgLeverage = sums.shareAmount > 0 ? (sums.totalAssets / sums.shareAmount) * 100 - 100 : 0;
     const avgFee = sums.equity > 0 ? sums.feeWeighted / sums.equity : 0;
     const avgRepo = sums.equity > 0 ? sums.repoWeighted / sums.equity : 0;
-    const avgYield = sums.equity > 0 ? (sums.netIncome / sums.equity) * 100 : 0;
+    const avgYield = sums.shareAmount > 0 ? (sums.netIncome / sums.shareAmount) * 100 : 0;
     const avgShareRatio = sums.equity > 0 ? (sums.shareAmount / sums.equity) * 100 : 0;
 
     table.innerHTML = `
@@ -262,9 +305,9 @@
           <th rowspan="2">펀드명</th>
           <th rowspan="2">규모(억)</th>
           <th rowspan="2">지분율</th>
-          <th rowspan="2">수익자분</th>
-          <th colspan="4" class="group-bond">채권 정보</th>
-          <th colspan="4" class="group-cd">CD 정보</th>
+          <th rowspan="2">수익자분(억)</th>
+          <th colspan="4" class="group-bond">채권 정보 (수익자분)</th>
+          <th colspan="4" class="group-cd">CD 정보 (수익자분)</th>
           <th rowspan="2">레버리지</th>
           <th rowspan="2">레포금리</th>
           <th rowspan="2">보수(bp)</th>
@@ -298,10 +341,11 @@
             <td>${fmt(fund.repoRate, 2)}%</td>
             <td>${fund.feeBp}</td>
             <td><strong style="color:var(--teal);">${fmt(c.expectedYield, 2)}%</strong></td>
-            <td>${fmt(c.netIncome, 2)}</td>
-            <td><button class="link-btn" data-detail="${fund.id}">내역보기</button></td>
-            <td><button class="del-link" data-del="${fund.id}">삭제</button></td>
+            <td>${fmt(c.netIncome, 1)}</td>
+            <td><button class="link-btn" data-detail="${fund.id}">${openDetailId === fund.id ? '닫기 ▴' : '내역보기 ▾'}</button></td>
+            <td><button class="del-link" data-exclude="${fund.id}">제외해보기</button></td>
           </tr>
+          ${openDetailId === fund.id ? renderDetailRow(fund, c) : ''}
         `).join('')}
       </tbody>
       <tfoot>
@@ -322,64 +366,135 @@
           <td>${fmt(avgRepo, 2)}%</td>
           <td>${fmt(avgFee, 1)}</td>
           <td style="color:var(--teal);">${fmt(avgYield, 2)}%</td>
-          <td>${fmt(sums.netIncome, 2)}</td>
+          <td>${fmt(sums.netIncome, 1)}</td>
           <td></td><td></td>
         </tr>
       </tfoot>
     `;
 
     table.querySelectorAll('[data-detail]').forEach((btn) => {
-      btn.addEventListener('click', () => openDetail(btn.dataset.detail, funds));
-    });
-    table.querySelectorAll('[data-del]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (!confirm('이 펀드를 삭제할까요? (데모 데이터입니다 — manager.html에도 반영돼요)')) return;
-        state.funds = state.funds.filter((f) => f.id !== btn.dataset.del);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        const id = btn.dataset.detail;
+        openDetailId = openDetailId === id ? null : id;
         render();
       });
     });
+    table.querySelectorAll('[data-exclude]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        excludedIds.add(btn.dataset.exclude);
+        saveExcluded(excludedIds);
+        render();
+      });
+    });
+
+    renderExcludedPanel(allFunds);
   }
 
   function specRow(it) {
     return `<tr><td>${it.name}</td><td>${it.amount}</td><td>${Number(it.rate).toFixed(3)}%</td><td>${Number(it.md).toFixed(2)}</td></tr>`;
   }
 
-  function openDetail(fundId, funds) {
-    const fund = funds.find((f) => f.id === fundId);
-    if (!fund) return;
-    const c = computeFund(fund);
-    document.getElementById('detailTitle').textContent = `${fund.company} · ${fund.fundName} 펀드명세`;
-    document.getElementById('detailBody').innerHTML = `
-      <h3 style="font-size:13px;">채권 명세</h3>
-      <table>
-        <thead><tr><th>종목명</th><th>금액(억)</th><th>금리</th><th>MD</th></tr></thead>
-        <tbody>${fund.bonds.map(specRow).join('') || '<tr><td colspan="4">데이터 없음</td></tr>'}</tbody>
-      </table>
-      <h3 style="font-size:13px;">CD 명세</h3>
-      <table>
-        <thead><tr><th>종목명</th><th>금액(억)</th><th>금리</th><th>MD</th></tr></thead>
-        <tbody>${fund.cds.map(specRow).join('') || '<tr><td colspan="4">데이터 없음</td></tr>'}</tbody>
-      </table>
-      <div style="font-size:12.5px;color:var(--ink-soft);">
-        레버리지 ${fmt(c.leverage, 1)}% · 예상수익률 ${fmt(c.expectedYield, 2)}% · 연간수익 ${fmt(c.netIncome, 2)}억원
-      </div>
+  function renderDetailRow(fund, c) {
+    return `
+      <tr class="detail-row">
+        <td colspan="18">
+          <div class="detail-grid">
+            <div>
+              <h4>📄 채권 명세 (펀드 전체 기준)</h4>
+              <table class="mini">
+                <thead><tr><th>종목명</th><th>금액(억)</th><th>금리</th><th>MD</th></tr></thead>
+                <tbody>${fund.bonds.map(specRow).join('') || '<tr><td colspan="4">데이터 없음</td></tr>'}</tbody>
+              </table>
+            </div>
+            <div>
+              <h4>📄 CD 명세 (펀드 전체 기준)</h4>
+              <table class="mini">
+                <thead><tr><th>종목명</th><th>금액(억)</th><th>금리</th><th>MD</th></tr></thead>
+                <tbody>${fund.cds.map(specRow).join('') || '<tr><td colspan="4">데이터 없음</td></tr>'}</tbody>
+              </table>
+            </div>
+          </div>
+          <div class="detail-footnote">
+            수익자분 기준 · 채권 ${fmt(c.bondAmount)}억 + CD ${fmt(c.cdAmount)}억 = 총 ${fmt(c.totalAssets)}억 / 수익자분 ${fmt(c.shareAmount)}억
+            → 레버리지 ${fmt(c.leverage, 1)}% · 예상수익률 ${fmt(c.expectedYield, 2)}% · 연간수익 ${fmt(c.netIncome, 1)}억원
+          </div>
+        </td>
+      </tr>
     `;
-    document.getElementById('detailOverlay').classList.add('open');
   }
 
-  document.getElementById('detailClose').addEventListener('click', () => {
-    document.getElementById('detailOverlay').classList.remove('open');
-  });
+  function renderExcludedPanel(allFunds) {
+    const panel = document.getElementById('excludedPanel');
+    const excluded = allFunds.filter((f) => excludedIds.has(f.id));
+    if (excluded.length === 0) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
+    panel.style.display = 'block';
+    panel.innerHTML = `
+      <strong>🧪 제외해본 펀드 (테스트, 위 집계에서 제외됨 — 운용사 데이터는 그대로 유지)</strong><br>
+      ${excluded.map((f) => `
+        <span class="excluded-chip">${f.company} · ${f.fundName}
+          <button class="restore-link" data-restore="${f.id}">복원</button>
+        </span>
+      `).join('')}
+    `;
+    panel.querySelectorAll('[data-restore]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        excludedIds.delete(btn.dataset.restore);
+        saveExcluded(excludedIds);
+        render();
+      });
+    });
+  }
+
   document.getElementById('refreshBtn').addEventListener('click', render);
   document.getElementById('closeBtn').addEventListener('click', () => {
-    // 팝업창으로 열린 경우 창을 닫고, 그렇지 않으면(직접 주소로 들어온 탭 등) 이전 화면으로 이동
     window.close();
     setTimeout(() => { if (!window.closed) history.back(); }, 150);
   });
 
+  // 화면에 보이는 대시보드 표를 그대로 엑셀(xlsx)로 저장
+  document.getElementById('exportExcelBtn').addEventListener('click', () => {
+    try {
+      const wb = XLSX.utils.table_to_book(document.getElementById('dashTable'), { sheet: '수익자통합집계' });
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      XLSX.writeFile(wb, `수익자통합집계_${today}.xlsx`);
+    } catch (e) {
+      alert('엑셀 저장에 실패했습니다: ' + e.message);
+    }
+  });
+
+  // 대시보드 합계(가중평균/합계 행)를 레포펀드 시뮬레이터에 기본값으로 넘겨서 새 창으로 연다.
+  // ⚠️ 시뮬레이터(apps/repo-fund-simulator.html)가 실제로 어떤 파라미터/키를 읽는지는
+  // 아직 확인하지 못해 URL 쿼리스트링 + localStorage 두 가지로 우선 넘겨두었습니다.
+  // 시뮬레이터 파일을 공유해주시면 정확한 필드명으로 맞춰드릴 수 있어요.
+  document.getElementById('gotoSimulatorBtn').addEventListener('click', () => {
+    const state = loadState();
+    const funds = (state.funds || []).filter((f) => !excludedIds.has(f.id));
+    if (funds.length === 0) { alert('집계할 펀드가 없습니다.'); return; }
+    const rows = funds.map((f) => ({ fund: f, c: computeFund(f) }));
+    let bondAmt = 0, bondRateW = 0, cdAmt = 0, cdRateW = 0, shareAmt = 0, totalAssets = 0;
+    rows.forEach(({ fund, c }) => {
+      bondAmt += c.bondAmount; bondRateW += c.bondAmount * c.bondRate;
+      cdAmt += c.cdAmount; cdRateW += c.cdAmount * c.cdRate;
+      shareAmt += c.shareAmount; totalAssets += c.totalAssets;
+    });
+    const payload = {
+      source: 'aimi-fund-dashboard',
+      equity: Math.round(shareAmt * 10) / 10,
+      bondAmount: Math.round(bondAmt * 10) / 10,
+      bondRate: bondAmt > 0 ? Math.round((bondRateW / bondAmt) * 1000) / 1000 : 0,
+      cdAmount: Math.round(cdAmt * 10) / 10,
+      cdRate: cdAmt > 0 ? Math.round((cdRateW / cdAmt) * 100) / 100 : 0,
+      leverage: shareAmt > 0 ? Math.round(((totalAssets / shareAmt) * 100 - 100) * 10) / 10 : 0,
+    };
+    try { localStorage.setItem('aimi_repofund_prefill', JSON.stringify(payload)); } catch (e) {}
+    const params = new URLSearchParams({
+      prefill: '1', equity: payload.equity, bondAmount: payload.bondAmount, bondRate: payload.bondRate,
+      cdAmount: payload.cdAmount, cdRate: payload.cdRate, leverage: payload.leverage,
+    });
+    window.open(`../apps/repo-fund-simulator.html?${params.toString()}`, '_blank');
+  });
+
   render();
-  // 다른 탭(manager.html)에서 데이터를 바꾸면 이 화면도 자동으로 갱신
   window.addEventListener('storage', (e) => { if (e.key === STORAGE_KEY) render(); });
 </script>
 </body>

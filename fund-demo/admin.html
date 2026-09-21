@@ -462,35 +462,31 @@
     }
   });
 
-  // 대시보드 합계(가중평균/합계 행)를 레포펀드 시뮬레이터에 기본값으로 넘겨서 새 창으로 연다.
-  // ⚠️ 시뮬레이터(apps/repo-fund-simulator.html)가 실제로 어떤 파라미터/키를 읽는지는
-  // 아직 확인하지 못해 URL 쿼리스트링 + localStorage 두 가지로 우선 넘겨두었습니다.
-  // 시뮬레이터 파일을 공유해주시면 정확한 필드명으로 맞춰드릴 수 있어요.
+  // 대시보드 합계(수익자분 기준)를 레포펀드 시뮬레이터의 실제 입력 필드에 맞춰 넘긴다.
+  //   NAV = 수익자분 합계, 채권/CD 편입비율 = 채권·CD금액(수익자분) ÷ NAV × 100
+  //   (편입비율의 합-100 이 곧 레버리지이므로, 레버리지는 따로 넘기지 않아도 자동으로 맞춰진다)
+  //   기준금리는 넘기지 않음 — 시뮬레이터 기본값 3.00%를 그대로 사용.
   document.getElementById('gotoSimulatorBtn').addEventListener('click', () => {
     const state = loadState();
     const funds = (state.funds || []).filter((f) => !excludedIds.has(f.id));
     if (funds.length === 0) { alert('집계할 펀드가 없습니다.'); return; }
     const rows = funds.map((f) => ({ fund: f, c: computeFund(f) }));
-    let bondAmt = 0, bondRateW = 0, cdAmt = 0, cdRateW = 0, shareAmt = 0, totalAssets = 0;
+    let bondAmt = 0, bondRateW = 0, cdAmt = 0, cdRateW = 0, shareAmt = 0, feeW = 0, equitySum = 0;
     rows.forEach(({ fund, c }) => {
       bondAmt += c.bondAmount; bondRateW += c.bondAmount * c.bondRate;
       cdAmt += c.cdAmount; cdRateW += c.cdAmount * c.cdRate;
-      shareAmt += c.shareAmount; totalAssets += c.totalAssets;
+      shareAmt += c.shareAmount;
+      feeW += fund.equity * fund.feeBp; equitySum += fund.equity;
     });
-    const payload = {
-      source: 'aimi-fund-dashboard',
-      equity: Math.round(shareAmt * 10) / 10,
-      bondAmount: Math.round(bondAmt * 10) / 10,
-      bondRate: bondAmt > 0 ? Math.round((bondRateW / bondAmt) * 1000) / 1000 : 0,
-      cdAmount: Math.round(cdAmt * 10) / 10,
-      cdRate: cdAmt > 0 ? Math.round((cdRateW / cdAmt) * 100) / 100 : 0,
-      leverage: shareAmt > 0 ? Math.round(((totalAssets / shareAmt) * 100 - 100) * 10) / 10 : 0,
-    };
+    const nav = Math.round(shareAmt * 10) / 10;
+    const fee = equitySum > 0 ? Math.round((feeW / equitySum) * 10) / 10 : 8;
+    const bondRatio = nav > 0 ? Math.round((bondAmt / nav) * 1000) / 10 : 0;
+    const cdRatio = nav > 0 ? Math.round((cdAmt / nav) * 1000) / 10 : 0;
+    const bondYield = bondAmt > 0 ? Math.round((bondRateW / bondAmt) * 1000) / 1000 : 0;
+    const cdYield = cdAmt > 0 ? Math.round((cdRateW / cdAmt) * 1000) / 1000 : 0;
+    const payload = { nav, fee, bondRatio, cdRatio, bondYield, cdYield };
     try { localStorage.setItem('aimi_repofund_prefill', JSON.stringify(payload)); } catch (e) {}
-    const params = new URLSearchParams({
-      prefill: '1', equity: payload.equity, bondAmount: payload.bondAmount, bondRate: payload.bondRate,
-      cdAmount: payload.cdAmount, cdRate: payload.cdRate, leverage: payload.leverage,
-    });
+    const params = new URLSearchParams({ prefill: '1', nav, fee, bondRatio, cdRatio, bondYield, cdYield });
     window.open(`../apps/repo-fund-simulator.html?${params.toString()}`, '_blank');
   });
 

@@ -64,8 +64,10 @@
   .group-bond { background: var(--teal-soft); }
   .group-cd { background: var(--accent-soft); }
 
-  .link-btn { color: var(--accent); font-weight: 700; text-decoration: underline; cursor: pointer; font-size: 12px; background:none; border:none; }
-  .del-link { color: var(--danger); font-weight: 700; text-decoration: underline; cursor: pointer; font-size: 12px; background:none; border:none; }
+  .link-btn { color: var(--teal); font-weight: 700; cursor: pointer; font-size: 11.5px; background: var(--teal-soft); border: 1px solid #cfe8e2; border-radius: 999px; padding: 5px 12px; }
+  .link-btn:hover { background: #d3ede7; }
+  .del-link { color: #a15a3f; font-weight: 700; cursor: pointer; font-size: 11.5px; background: #fbeee7; border: 1px solid #f0d5c5; border-radius: 999px; padding: 5px 12px; }
+  .del-link:hover { background: #f7e2d4; }
   .restore-link { color: var(--teal); font-weight: 700; text-decoration: underline; cursor: pointer; font-size: 12px; background:none; border:none; }
 
   .excluded-panel {
@@ -123,60 +125,60 @@
 
   // 시드 데이터 설계 기준(데모용):
   //  - 레버리지 = (채권+CD 합계 ÷ 펀드규모) × 100% − 100% 가 대략 100%~300% 사이에 오도록 채권·CD 금액을 세팅
-  //  - CD 금액 비중(CD ÷ 총자산)은 "레버리지 비율의 20% 이상"이 되도록 세팅 (예: 레버리지 160%면 CD비중 32%↑)
+  //  - CD 금액 비중(CD ÷ 총자산)은 "레버리지 비율의 20%~21%" 사이가 되도록 세팅 (예: 레버리지 160%면 CD비중 32%~33.6%)
   function seedData() {
     return {
       companies: ['라온자산', '다인자산', '온새미로자산', '청람자산', '별빛자산', '하늘빛자산', '은하수자산', '미래솔자산', '태양자산', '청명자산'],
       funds: [
         { id: 'raon-1', company: '라온자산', fundName: '라온1호', equity: 480.0, shareRatio: 50, feeBp: 8, repoRate: 3.05,
           bonds: [
-            { name: '기업은행(신)2501이2.5A-20', amount: 257.6, rate: 3.945, md: 0.81 },
-            { name: '기업은행(신)2508이2A-26', amount: 343.5, rate: 3.961, md: 0.91 },
-            { name: '기업은행(신)2407이3A-22', amount: 85.4, rate: 3.947, md: 0.82 },
+            { name: '기업은행(신)2501이2.5A-20', amount: 298.9, rate: 3.945, md: 0.81 },
+            { name: '기업은행(신)2508이2A-26', amount: 398.4, rate: 3.961, md: 0.91 },
+            { name: '기업은행(신)2407이3A-22', amount: 99.1, rate: 3.947, md: 0.82 },
           ],
-          cds: [ { name: 'CD(경남은행자금부20260925-99.3-3)', amount: 369.6, rate: 3.86, md: 0.75 } ] },
+          cds: [ { name: 'CD(경남은행자금부20260925-99.3-3)', amount: 259.8, rate: 3.86, md: 0.75 } ] },
         { id: 'raon-2', company: '라온자산', fundName: '라온2호', equity: 594.5, shareRatio: 50, feeBp: 8, repoRate: 3.05,
           bonds: [
-            { name: '산금24신이0300-0814-3', amount: 465.3, rate: 3.956, md: 0.88 },
-            { name: '산금26신이0106-0121-1', amount: 462.1, rate: 3.947, md: 0.81 },
+            { name: '산금24신이0300-0814-3', amount: 521.1, rate: 3.956, md: 0.88 },
+            { name: '산금26신이0106-0121-1', amount: 517.6, rate: 3.947, md: 0.81 },
           ],
-          cds: [ { name: 'CD(스탠다드차타드은행자금부20260911-74.7-3)', amount: 618.3, rate: 3.30, md: 0.28 } ] },
+          cds: [ { name: 'CD(스탠다드차타드은행자금부20260911-74.7-3)', amount: 507.0, rate: 3.30, md: 0.28 } ] },
         { id: 'dain-1', company: '다인자산', fundName: '다인22호', equity: 998.3, shareRatio: 50, feeBp: 8, repoRate: 3.05,
           bonds: [
-            { name: '기업은행(신)2307이4A-07(사)', amount: 915.1, rate: 3.940, md: 0.77 },
-            { name: '기업은행(신)2507이2A-23', amount: 732.1, rate: 3.947, md: 0.82 },
+            { name: '기업은행(신)2307이4A-07(사)', amount: 981.9, rate: 3.940, md: 0.77 },
+            { name: '기업은행(신)2507이2A-23', amount: 785.5, rate: 3.947, md: 0.82 },
           ],
-          cds: [ { name: 'CD(전북은행자금부20260310-448.3-3)', amount: 1347.7, rate: 3.84, md: 0.78 } ] },
+          cds: [ { name: 'CD(전북은행자금부20260310-448.3-3)', amount: 1227.9, rate: 3.84, md: 0.78 } ] },
         { id: 'onsae-1', company: '온새미로자산', fundName: '온새미로8호', equity: 595.8, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금22신이0500-0715-2', amount: 929.4, rate: 3.945, md: 0.80 } ],
-          cds: [ { name: 'CD(스탠다드차타드은행자금부20260410-99.5-2)', amount: 500.5, rate: 3.25, md: 0.28 } ] },
+          bonds: [ { name: '산금22신이0500-0715-2', amount: 1019.5, rate: 3.945, md: 0.80 } ],
+          cds: [ { name: 'CD(스탠다드차타드은행자금부20260410-99.5-2)', amount: 410.4, rate: 3.25, md: 0.28 } ] },
         { id: 'cheongram-1', company: '청람자산', fundName: '청람19호', equity: 505.3, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금25신이0200-0917-2', amount: 778.2, rate: 3.971, md: 0.97 } ],
-          cds: [ { name: 'CD(경남은행자금부20260917-99.5-3)', amount: 636.7, rate: 3.51, md: 0.33 } ] },
+          bonds: [ { name: '산금25신이0200-0917-2', amount: 892.8, rate: 3.971, md: 0.97 } ],
+          cds: [ { name: 'CD(경남은행자금부20260917-99.5-3)', amount: 522.1, rate: 3.51, md: 0.33 } ] },
         { id: 'byeolbit-1', company: '별빛자산', fundName: '별빛3호', equity: 400.1, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금25신이0200-0912-2', amount: 588.1, rate: 3.968, md: 0.96 } ],
-          cds: [ { name: 'CD(기업은행자금부20260224-448.3-3)', amount: 252.1, rate: 3.28, md: 0.33 } ] },
+          bonds: [ { name: '산금25신이0200-0912-2', amount: 650.7, rate: 3.968, md: 0.96 } ],
+          cds: [ { name: 'CD(기업은행자금부20260224-448.3-3)', amount: 189.5, rate: 3.28, md: 0.33 } ] },
         { id: 'haneulbit-1', company: '하늘빛자산', fundName: '하늘빛5호', equity: 620.0, shareRatio: 50, feeBp: 8, repoRate: 3.05,
           bonds: [
-            { name: '산금22신이0500-0908-2', amount: 826.7, rate: 3.966, md: 0.94 },
-            { name: '기업은행(신)2507이2A-22', amount: 165.3, rate: 3.947, md: 0.82 },
+            { name: '산금22신이0500-0908-2', amount: 907.7, rate: 3.966, md: 0.94 },
+            { name: '기업은행(신)2507이2A-22', amount: 181.5, rate: 3.947, md: 0.82 },
           ],
-          cds: [ { name: 'CD(경남은행자금부20260426-150-2)', amount: 992.0, rate: 3.84, md: 0.75 } ] },
+          cds: [ { name: 'CD(경남은행자금부20260426-150-2)', amount: 894.8, rate: 3.84, md: 0.75 } ] },
         { id: 'eunhasu-1', company: '은하수자산', fundName: '은하수12호', equity: 450.7, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금25신이0200-0711-2', amount: 673.8, rate: 3.943, md: 0.79 } ],
-          cds: [ { name: 'CD(국민은행자금부20260713-74.7-2)', amount: 362.8, rate: 3.16, md: 0.25 } ] },
+          bonds: [ { name: '산금25신이0200-0711-2', amount: 760.3, rate: 3.943, md: 0.79 } ],
+          cds: [ { name: 'CD(국민은행자금부20260713-74.7-2)', amount: 276.3, rate: 3.16, md: 0.25 } ] },
         { id: 'miraesol-1', company: '미래솔자산', fundName: '미래솔7호', equity: 700.2, shareRatio: 50, feeBp: 8, repoRate: 3.05,
           bonds: [
-            { name: '기업은행(신)2507이2A-21', amount: 992.1, rate: 3.946, md: 0.82 },
-            { name: '산금25신이0206-0117-1', amount: 110.7, rate: 3.945, md: 0.80 },
+            { name: '기업은행(신)2507이2A-21', amount: 1074.9, rate: 3.946, md: 0.82 },
+            { name: '산금25신이0206-0117-1', amount: 119.9, rate: 3.945, md: 0.80 },
           ],
-          cds: [ { name: 'CD(국민은행자금부20260411-99.5-2)', amount: 1347.9, rate: 3.25, md: 0.33 } ] },
+          cds: [ { name: 'CD(국민은행자금부20260411-99.5-2)', amount: 1256.0, rate: 3.25, md: 0.33 } ] },
         { id: 'taeyang-1', company: '태양자산', fundName: '태양9호', equity: 380.5, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금22신이0500-0823-1', amount: 616.4, rate: 3.960, md: 0.90 } ],
-          cds: [ { name: 'CD(국민은행자금부20260228-199-3)', amount: 410.9, rate: 3.20, md: 0.25 } ] },
+          bonds: [ { name: '산금22신이0500-0823-1', amount: 669.3, rate: 3.960, md: 0.90 } ],
+          cds: [ { name: 'CD(국민은행자금부20260228-199-3)', amount: 358.0, rate: 3.20, md: 0.25 } ] },
         { id: 'cheongmyeong-1', company: '청명자산', fundName: '청명4호', equity: 512.9, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금25신이0206-0131-2', amount: 818.1, rate: 3.950, md: 0.84 } ],
-          cds: [ { name: 'CD(스탠다드차타드은행자금부20260612-100-2)', amount: 669.3, rate: 3.32, md: 0.28 } ] },
+          bonds: [ { name: '산금25신이0206-0131-2', amount: 908.1, rate: 3.950, md: 0.84 } ],
+          cds: [ { name: 'CD(스탠다드차타드은행자금부20260612-100-2)', amount: 579.3, rate: 3.32, md: 0.28 } ] },
       ],
     };
   }
@@ -263,8 +265,8 @@
 
     const sums = {
       equity: 0, shareAmount: 0,
-      bondAmount: 0, bondRateWeighted: 0, bondPvbp: 0,
-      cdAmount: 0, cdRateWeighted: 0, cdPvbp: 0,
+      bondAmount: 0, bondRateWeighted: 0, bondMDWeighted: 0, bondPvbp: 0,
+      cdAmount: 0, cdRateWeighted: 0, cdMDWeighted: 0, cdPvbp: 0,
       totalAssets: 0, feeWeighted: 0, repoWeighted: 0, netIncome: 0,
     };
     rows.forEach(({ fund, c }) => {
@@ -272,9 +274,11 @@
       sums.shareAmount += c.shareAmount;
       sums.bondAmount += c.bondAmount;
       sums.bondRateWeighted += c.bondAmount * c.bondRate;
+      sums.bondMDWeighted += c.bondAmount * c.bondMD;
       sums.bondPvbp += c.bondPvbp;
       sums.cdAmount += c.cdAmount;
       sums.cdRateWeighted += c.cdAmount * c.cdRate;
+      sums.cdMDWeighted += c.cdAmount * c.cdMD;
       sums.cdPvbp += c.cdPvbp;
       sums.totalAssets += c.totalAssets;
       sums.feeWeighted += fund.equity * fund.feeBp;
@@ -282,7 +286,9 @@
       sums.netIncome += c.netIncome;
     });
     const avgBondRate = sums.bondAmount > 0 ? sums.bondRateWeighted / sums.bondAmount : 0;
+    const avgBondMD = sums.bondAmount > 0 ? sums.bondMDWeighted / sums.bondAmount : 0;
     const avgCdRate = sums.cdAmount > 0 ? sums.cdRateWeighted / sums.cdAmount : 0;
+    const avgCdMD = sums.cdAmount > 0 ? sums.cdMDWeighted / sums.cdAmount : 0;
     const avgLeverage = sums.shareAmount > 0 ? (sums.totalAssets / sums.shareAmount) * 100 - 100 : 0;
     const avgFee = sums.equity > 0 ? sums.feeWeighted / sums.equity : 0;
     const avgRepo = sums.equity > 0 ? sums.repoWeighted / sums.equity : 0;
@@ -346,11 +352,11 @@
           <td>${fmt(sums.shareAmount)}</td>
           <td class="group-bond">${fmt(sums.bondAmount)}</td>
           <td class="group-bond">${fmt(avgBondRate, 2)}%</td>
-          <td class="group-bond">-</td>
+          <td class="group-bond">${fmt(avgBondMD, 2)}</td>
           <td class="group-bond">${fmt(sums.bondPvbp, 2)}</td>
           <td class="group-cd">${fmt(sums.cdAmount)}</td>
           <td class="group-cd">${fmt(avgCdRate, 2)}%</td>
-          <td class="group-cd">-</td>
+          <td class="group-cd">${fmt(avgCdMD, 2)}</td>
           <td class="group-cd">${fmt(sums.cdPvbp, 2)}</td>
           <td>${fmt(avgLeverage, 1)}%</td>
           <td>${fmt(avgRepo, 2)}%</td>
@@ -386,7 +392,10 @@
 
   // "펀드명세" 버튼을 누르면 표 안에서 펼치지 않고, 별도의 새 창을 띄워서 보여준다.
   function openFundDetail(fund, c) {
-    const w = window.open('', 'fund_detail_' + fund.id, 'width=760,height=640,resizable=yes,scrollbars=yes');
+    const winW = 760, winH = 640;
+    const left = Math.round((window.screenX || window.screenLeft || 0) + ((window.outerWidth || screen.width) - winW) / 2);
+    const top = Math.round((window.screenY || window.screenTop || 0) + ((window.outerHeight || screen.height) - winH) / 2);
+    const w = window.open('', 'fund_detail_' + fund.id, `width=${winW},height=${winH},left=${left},top=${top},resizable=yes,scrollbars=yes`);
     if (!w) { alert('팝업이 차단되었습니다. 브라우저의 팝업 차단을 해제한 뒤 다시 시도해주세요.'); return; }
     const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
 <title>${fund.company} · ${fund.fundName} 명세</title>

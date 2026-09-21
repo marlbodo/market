@@ -227,11 +227,11 @@
 
       <div class="spec-cols">
         <div>
-          <h3><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M6.5 7v8.5"/></svg> 채권 명세 현황</h3>
+          <h3><svg viewBox="0 0 18 18" fill="currentColor"><rect x="2.5" y="9" width="3" height="6.5" rx="1"/><rect x="7.5" y="5.5" width="3" height="10" rx="1"/><rect x="12.5" y="2.5" width="3" height="13" rx="1"/></svg> 채권 명세 현황</h3>
           <table class="spec-table" id="bondSpecTable"></table>
         </div>
         <div>
-          <h3><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M6.5 7v8.5"/></svg> CD 명세 현황</h3>
+          <h3><svg viewBox="0 0 18 18" fill="currentColor"><rect x="2.5" y="9" width="3" height="6.5" rx="1"/><rect x="7.5" y="5.5" width="3" height="10" rx="1"/><rect x="12.5" y="2.5" width="3" height="13" rx="1"/></svg> CD 명세 현황</h3>
           <table class="spec-table" id="cdSpecTable"></table>
         </div>
       </div>
@@ -328,7 +328,11 @@
   // 참고: 대시보드(admin.html)에서는 채권/CD 금액·레버리지·연간수익을 "수익자분" 기준으로
   // 다시 계산해서 보여준다. 이 입력 화면은 운용사가 펀드 전체 명세를 입력하는 화면이라
   // 레버리지 미리보기는 펀드 전체 기준(총자산/펀드규모)으로 참고용으로만 보여준다.
+  // 레버리지 = (채권+CD 수익자분) ÷ 수익자분 × 100% − 100% (admin.html 대시보드와 동일한 정의)
   function computeFund(fund) {
+    const scale = fund.shareRatio / 100;
+    const shareAmount = fund.equity * scale;
+
     const bondAmount = fund.bonds.reduce((s, b) => s + b.amount, 0);
     const bondRate = weightedAvg(fund.bonds, 'rate');
     const bondMD = weightedAvg(fund.bonds, 'md');
@@ -340,14 +344,16 @@
     const cdPvbp = pvbp(cdAmount, cdMD);
 
     const totalAssets = bondAmount + cdAmount;
-    const leverage = fund.equity > 0 ? (totalAssets / fund.equity) * 100 - 100 : 0;
+    const bondShare = bondAmount * scale;
+    const cdShare = cdAmount * scale;
+    const totalAssetsShare = bondShare + cdShare;
+    const leverage = shareAmount > 0 ? (totalAssetsShare / shareAmount) * 100 - 100 : 0;
 
     const assetIncome = bondAmount * bondRate / 100 + cdAmount * cdRate / 100;
     const fundingCost = Math.max(totalAssets - fund.equity, 0) * fund.repoRate / 100;
     const feeCost = fund.equity * fund.feeBp / 10000;
     const netIncome = assetIncome - fundingCost - feeCost;
     const expectedYield = fund.equity > 0 ? (netIncome / fund.equity) * 100 : 0;
-    const shareAmount = fund.equity * fund.shareRatio / 100;
 
     return { bondAmount, bondRate, bondMD, bondPvbp, cdAmount, cdRate, cdMD, cdPvbp, totalAssets, leverage, netIncome, expectedYield, shareAmount };
   }

@@ -125,7 +125,8 @@
   /* 채권/CD 명세 현황을 나란히(좌우) 배치 */
   .spec-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; }
   @media (max-width: 800px) { .spec-cols { grid-template-columns: 1fr; } }
-  .spec-cols h3 { font-size: 13px; margin: 0 0 8px; }
+  .spec-cols h3 { font-size: 13px; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+  .spec-cols h3 svg { width: 14px; height: 14px; color: var(--teal); flex: none; }
 
   table.spec-table { width: 100%; border-collapse: collapse; margin-top: 0; font-size: 12.5px; }
   table.spec-table th, table.spec-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: center; }
@@ -226,11 +227,11 @@
 
       <div class="spec-cols">
         <div>
-          <h3>📊 채권 명세 현황</h3>
+          <h3><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M6.5 7v8.5"/></svg> 채권 명세 현황</h3>
           <table class="spec-table" id="bondSpecTable"></table>
         </div>
         <div>
-          <h3>📊 CD 명세 현황</h3>
+          <h3><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="13" height="13" rx="1.5"/><path d="M2.5 7h13M6.5 7v8.5"/></svg> CD 명세 현황</h3>
           <table class="spec-table" id="cdSpecTable"></table>
         </div>
       </div>

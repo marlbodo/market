@@ -340,7 +340,7 @@
     const cdPvbp = pvbp(cdAmount, cdMD);
 
     const totalAssets = bondAmount + cdAmount;
-    const leverage = fund.equity > 0 ? (totalAssets / fund.equity) * 100 : 0;
+    const leverage = fund.equity > 0 ? (totalAssets / fund.equity) * 100 - 100 : 0;
 
     const assetIncome = bondAmount * bondRate / 100 + cdAmount * cdRate / 100;
     const fundingCost = Math.max(totalAssets - fund.equity, 0) * fund.repoRate / 100;
@@ -418,6 +418,7 @@
       <div><span class="label">펀드규모</span><span class="value">${fund.equity.toLocaleString('ko-KR')}억</span></div>
       <div><span class="label">총보수</span><span class="value">${fund.feeBp}bp</span></div>
       <div><span class="label">지분율</span><span class="value">${fund.shareRatio}%</span></div>
+      <div><span class="label">수익자분</span><span class="value">${(fund.equity * fund.shareRatio / 100).toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}억</span></div>
     `;
   }
 

@@ -197,7 +197,7 @@
             <h3>📄 채권 명세 (종목명 · 금액 · 금리 · MD)</h3>
             <button class="clear-btn" id="clearBondBtn" type="button">전체 지우기</button>
           </div>
-          <textarea class="asset-textarea" id="bondInput" placeholder="예)&#10;채권1  100  3.945  0.81&#10;채권2  100  3.961  0.91"></textarea>
+          <textarea class="asset-textarea" id="bondInput" placeholder="예)&#10;채권1  130  3.945  0.81&#10;채권2  130  3.961  0.91"></textarea>
           <div class="hint">종목명 / 금액(억) / 금리(%) / MD(듀레이션) 순서. <strong>공백 또는 엑셀 붙여넣기(탭)</strong> 모두 지원합니다.</div>
         </div>
         <div>
@@ -205,7 +205,7 @@
             <h3>📄 CD 명세 (종목명 · 금액 · 금리 · MD)</h3>
             <button class="clear-btn" id="clearCdBtn" type="button">전체 지우기</button>
           </div>
-          <textarea class="asset-textarea" id="cdInput" placeholder="예)&#10;CD1  400  3.30  0.28"></textarea>
+          <textarea class="asset-textarea" id="cdInput" placeholder="예)&#10;CD1  40  3.30  0.28"></textarea>
           <div class="hint">종목명 / 금액(억) / 금리(%) / MD 순서. <strong>공백 또는 엑셀 붙여넣기(탭)</strong> 모두 지원합니다.</div>
         </div>
       </div>
@@ -248,55 +248,55 @@
     return {
       companies: ['라온자산', '다인자산', '온새미로자산', '청람자산', '별빛자산', '하늘빛자산', '은하수자산', '미래솔자산', '태양자산', '청명자산'],
       funds: [
-        { id: 'raon-1', company: '라온자산', fundName: '라온1호', equity: 480.0, shareRatio: 50, feeBp: 8, repoRate: 3.05,
+        { id: 'raon-1', company: '라온자산', fundName: '라온1호', equity: 480.0, shareRatio: 30, feeBp: 8, repoRate: 3.05,
           bonds: [
-            { name: '기업은행(신)2501이2.5A-20', amount: 308.0, rate: 3.945, md: 0.81 },
-            { name: '기업은행(신)2508이2A-26', amount: 410.7, rate: 3.961, md: 0.91 },
-            { name: '기업은행(신)2407이3A-22', amount: 102.1, rate: 3.947, md: 0.82 },
+            { name: '기업은행(신)2501이2.5A-20', amount: 468.3, rate: 3.945, md: 0.81 },
+            { name: '기업은행(신)2508이2A-26', amount: 624.5, rate: 3.961, md: 0.91 },
+            { name: '기업은행(신)2407이3A-22', amount: 155.2, rate: 3.947, md: 0.82 },
           ],
-          cds: [ { name: 'CD(경남은행자금부20260925-99.3-3)', amount: 619.2, rate: 3.86, md: 0.75 } ] },
-        { id: 'raon-2', company: '라온자산', fundName: '라온2호', equity: 594.5, shareRatio: 50, feeBp: 8, repoRate: 3.05,
+          cds: [ { name: 'CD(경남은행자금부20260925-99.3-3)', amount: 192.0, rate: 3.86, md: 0.75 } ] },
+        { id: 'raon-2', company: '라온자산', fundName: '라온2호', equity: 594.5, shareRatio: 32, feeBp: 8, repoRate: 3.05,
           bonds: [
-            { name: '산금24신이0300-0814-3', amount: 507.1, rate: 3.956, md: 0.88 },
-            { name: '산금26신이0106-0121-1', amount: 503.8, rate: 3.947, md: 0.81 },
+            { name: '산금24신이0300-0814-3', amount: 799.2, rate: 3.956, md: 0.88 },
+            { name: '산금26신이0106-0121-1', amount: 794.0, rate: 3.947, md: 0.81 },
           ],
-          cds: [ { name: 'CD(스탠다드차타드은행자금부20260911-74.7-3)', amount: 832.1, rate: 3.30, md: 0.28 } ] },
-        { id: 'dain-1', company: '다인자산', fundName: '다인22호', equity: 998.3, shareRatio: 50, feeBp: 8, repoRate: 3.05,
+          cds: [ { name: 'CD(스탠다드차타드은행자금부20260911-74.7-3)', amount: 249.7, rate: 3.30, md: 0.28 } ] },
+        { id: 'dain-1', company: '다인자산', fundName: '다인22호', equity: 998.3, shareRatio: 34, feeBp: 8, repoRate: 3.05,
           bonds: [
-            { name: '기업은행(신)2307이4A-07(사)', amount: 935.4, rate: 3.940, md: 0.77 },
-            { name: '기업은행(신)2507이2A-23', amount: 748.3, rate: 3.947, md: 0.82 },
+            { name: '기업은행(신)2307이4A-07(사)', amount: 1530.7, rate: 3.940, md: 0.77 },
+            { name: '기업은행(신)2507이2A-23', amount: 1224.6, rate: 3.947, md: 0.82 },
           ],
-          cds: [ { name: 'CD(전북은행자금부20260310-448.3-3)', amount: 1511.0, rate: 3.84, md: 0.78 } ] },
-        { id: 'onsae-1', company: '온새미로자산', fundName: '온새미로8호', equity: 595.8, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금22신이0500-0715-2', amount: 993.7, rate: 3.945, md: 0.80 } ],
-          cds: [ { name: 'CD(스탠다드차타드은행자금부20260410-99.5-2)', amount: 972.4, rate: 3.25, md: 0.28 } ] },
-        { id: 'cheongram-1', company: '청람자산', fundName: '청람19호', equity: 505.3, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금25신이0200-0917-2', amount: 831.5, rate: 3.971, md: 0.97 } ],
-          cds: [ { name: 'CD(경남은행자금부20260917-99.5-3)', amount: 886.5, rate: 3.51, md: 0.33 } ] },
-        { id: 'byeolbit-1', company: '별빛자산', fundName: '별빛3호', equity: 400.1, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금25신이0200-0912-2', amount: 647.7, rate: 3.968, md: 0.96 } ],
-          cds: [ { name: 'CD(기업은행자금부20260224-448.3-3)', amount: 752.7, rate: 3.28, md: 0.33 } ] },
-        { id: 'haneulbit-1', company: '하늘빛자산', fundName: '하늘빛5호', equity: 620.0, shareRatio: 50, feeBp: 8, repoRate: 3.05,
+          cds: [ { name: 'CD(전북은행자금부20260310-448.3-3)', amount: 439.3, rate: 3.84, md: 0.78 } ] },
+        { id: 'onsae-1', company: '온새미로자산', fundName: '온새미로8호', equity: 595.8, shareRatio: 36, feeBp: 8, repoRate: 3.05,
+          bonds: [ { name: '산금22신이0500-0715-2', amount: 1692.1, rate: 3.945, md: 0.80 } ],
+          cds: [ { name: 'CD(스탠다드차타드은행자금부20260410-99.5-2)', amount: 274.1, rate: 3.25, md: 0.28 } ] },
+        { id: 'cheongram-1', company: '청람자산', fundName: '청람19호', equity: 505.3, shareRatio: 38, feeBp: 8, repoRate: 3.05,
+          bonds: [ { name: '산금25신이0200-0917-2', amount: 1475.5, rate: 3.971, md: 0.97 } ],
+          cds: [ { name: 'CD(경남은행자금부20260917-99.5-3)', amount: 242.6, rate: 3.51, md: 0.33 } ] },
+        { id: 'byeolbit-1', company: '별빛자산', fundName: '별빛3호', equity: 400.1, shareRatio: 40, feeBp: 8, repoRate: 3.05,
+          bonds: [ { name: '산금25신이0200-0912-2', amount: 1200.3, rate: 3.968, md: 0.96 } ],
+          cds: [ { name: 'CD(기업은행자금부20260224-448.3-3)', amount: 200.1, rate: 3.28, md: 0.33 } ] },
+        { id: 'haneulbit-1', company: '하늘빛자산', fundName: '하늘빛5호', equity: 620.0, shareRatio: 42, feeBp: 8, repoRate: 3.05,
           bonds: [
-            { name: '산금22신이0500-0908-2', amount: 820.2, rate: 3.966, md: 0.94 },
-            { name: '기업은행(신)2507이2A-22', amount: 164.0, rate: 3.947, md: 0.82 },
+            { name: '산금22신이0500-0908-2', amount: 1591.4, rate: 3.966, md: 0.94 },
+            { name: '기업은행(신)2507이2A-22', amount: 318.2, rate: 3.947, md: 0.82 },
           ],
-          cds: [ { name: 'CD(경남은행자금부20260426-150-2)', amount: 1247.7, rate: 3.84, md: 0.75 } ] },
-        { id: 'eunhasu-1', company: '은하수자산', fundName: '은하수12호', equity: 450.7, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금25신이0200-0711-2', amount: 699.5, rate: 3.943, md: 0.79 } ],
-          cds: [ { name: 'CD(국민은행자금부20260713-74.7-2)', amount: 968.1, rate: 3.16, md: 0.25 } ] },
-        { id: 'miraesol-1', company: '미래솔자산', fundName: '미래솔7호', equity: 700.2, shareRatio: 50, feeBp: 8, repoRate: 3.05,
+          cds: [ { name: 'CD(경남은행자금부20260426-150-2)', amount: 322.4, rate: 3.84, md: 0.75 } ] },
+        { id: 'eunhasu-1', company: '은하수자산', fundName: '은하수12호', equity: 450.7, shareRatio: 44, feeBp: 8, repoRate: 3.05,
+          bonds: [ { name: '산금25신이0200-0711-2', amount: 1424.2, rate: 3.943, md: 0.79 } ],
+          cds: [ { name: 'CD(국민은행자금부20260713-74.7-2)', amount: 243.4, rate: 3.16, md: 0.25 } ] },
+        { id: 'miraesol-1', company: '미래솔자산', fundName: '미래솔7호', equity: 700.2, shareRatio: 46, feeBp: 8, repoRate: 3.05,
           bonds: [
-            { name: '기업은행(신)2507이2A-21', amount: 952.7, rate: 3.946, md: 0.82 },
-            { name: '산금25신이0206-0117-1', amount: 106.2, rate: 3.945, md: 0.80 },
+            { name: '기업은행(신)2507이2A-21', amount: 2041.1, rate: 3.946, md: 0.82 },
+            { name: '산금25신이0206-0117-1', amount: 227.5, rate: 3.945, md: 0.80 },
           ],
-          cds: [ { name: 'CD(국민은행자금부20260411-99.5-2)', amount: 1601.8, rate: 3.25, md: 0.33 } ] },
-        { id: 'taeyang-1', company: '태양자산', fundName: '태양9호', equity: 380.5, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금22신이0500-0823-1', amount: 558.7, rate: 3.960, md: 0.90 } ],
-          cds: [ { name: 'CD(국민은행자금부20260228-199-3)', amount: 925.3, rate: 3.20, md: 0.25 } ] },
+          cds: [ { name: 'CD(국민은행자금부20260411-99.5-2)', amount: 392.2, rate: 3.25, md: 0.33 } ] },
+        { id: 'taeyang-1', company: '태양자산', fundName: '태양9호', equity: 380.5, shareRatio: 48, feeBp: 8, repoRate: 3.05,
+          bonds: [ { name: '산금22신이0500-0823-1', amount: 1263.3, rate: 3.960, md: 0.90 } ],
+          cds: [ { name: 'CD(국민은행자금부20260228-199-3)', amount: 220.7, rate: 3.20, md: 0.25 } ] },
         { id: 'cheongmyeong-1', company: '청명자산', fundName: '청명4호', equity: 512.9, shareRatio: 50, feeBp: 8, repoRate: 3.05,
-          bonds: [ { name: '산금25신이0206-0131-2', amount: 728.3, rate: 3.950, md: 0.84 } ],
-          cds: [ { name: 'CD(스탠다드차타드은행자금부20260612-100-2)', amount: 1323.3, rate: 3.32, md: 0.28 } ] },
+          bonds: [ { name: '산금25신이0206-0131-2', amount: 1743.9, rate: 3.950, md: 0.84 } ],
+          cds: [ { name: 'CD(스탠다드차타드은행자금부20260612-100-2)', amount: 307.8, rate: 3.32, md: 0.28 } ] },
       ],
     };
   }

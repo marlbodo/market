@@ -513,7 +513,10 @@
     const totalPvbp = pvbp(totalAmount, totalMD);
 
     const winName = 'all_assets_' + kind;
-    const w = window.open('', winName, 'width=820,height=680,resizable=yes,scrollbars=yes');
+    const winW = 820, winH = 680;
+    const left = Math.round((window.screenX || window.screenLeft || 0) + ((window.outerWidth || screen.width) - winW) / 2);
+    const top = Math.round((window.screenY || window.screenTop || 0) + ((window.outerHeight || screen.height) - winH) / 2);
+    const w = window.open('', winName, `width=${winW},height=${winH},left=${left},top=${top},resizable=yes,scrollbars=yes`);
     if (!w) { alert('팝업이 차단되었습니다. 브라우저의 팝업 차단을 해제한 뒤 다시 시도해주세요.'); return; }
 
     const bodyRows = items.map((it) => `

@@ -91,6 +91,42 @@
     margin-bottom: 16px; line-height: 1.65;
   }
   .assumption-note strong { color: #14432a; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(20,23,31,0.45);
+    display: flex; align-items: center; justify-content: center; z-index: 1000;
+  }
+  .modal-box {
+    background: #fff; border-radius: 12px; width: 480px; max-width: 92vw;
+    max-height: 82vh; display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 12px 36px rgba(20,23,31,0.25);
+  }
+  .modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+  }
+  .modal-head h3 { margin: 0; font-size: 15.5px; }
+  .modal-close { border: none; background: none; font-size: 16px; color: var(--ink-soft); cursor: pointer; padding: 2px 6px; }
+  .modal-close:hover { color: var(--ink); }
+  .modal-body { padding: 16px 20px; overflow-y: auto; }
+  .company-add-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .company-add-row input {
+    flex: 1; border: 1px solid var(--border-strong); border-radius: 6px;
+    padding: 8px 10px; font-size: 13px; font-family: inherit;
+  }
+  .company-list { display: flex; flex-direction: column; gap: 8px; }
+  .company-row {
+    display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px;
+  }
+  .company-row .name { font-weight: 700; }
+  .company-row .fund-count { color: var(--ink-soft); font-size: 12px; margin-left: 8px; }
+  .company-row .del-company-btn {
+    background: var(--danger-soft); color: var(--danger); border: 1px solid #f0c1b4;
+    border-radius: 999px; padding: 4px 11px; font-size: 11.5px; font-weight: 700; cursor: pointer;
+  }
+  .company-row .del-company-btn:hover { background: #f7ded4; }
+  .company-empty { color: var(--ink-soft); font-size: 12.5px; padding: 10px 2px; }
 </style>
 </head>
 <body>
@@ -108,6 +144,7 @@
       수익자 통합 집계 대시보드 <span style="font-size:13px;font-weight:400;color:var(--ink-soft);">(데모)</span>
     </h1>
     <div class="top-actions">
+      <button class="btn btn-ghost" id="manageCompanyBtn">🏢 운용사 관리</button>
       <button class="btn btn-ghost" id="refreshBtn">↻ 새로고침</button>
       <button class="btn btn-ghost" id="exportExcelBtn">⬇ 엑셀로 저장</button>
       <button class="btn btn-primary" id="gotoSimulatorBtn">🧮 레포펀드 시뮬레이터로 가기</button>
@@ -130,6 +167,22 @@
   </div>
 
   <div id="excludedPanel" class="excluded-panel" style="display:none;"></div>
+
+  <div id="companyModalOverlay" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>🏢 운용사 관리 (등록 / 삭제)</h3>
+        <button class="modal-close" id="companyModalCloseBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="company-add-row">
+          <input type="text" id="newCompanyNameInput" placeholder="신규 운용사명 입력">
+          <button class="btn btn-primary" id="addCompanyModalBtn">등록</button>
+        </div>
+        <div class="company-list" id="companyListBox"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -207,6 +260,10 @@
     const seed = seedData();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(seed)); } catch (e) {}
     return seed;
+  }
+
+  function saveState(state) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { console.warn('demo storage write failed', e); }
   }
 
   function loadExcluded() {
@@ -476,6 +533,77 @@
       });
     });
   }
+
+  // ── 운용사 관리 (등록/삭제) ────────────────────────────────────
+  function renderCompanyModal() {
+    const state = loadState();
+    const box = document.getElementById('companyListBox');
+    const companies = state.companies || [];
+    if (companies.length === 0) {
+      box.innerHTML = `<div class="company-empty">등록된 운용사가 없습니다.</div>`;
+      return;
+    }
+    box.innerHTML = companies.map((name) => {
+      const fundCount = (state.funds || []).filter((f) => f.company === name).length;
+      return `
+        <div class="company-row">
+          <div><span class="name">${name}</span><span class="fund-count">(펀드 ${fundCount}개)</span></div>
+          <button class="del-company-btn" data-del-company="${name}">삭제</button>
+        </div>
+      `;
+    }).join('');
+
+    box.querySelectorAll('[data-del-company]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const name = btn.dataset.delCompany;
+        const s = loadState();
+        const relatedFunds = (s.funds || []).filter((f) => f.company === name);
+        if (relatedFunds.length > 0) {
+          if (!confirm(`'${name}' 운용사에는 펀드 ${relatedFunds.length}개가 등록되어 있습니다.\n운용사를 삭제하면 소속된 펀드도 함께 삭제됩니다. 계속할까요?`)) return;
+          s.funds = s.funds.filter((f) => f.company !== name);
+        } else {
+          if (!confirm(`'${name}' 운용사를 삭제할까요?`)) return;
+        }
+        s.companies = s.companies.filter((c) => c !== name);
+        saveState(s);
+        excludedIds = new Set([...excludedIds].filter((id) => s.funds.some((f) => f.id === id)));
+        saveExcluded(excludedIds);
+        renderCompanyModal();
+        render();
+      });
+    });
+  }
+
+  function openCompanyModal() {
+    document.getElementById('newCompanyNameInput').value = '';
+    renderCompanyModal();
+    document.getElementById('companyModalOverlay').style.display = 'flex';
+  }
+  function closeCompanyModal() {
+    document.getElementById('companyModalOverlay').style.display = 'none';
+  }
+
+  document.getElementById('manageCompanyBtn').addEventListener('click', openCompanyModal);
+  document.getElementById('companyModalCloseBtn').addEventListener('click', closeCompanyModal);
+  document.getElementById('companyModalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'companyModalOverlay') closeCompanyModal();
+  });
+
+  document.getElementById('addCompanyModalBtn').addEventListener('click', () => {
+    const input = document.getElementById('newCompanyNameInput');
+    const name = input.value.trim();
+    if (!name) { alert('운용사명을 입력해주세요.'); return; }
+    const state = loadState();
+    if ((state.companies || []).includes(name)) { alert('이미 등록된 운용사명입니다.'); return; }
+    state.companies.push(name);
+    saveState(state);
+    input.value = '';
+    renderCompanyModal();
+    render();
+  });
+  document.getElementById('newCompanyNameInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('addCompanyModalBtn').click();
+  });
 
   document.getElementById('refreshBtn').addEventListener('click', render);
   document.getElementById('closeBtn').addEventListener('click', () => {

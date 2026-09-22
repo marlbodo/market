@@ -534,22 +534,29 @@
 <title>전체 ${label} 명세 (수익자분 기준)</title>
 <style>
   * { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
-  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;line-height:1.5;color:#14171f;background:#f6f7f9;margin:0;padding:18px;}
-  @media (max-width:640px){ body{ padding:14px; } }
-  h2{font-size:18px;margin:0 0 6px;}
-  .sub{font-size:13px;color:#5b5f6b;margin-bottom:16px;line-height:1.6;}
+  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;line-height:1.5;color:#14171f;background:#f6f7f9;margin:0;padding:24px;}
+  h2{font-size:16px;margin:0 0 4px;}
+  .sub{font-size:12px;color:#5b5f6b;margin-bottom:16px;line-height:1.6;}
   .top-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
-  .btn{border:none;border-radius:8px;padding:9px 16px;font-size:13.5px;font-weight:700;cursor:pointer;}
+  .btn{border:none;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;}
   .btn-primary{background:#0f7a6b;color:#fff;}
   .btn-primary:hover{background:#0b6357;}
   .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;background:#fff;border:1px solid #e6e8ec;}
-  table{width:100%;min-width:520px;border-collapse:collapse;font-size:14px;}
-  th,td{border:1px solid #e6e8ec;padding:10px 8px;text-align:center;white-space:nowrap;}
+  table{width:100%;min-width:520px;border-collapse:collapse;font-size:12px;}
+  th,td{border:1px solid #e6e8ec;padding:6px 8px;text-align:center;white-space:nowrap;}
   td:first-child, th:first-child{text-align:left;}
-  thead th{background:#f6f7f9;font-weight:700;color:#5b5f6b;font-size:12.5px;}
+  thead th{background:#f6f7f9;font-weight:700;color:#5b5f6b;}
   tfoot td{font-weight:700;background:#f6f7f9;}
-  .close-btn{display:block;width:100%;margin:20px auto 0;border:1px solid #d6dae1;background:#fff;color:#5b5f6b;border-radius:8px;padding:13px 14px;font-size:15px;font-weight:700;cursor:pointer;}
-  @media (min-width:641px){ .close-btn{ width:auto; min-width:120px; padding:9px 20px; } }
+  .close-btn{display:block;margin:18px auto 0;border:1px solid #d6dae1;background:#fff;color:#5b5f6b;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;}
+  @media (max-width:640px){
+    body{ padding:14px; font-size:15px; }
+    h2{ font-size:18px; }
+    .sub{ font-size:13px; }
+    table{ font-size:14px; }
+    th,td{ padding:10px 8px; }
+    .btn{ font-size:13.5px; padding:9px 16px; }
+    .close-btn{ width:100%; font-size:15px; padding:13px 14px; }
+  }
 </style></head><body>
   <h2>전체 ${label} 명세 (수익자분 기준)</h2>
   <div class="sub">집계 대상 펀드 전체를 합산했습니다 (같은 종목은 하나로 합침) · 현재 대시보드에서 "제외"한 펀드는 포함되지 않습니다.</div>
@@ -603,21 +610,30 @@
 <title>${fund.company} · ${fund.fundName} 명세</title>
 <style>
   * { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
-  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;line-height:1.5;color:#14171f;background:#f6f7f9;margin:0;padding:18px;}
-  h2{font-size:19px;margin:0 0 6px;}
-  .sub{font-size:13px;color:#5b5f6b;margin-bottom:18px;line-height:1.6;}
+  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;line-height:1.5;color:#14171f;background:#f6f7f9;margin:0;padding:24px;}
+  h2{font-size:16px;margin:0 0 4px;}
+  .sub{font-size:12px;color:#5b5f6b;margin-bottom:18px;line-height:1.6;}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-  @media (max-width:640px){ .grid{ grid-template-columns:1fr; gap:22px; } body{ padding:14px; } h2{ font-size:18px; } }
-  h4{font-size:14px;margin:0 0 8px;color:#5b5f6b;}
+  h4{font-size:12.5px;margin:0 0 8px;color:#5b5f6b;}
   .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;}
-  table{width:100%;min-width:320px;border-collapse:collapse;font-size:14px;background:#fff;}
-  th,td{border:1px solid #e6e8ec;padding:10px 8px;text-align:center;white-space:nowrap;}
+  table{width:100%;min-width:320px;border-collapse:collapse;font-size:12px;background:#fff;}
+  th,td{border:1px solid #e6e8ec;padding:6px 8px;text-align:center;white-space:nowrap;}
   td:first-child{text-align:left;}
-  thead th{background:#f6f7f9;font-weight:700;color:#5b5f6b;font-size:12.5px;}
+  thead th{background:#f6f7f9;font-weight:700;color:#5b5f6b;}
   tfoot td{font-weight:700;background:#f6f7f9;}
-  .footnote{font-size:13.5px;color:#5b5f6b;margin-top:20px;background:#fff;border:1px solid #e6e8ec;border-radius:8px;padding:14px 16px;line-height:1.8;}
-  .close-btn{display:block;width:100%;margin:20px auto 0;border:1px solid #d6dae1;background:#fff;color:#5b5f6b;border-radius:8px;padding:13px 14px;font-size:15px;font-weight:700;cursor:pointer;}
-  @media (min-width:641px){ .close-btn{ width:auto; min-width:120px; padding:9px 20px; } }
+  .footnote{font-size:12px;color:#5b5f6b;margin-top:18px;background:#fff;border:1px solid #e6e8ec;border-radius:8px;padding:12px 14px;line-height:1.7;}
+  .close-btn{display:block;margin:18px auto 0;border:1px solid #d6dae1;background:#fff;color:#5b5f6b;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;}
+  @media (max-width:640px){
+    .grid{ grid-template-columns:1fr; gap:22px; }
+    body{ padding:14px; font-size:15px; }
+    h2{ font-size:18px; }
+    .sub{ font-size:13px; }
+    h4{ font-size:14px; }
+    table{ font-size:14px; }
+    th,td{ padding:10px 8px; }
+    .footnote{ font-size:13.5px; }
+    .close-btn{ width:100%; font-size:15px; padding:13px 14px; }
+  }
 </style></head><body>
   <h2>${fund.company} · ${fund.fundName}</h2>
   <div class="sub">펀드규모 ${fmt(fund.equity)}억 · 지분율 ${fund.shareRatio}% · 총보수 ${fund.feeBp}bp · Repo 조달금리 ${fmt(fund.repoRate, 2)}%</div>

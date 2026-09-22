@@ -471,34 +471,38 @@
     const w = window.open('', 'fund_detail_' + fund.id, `width=${winW},height=${winH},left=${left},top=${top},resizable=yes,scrollbars=yes`);
     if (!w) { alert('팝업이 차단되었습니다. 브라우저의 팝업 차단을 해제한 뒤 다시 시도해주세요.'); return; }
     const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>${fund.company} · ${fund.fundName} 명세</title>
 <style>
-  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;color:#14171f;background:#f6f7f9;margin:0;padding:24px;}
-  h2{font-size:16px;margin:0 0 4px;}
-  .sub{font-size:12px;color:#5b5f6b;margin-bottom:18px;}
+  * { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
+  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;line-height:1.5;color:#14171f;background:#f6f7f9;margin:0;padding:18px;}
+  h2{font-size:19px;margin:0 0 6px;}
+  .sub{font-size:13px;color:#5b5f6b;margin-bottom:18px;line-height:1.6;}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-  @media (max-width:640px){ .grid{ grid-template-columns:1fr; } }
-  h4{font-size:12.5px;margin:0 0 8px;color:#5b5f6b;}
-  table{width:100%;border-collapse:collapse;font-size:12px;background:#fff;}
-  th,td{border:1px solid #e6e8ec;padding:6px 8px;text-align:center;}
+  @media (max-width:640px){ .grid{ grid-template-columns:1fr; gap:22px; } body{ padding:14px; } h2{ font-size:18px; } }
+  h4{font-size:14px;margin:0 0 8px;color:#5b5f6b;}
+  .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;}
+  table{width:100%;min-width:320px;border-collapse:collapse;font-size:14px;background:#fff;}
+  th,td{border:1px solid #e6e8ec;padding:10px 8px;text-align:center;white-space:nowrap;}
   td:first-child{text-align:left;}
-  thead th{background:#f6f7f9;font-weight:700;color:#5b5f6b;}
+  thead th{background:#f6f7f9;font-weight:700;color:#5b5f6b;font-size:12.5px;}
   tfoot td{font-weight:700;background:#f6f7f9;}
-  .footnote{font-size:12px;color:#5b5f6b;margin-top:18px;background:#fff;border:1px solid #e6e8ec;border-radius:8px;padding:12px 14px;line-height:1.7;}
-  .close-btn{display:block;margin:18px auto 0;border:1px solid #d6dae1;background:#fff;color:#5b5f6b;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .footnote{font-size:13.5px;color:#5b5f6b;margin-top:20px;background:#fff;border:1px solid #e6e8ec;border-radius:8px;padding:14px 16px;line-height:1.8;}
+  .close-btn{display:block;width:100%;margin:20px auto 0;border:1px solid #d6dae1;background:#fff;color:#5b5f6b;border-radius:8px;padding:13px 14px;font-size:15px;font-weight:700;cursor:pointer;}
+  @media (min-width:641px){ .close-btn{ width:auto; min-width:120px; padding:9px 20px; } }
 </style></head><body>
   <h2>${fund.company} · ${fund.fundName}</h2>
   <div class="sub">펀드규모 ${fmt(fund.equity)}억 · 지분율 ${fund.shareRatio}% · 총보수 ${fund.feeBp}bp · Repo 조달금리 ${fmt(fund.repoRate, 2)}%</div>
   <div class="grid">
     <div>
       <h4>📄 채권 명세 (펀드 전체 기준)</h4>
-      <table><thead><tr><th>종목명</th><th>금액(억)</th><th>금리</th><th>MD</th></tr></thead>
-      <tbody>${fund.bonds.map(specRow).join('') || '<tr><td colspan="4">데이터 없음</td></tr>'}</tbody></table>
+      <div class="table-wrap"><table><thead><tr><th>종목명</th><th>금액(억)</th><th>금리</th><th>MD</th></tr></thead>
+      <tbody>${fund.bonds.map(specRow).join('') || '<tr><td colspan="4">데이터 없음</td></tr>'}</tbody></table></div>
     </div>
     <div>
       <h4>📄 CD 명세 (펀드 전체 기준)</h4>
-      <table><thead><tr><th>종목명</th><th>금액(억)</th><th>금리</th><th>MD</th></tr></thead>
-      <tbody>${fund.cds.map(specRow).join('') || '<tr><td colspan="4">데이터 없음</td></tr>'}</tbody></table>
+      <div class="table-wrap"><table><thead><tr><th>종목명</th><th>금액(억)</th><th>금리</th><th>MD</th></tr></thead>
+      <tbody>${fund.cds.map(specRow).join('') || '<tr><td colspan="4">데이터 없음</td></tr>'}</tbody></table></div>
     </div>
   </div>
   <div class="footnote">

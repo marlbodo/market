@@ -59,13 +59,17 @@
   table.dash td.left { text-align: left; }
   table.dash tbody tr:hover td { background: #f2f5fa; }
   table.dash tfoot td { font-weight: 700; background: var(--bg-subtle); }
+  table.dash tfoot td.group-share { background: var(--amber-soft); }
   table.dash tbody tr.excluded-row td { opacity: 0.45; text-decoration: line-through; }
 
   .group-bond { background: var(--teal-soft); }
   .group-cd { background: var(--accent-soft); }
+  .group-share { background: var(--amber-soft); font-weight: 700; color: #7a4e0a; }
 
   .link-btn { color: var(--teal); font-weight: 700; cursor: pointer; font-size: 11.5px; background: var(--teal-soft); border: 1px solid #cfe8e2; border-radius: 999px; padding: 5px 12px; }
   .link-btn:hover { background: #d3ede7; }
+  .link-btn-accent { color: var(--accent); font-weight: 700; cursor: pointer; font-size: 11.5px; background: var(--accent-soft); border: 1px solid #cfdcf3; border-radius: 999px; padding: 5px 12px; }
+  .link-btn-accent:hover { background: #dbe6f8; }
   .del-link { color: #a15a3f; font-weight: 700; cursor: pointer; font-size: 11.5px; background: #fbeee7; border: 1px solid #f0d5c5; border-radius: 999px; padding: 5px 12px; }
   .del-link:hover { background: #f7e2d4; }
   .restore-link { color: var(--teal); font-weight: 700; text-decoration: underline; cursor: pointer; font-size: 12px; background:none; border:none; }
@@ -375,7 +379,7 @@
           <th rowspan="2">펀드명</th>
           <th rowspan="2">규모(억)</th>
           <th rowspan="2">지분율</th>
-          <th rowspan="2">수익자분(억)</th>
+          <th rowspan="2" class="group-share">수익자분(억)</th>
           <th colspan="4" class="group-bond">채권 정보 (수익자분)</th>
           <th colspan="4" class="group-cd">CD 정보 (수익자분)</th>
           <th rowspan="2">레버리지</th>
@@ -398,7 +402,7 @@
             <td class="left"><strong>${fund.fundName}</strong></td>
             <td>${fmt(fund.equity)}</td>
             <td>${fund.shareRatio}%</td>
-            <td>${fmt(c.shareAmount)}</td>
+            <td class="group-share">${fmt(c.shareAmount)}</td>
             <td class="group-bond">${fmt(c.bondAmount)}</td>
             <td class="group-bond">${fmt(c.bondRate, 2)}%</td>
             <td class="group-bond">${fmt(c.bondMD, 2)}</td>
@@ -422,7 +426,7 @@
           <td colspan="2" class="left">가중평균 / 합계</td>
           <td>${fmt(sums.equity)}</td>
           <td>${fmt(avgShareRatio, 1)}%</td>
-          <td>${fmt(sums.shareAmount)}</td>
+          <td class="group-share">${fmt(sums.shareAmount)}</td>
           <td class="group-bond">${fmt(sums.bondAmount)}</td>
           <td class="group-bond">${fmt(avgBondRate, 2)}%</td>
           <td class="group-bond">${fmt(avgBondMD, 2)}</td>
@@ -436,10 +440,17 @@
           <td>${fmt(avgFee, 1)}</td>
           <td style="color:var(--teal);">${fmt(avgYield, 2)}%</td>
           <td>${fmt(sums.netIncome, 1)}</td>
-          <td></td><td></td>
+          <td><button class="link-btn" data-all-assets="bond">전체(채권)</button></td>
+          <td><button class="link-btn-accent" data-all-assets="cd">전체(CD)</button></td>
         </tr>
       </tfoot>
     `;
+
+    table.querySelectorAll('[data-all-assets]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        openAssetListPopup(btn.dataset.allAssets, funds);
+      });
+    });
 
     table.querySelectorAll('[data-detail]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -460,7 +471,121 @@
   }
 
   function specRow(it) {
-    return `<tr><td>${it.name}</td><td>${it.amount}</td><td>${Number(it.rate).toFixed(3)}%</td><td>${Number(it.md).toFixed(2)}</td></tr>`;
+    return `<tr><td>${it.name}</td><td>${fmt(it.amount)}</td><td>${Number(it.rate).toFixed(3)}%</td><td>${Number(it.md).toFixed(2)}</td></tr>`;
+  }
+
+  // 여러 펀드에 걸친 채권(또는 CD) 명세를 "수익자분" 기준으로 합산한다.
+  // 같은 종목명(name)이 여러 펀드에 있으면 금액을 더하고, 금리·MD는 금액 가중평균으로 재계산한다.
+  function collectAssets(funds, key) {
+    const map = new Map();
+    funds.forEach((fund) => {
+      const scale = fund.shareRatio / 100;
+      (fund[key] || []).forEach((item) => {
+        const amt = item.amount * scale; // 수익자분 기준 금액
+        if (!map.has(item.name)) {
+          map.set(item.name, { name: item.name, amount: 0, rateSum: 0, mdSum: 0 });
+        }
+        const e = map.get(item.name);
+        e.amount += amt;
+        e.rateSum += amt * item.rate;
+        e.mdSum += amt * item.md;
+      });
+    });
+    return [...map.values()]
+      .map((e) => ({
+        name: e.name,
+        amount: e.amount,
+        rate: e.amount > 0 ? e.rateSum / e.amount : 0,
+        md: e.amount > 0 ? e.mdSum / e.amount : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount);
+  }
+
+  // "전체(채권)" / "전체(CD)" 버튼 → 집계 대상 펀드 전체의 종목을 합산해 새 창으로 보여준다.
+  function openAssetListPopup(kind, funds) {
+    const key = kind === 'bond' ? 'bonds' : 'cds';
+    const label = kind === 'bond' ? '채권' : 'CD';
+    const items = collectAssets(funds, key);
+
+    const totalAmount = items.reduce((s, it) => s + it.amount, 0);
+    const totalRate = totalAmount > 0 ? items.reduce((s, it) => s + it.amount * it.rate, 0) / totalAmount : 0;
+    const totalMD = totalAmount > 0 ? items.reduce((s, it) => s + it.amount * it.md, 0) / totalAmount : 0;
+    const totalPvbp = pvbp(totalAmount, totalMD);
+
+    const winName = 'all_assets_' + kind;
+    const w = window.open('', winName, 'width=820,height=680,resizable=yes,scrollbars=yes');
+    if (!w) { alert('팝업이 차단되었습니다. 브라우저의 팝업 차단을 해제한 뒤 다시 시도해주세요.'); return; }
+
+    const bodyRows = items.map((it) => `
+      <tr>
+        <td>${it.name}</td>
+        <td>${fmt(it.amount)}</td>
+        <td>${fmt(it.rate, 2)}%</td>
+        <td>${fmt(it.md, 2)}</td>
+        <td>${fmt(pvbp(it.amount, it.md), 2)}</td>
+      </tr>
+    `).join('') || `<tr><td colspan="5">데이터 없음</td></tr>`;
+
+    const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>전체 ${label} 명세 (수익자분 기준)</title>
+<style>
+  * { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
+  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;line-height:1.5;color:#14171f;background:#f6f7f9;margin:0;padding:18px;}
+  @media (max-width:640px){ body{ padding:14px; } }
+  h2{font-size:18px;margin:0 0 6px;}
+  .sub{font-size:13px;color:#5b5f6b;margin-bottom:16px;line-height:1.6;}
+  .top-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+  .btn{border:none;border-radius:8px;padding:9px 16px;font-size:13.5px;font-weight:700;cursor:pointer;}
+  .btn-primary{background:#0f7a6b;color:#fff;}
+  .btn-primary:hover{background:#0b6357;}
+  .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;background:#fff;border:1px solid #e6e8ec;}
+  table{width:100%;min-width:520px;border-collapse:collapse;font-size:14px;}
+  th,td{border:1px solid #e6e8ec;padding:10px 8px;text-align:center;white-space:nowrap;}
+  td:first-child, th:first-child{text-align:left;}
+  thead th{background:#f6f7f9;font-weight:700;color:#5b5f6b;font-size:12.5px;}
+  tfoot td{font-weight:700;background:#f6f7f9;}
+  .close-btn{display:block;width:100%;margin:20px auto 0;border:1px solid #d6dae1;background:#fff;color:#5b5f6b;border-radius:8px;padding:13px 14px;font-size:15px;font-weight:700;cursor:pointer;}
+  @media (min-width:641px){ .close-btn{ width:auto; min-width:120px; padding:9px 20px; } }
+</style></head><body>
+  <h2>전체 ${label} 명세 (수익자분 기준)</h2>
+  <div class="sub">집계 대상 펀드 전체를 합산했습니다 (같은 종목은 하나로 합침) · 현재 대시보드에서 "제외"한 펀드는 포함되지 않습니다.</div>
+  <div class="top-row">
+    <div></div>
+    <button class="btn btn-primary" id="exportBtn">⬇ 엑셀로 저장</button>
+  </div>
+  <div class="table-wrap">
+    <table id="assetTable">
+      <thead><tr><th>종목명</th><th>금액(억)</th><th>금리</th><th>MD</th><th>PVBP</th></tr></thead>
+      <tbody>${bodyRows}</tbody>
+      <tfoot>
+        <tr>
+          <td>합계 / 가중평균</td>
+          <td>${fmt(totalAmount)}</td>
+          <td>${fmt(totalRate, 2)}%</td>
+          <td>${fmt(totalMD, 2)}</td>
+          <td>${fmt(totalPvbp, 2)}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <button class="close-btn" onclick="window.close()">닫기</button>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>
+  <script>
+    document.getElementById('exportBtn').addEventListener('click', function () {
+      try {
+        var wb = XLSX.utils.table_to_book(document.getElementById('assetTable'), { sheet: '전체${label}명세' });
+        var today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        XLSX.writeFile(wb, '전체${label}명세_' + today + '.xlsx');
+      } catch (e) {
+        alert('엑셀 저장에 실패했습니다: ' + e.message);
+      }
+    });
+  <\/script>
+</body></html>`;
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
   }
 
   // "펀드명세" 버튼을 누르면 표 안에서 펼치지 않고, 별도의 새 창을 띄워서 보여준다.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>이종채권 Yield Curve — AI 마켓 인사이트</title>
+<title>이종채권 Yield Curve 변화도 — AI 마켓 인사이트</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -57,9 +57,9 @@
   }
   .hint-note {
     margin-left: auto; text-align: right; line-height: 1.55;
-    font-size: 11.5px; font-style: italic; color: #9aa0ab;
+    font-size: 12.5px; font-style: italic; font-weight: 700; color: #16305c;
   }
-  .hint-note .hint-en { display: block; font-size: 10.5px; font-style: normal; }
+  .hint-note .hint-en { display: block; font-size: 11.5px; font-style: normal; font-weight: 600; color: #374151; }
 
   .toggle-row {
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
@@ -70,38 +70,6 @@
 
   .chart-canvas-box { position: relative; height: 420px; }
   .bottom-canvas-box { position: relative; height: 200px; cursor: pointer; }
-
-  .curve-config-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .curve-config-head h3 { font-size: 13.5px; margin: 0; color: #1f2430; }
-  .hint-small { font-size: 11px; color: #9aa0ab; font-weight: 400; margin-left: 6px; }
-  .mini-btn {
-    border: 1px solid #d7dae0; background: #fff; color: #374151;
-    padding: 5px 11px; border-radius: 7px; font-size: 12px; cursor: pointer;
-  }
-  .mini-btn:hover { background: #f3f4f6; }
-  .mini-btn.add { margin-top: 8px; }
-
-  .curve-tenor-list { display: flex; flex-direction: column; gap: 6px; }
-  .curve-tenor-row {
-    display: flex; align-items: center; gap: 8px;
-    border: 1px solid #e5e7eb; border-radius: 7px; padding: 6px 8px;
-    background: #fff; cursor: grab;
-  }
-  .curve-tenor-row.drag-over { border-color: #16305c; background: #eef2f8; }
-  .curve-tenor-row .drag-handle { color: #9aa0ab; font-size: 14px; flex: none; }
-  .curve-tenor-row .pos-badge {
-    flex: none; width: 20px; height: 20px; border-radius: 50%;
-    background: #f4f5f7; color: #4b5563; font-size: 11px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .curve-tenor-row select {
-    flex: 1; border: 1px solid #d7dae0; border-radius: 6px; padding: 5px 8px; font-size: 12.5px; color: #1f2430;
-  }
-  .curve-tenor-row .remove-btn {
-    flex: none; border: none; background: #fbeae6; color: #b3432e;
-    width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 13px;
-  }
-  .curve-tenor-row .remove-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
   .bottom-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .bottom-toolbar .seg-btn {
@@ -130,7 +98,7 @@
 
 <div class="wrap">
   <div class="page-header-row">
-    <h1>📈 이종채권 Yield Curve (2001~)</h1>
+    <h1>📈 이종채권 Yield Curve 변화도</h1>
     <button class="close-btn" id="close-btn">✕ 닫기</button>
   </div>
 
@@ -161,15 +129,6 @@
         <label><input type="checkbox" id="ref-toggle"> 전년 동월 커브 비교</label>
         <label><input type="checkbox" id="yearend-toggle"> 전년말 커브 비교</label>
       </div>
-    </div>
-
-    <div class="panel">
-      <div class="curve-config-head">
-        <h3>커브 구성 지표 <span class="hint-small">(드래그로 순서 변경, 최소 2개)</span></h3>
-        <button class="mini-btn" id="curve-reset-btn">기본값으로</button>
-      </div>
-      <div id="curve-tenor-list" class="curve-tenor-list"></div>
-      <button class="mini-btn add" id="curve-add-btn">+ 지표 추가</button>
     </div>
 
     <div class="panel">
@@ -578,90 +537,6 @@
     bSel.addEventListener('change', () => { spreadB = bSel.value; refreshBottomSeries(); });
   }
 
-  // ── 위쪽 커브 구성 지표 편집 (추가/삭제/드래그 순서변경) ──────────────
-  let dragFromIdx = null;
-
-  function applyCurveTenors() {
-    curveChart.data.labels = CURVE_TENORS.map(shortLabel);
-    const yRange = globalYRange(rangeStart, rangeEnd);
-    curveChart.options.scales.y.min = yRange.min;
-    curveChart.options.scales.y.max = yRange.max;
-    render();
-  }
-
-  function renderCurveTenorList() {
-    const box = document.getElementById('curve-tenor-list');
-    const opts = ALL_INDICATORS.map((n) => `<option value="${n}">${shortLabel(n)}</option>`).join('');
-
-    box.innerHTML = CURVE_TENORS.map((name, i) => `
-      <div class="curve-tenor-row" draggable="true" data-idx="${i}">
-        <span class="drag-handle">⠿</span>
-        <span class="pos-badge">${i + 1}</span>
-        <select data-idx="${i}">${opts}</select>
-        <button class="remove-btn" data-idx="${i}" ${CURVE_TENORS.length <= 2 ? 'disabled' : ''}>×</button>
-      </div>`).join('');
-
-    box.querySelectorAll('.curve-tenor-row select').forEach((sel) => {
-      const i = parseInt(sel.getAttribute('data-idx'), 10);
-      sel.value = CURVE_TENORS[i];
-      sel.addEventListener('change', () => {
-        CURVE_TENORS[i] = sel.value;
-        applyCurveTenors();
-      });
-    });
-
-    box.querySelectorAll('.remove-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (CURVE_TENORS.length <= 2) return;
-        const i = parseInt(btn.getAttribute('data-idx'), 10);
-        CURVE_TENORS.splice(i, 1);
-        renderCurveTenorList();
-        applyCurveTenors();
-      });
-    });
-
-    box.querySelectorAll('.curve-tenor-row').forEach((row) => {
-      row.addEventListener('dragstart', (e) => {
-        dragFromIdx = parseInt(row.getAttribute('data-idx'), 10);
-        e.dataTransfer.effectAllowed = 'move';
-      });
-      row.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        row.classList.add('drag-over');
-      });
-      row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
-      row.addEventListener('drop', (e) => {
-        e.preventDefault();
-        row.classList.remove('drag-over');
-        const toIdx = parseInt(row.getAttribute('data-idx'), 10);
-        if (dragFromIdx == null || dragFromIdx === toIdx) return;
-        const [moved] = CURVE_TENORS.splice(dragFromIdx, 1);
-        CURVE_TENORS.splice(toIdx, 0, moved);
-        dragFromIdx = null;
-        renderCurveTenorList();
-        applyCurveTenors();
-      });
-    });
-  }
-
-  function initCurveTenorControls() {
-    renderCurveTenorList();
-
-    document.getElementById('curve-add-btn').addEventListener('click', () => {
-      // 아직 안 쓰인 지표 중 첫 번째를 기본값으로 추가 (없으면 첫 지표 중복 추가)
-      const unused = ALL_INDICATORS.find((n) => !CURVE_TENORS.includes(n));
-      CURVE_TENORS.push(unused || ALL_INDICATORS[0]);
-      renderCurveTenorList();
-      applyCurveTenors();
-    });
-
-    document.getElementById('curve-reset-btn').addEventListener('click', () => {
-      CURVE_TENORS = [...DEFAULT_TENORS];
-      renderCurveTenorList();
-      applyCurveTenors();
-    });
-  }
-
   // 위에서 고른 시작~끝 구간만 슬라이스
   function sliceRange(arr) {
     return arr.slice(rangeStart, rangeEnd + 1);
@@ -868,7 +743,6 @@
 
     renderIndicatorChecklist();
     populateSpreadSelects();
-    initCurveTenorControls();
 
     // 아래 추이 차트를 클릭하면 그 시점으로 위 재생바를 이동시킨다.
     document.getElementById('bottom-chart').addEventListener('click', (evt) => {

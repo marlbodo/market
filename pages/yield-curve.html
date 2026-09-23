@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이종채권 Yield Curve — AI 마켓 인사이트</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: #f4f5f7;
+    color: #1f2430;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 16px 18px 40px; }
+
+  .page-header-row { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 16px; }
+  .page-header-row h1 { font-size: 18px; margin: 0; }
+  .close-btn {
+    border: 1px solid #d7dae0; background: #fff; color: #374151;
+    padding: 6px 14px; border-radius: 7px; font-size: 13px; cursor: pointer;
+  }
+  .close-btn:hover { background: #f3f4f6; }
+
+  .panel {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 14px; margin-bottom: 12px;
+  }
+
+  .transport {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .play-btn {
+    border: none; background: #16305c; color: #fff; width: 42px; height: 42px;
+    border-radius: 50%; font-size: 16px; cursor: pointer; flex: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .play-btn:hover { background: #0f2247; }
+  .speed-group { display: flex; gap: 4px; }
+  .speed-btn {
+    border: 1px solid #d7dae0; background: #fff; color: #374151;
+    padding: 6px 10px; border-radius: 7px; font-size: 12.5px; cursor: pointer;
+  }
+  .speed-btn.is-active { background: #16305c; color: #fff; border-color: #16305c; }
+  .month-slider { flex: 1; min-width: 160px; }
+  .month-label {
+    font-size: 18px; font-weight: 700; color: #16305c; min-width: 108px; text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .toggle-row {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid #eef0f2;
+    font-size: 12.5px; color: #4b5563;
+  }
+  .toggle-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+
+  .event-banner {
+    margin-top: 8px; font-size: 12.5px; min-height: 18px;
+    color: #8a5a15; font-weight: 600;
+  }
+
+  .chart-canvas-box { position: relative; height: 420px; }
+  .bottom-canvas-box { position: relative; height: 160px; }
+
+  .bottom-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .bottom-toolbar .seg-btn {
+    border: 1px solid #d7dae0; background: #fff; color: #374151;
+    padding: 5px 11px; border-radius: 7px; font-size: 12px; cursor: pointer;
+  }
+  .bottom-toolbar .seg-btn.is-active { background: #e3f5ee; color: #1f8266; border-color: #8fd9bd; font-weight: 700; }
+  .bottom-toolbar .label { font-size: 12px; color: #6b7280; margin-left: auto; }
+
+  .loading, .error { text-align: center; color: #9ca3af; font-size: 13px; padding: 60px 0; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="page-header-row">
+    <h1>📈 이종채권 Yield Curve (2001~)</h1>
+    <button class="close-btn" id="close-btn">✕ 닫기</button>
+  </div>
+
+  <div id="loading" class="loading">데이터를 불러오는 중…</div>
+
+  <div id="app" style="display:none;">
+    <div class="panel">
+      <div class="transport">
+        <button class="play-btn" id="play-btn">▶</button>
+        <div class="speed-group" id="speed-group">
+          <button class="speed-btn" data-speed="slow">느리게</button>
+          <button class="speed-btn is-active" data-speed="normal">보통</button>
+          <button class="speed-btn" data-speed="fast">빠르게</button>
+        </div>
+        <input type="range" class="month-slider" id="month-slider" min="0" max="0" value="0" step="1">
+        <span class="month-label" id="month-label">-</span>
+      </div>
+      <div class="toggle-row">
+        <label><input type="checkbox" id="ghost-toggle" checked> 이전 달 잔상 표시</label>
+        <label><input type="checkbox" id="ref-toggle"> 전년 동월 커브 비교</label>
+        <label><input type="checkbox" id="yearend-toggle"> 전년말 커브 비교</label>
+      </div>
+      <div class="event-banner" id="event-banner"></div>
+    </div>
+
+    <div class="panel">
+      <div class="chart-canvas-box">
+        <canvas id="curve-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="bottom-toolbar">
+        <button class="seg-btn is-active" data-mode="spread">스프레드 (산금6M − 기준금리)</button>
+        <button class="seg-btn" data-mode="base">기준금리 추이</button>
+        <span class="label" id="bottom-label"></span>
+      </div>
+      <div class="bottom-canvas-box">
+        <canvas id="bottom-chart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+(function () {
+  const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
+
+  // 화면에 표시할 순서 (기준금리 → CD91D → 산금 6M/1Y/2Y → 국고 3Y/5Y/10Y)
+  const TENORS = ['기준금리', 'CD 91D', '산금 6M', '산금 1Y', '산금 2Y', '국고 3Y', '국고 5Y', '국고 10Y'];
+  const TENOR_LABELS = ['기준금리', 'CD91D', '산금6M', '산금1Y', '산금2Y', '국고3Y', '국고5Y', '국고10Y'];
+
+  const SPEED_MS = { slow: 900, normal: 450, fast: 180 };
+  let currentSpeed = 'normal';
+  let playing = false;
+  let timer = null;
+
+  let MONTHS = [];         // ['2001-01', '2001-02', ...]
+  let MONTH_DATES = [];    // 실제 표시용 마지막 거래일 date (YYYY-MM-DD)
+  let DATA = {};           // DATA[indicator] = [value, value, ...] (MONTHS 순서)
+  let SPREAD = [];         // 산금6M - 기준금리, 월별
+  let EVENTS = [];         // { idx, from, to, dir }
+  let curIdx = 0;
+  let bottomMode = 'spread';
+
+  let curveChart = null;
+  let bottomChart = null;
+
+  async function fetchRpc(fnName) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+      },
+      body: '{}',
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  function fmtMonthLabel(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월`;
+  }
+
+  async function loadData() {
+    const rows = await fetchRpc('get_yield_curve_monthly');
+
+    const byIndicatorMonth = {};
+    TENORS.forEach((t) => { byIndicatorMonth[t] = {}; });
+
+    const monthSet = new Set();
+    rows.forEach((r) => {
+      const monthKey = r.month_date.slice(0, 7); // YYYY-MM
+      monthSet.add(monthKey);
+      if (!byIndicatorMonth[r.indicator]) return;
+      byIndicatorMonth[r.indicator][monthKey] = { value: Number(r.value), date: r.month_date };
+    });
+
+    MONTHS = Array.from(monthSet).sort();
+    // 8개 지표가 모두 존재하는 달만 사용
+    MONTHS = MONTHS.filter((m) => TENORS.every((t) => byIndicatorMonth[t][m] !== undefined));
+
+    MONTH_DATES = MONTHS.map((m) => byIndicatorMonth['기준금리'][m].date);
+
+    TENORS.forEach((t) => {
+      DATA[t] = MONTHS.map((m) => byIndicatorMonth[t][m].value);
+    });
+
+    SPREAD = MONTHS.map((_, i) => DATA['산금 6M'][i] - DATA['기준금리'][i]);
+
+    // 기준금리 변화 시점을 이벤트로 자동 추출
+    const base = DATA['기준금리'];
+    for (let i = 1; i < base.length; i++) {
+      const diff = base[i] - base[i - 1];
+      if (Math.abs(diff) >= 0.001) {
+        EVENTS.push({
+          idx: i,
+          from: base[i - 1],
+          to: base[i],
+          dir: diff > 0 ? '인상' : '인하',
+        });
+      }
+    }
+  }
+
+  function globalYRange() {
+    let min = Infinity, max = -Infinity;
+    TENORS.forEach((t) => {
+      DATA[t].forEach((v) => { if (v < min) min = v; if (v > max) max = v; });
+    });
+    const pad = (max - min) * 0.1 || 0.5;
+    return { min: Math.max(0, min - pad), max: max + pad };
+  }
+
+  function curveDataFor(idx) {
+    return TENORS.map((t) => DATA[t][idx]);
+  }
+
+  function sameMonthLastYearIdx(idx) {
+    const target = MONTHS[idx];
+    const y = Number(target.slice(0, 4)) - 1;
+    const m = target.slice(5, 7);
+    return MONTHS.indexOf(`${y}-${m}`);
+  }
+
+  function yearEndLastYearIdx(idx) {
+    const target = MONTHS[idx];
+    const y = Number(target.slice(0, 4)) - 1;
+    // 해당 연도의 마지막으로 존재하는 달 (보통 12월)
+    let lastIdx = -1;
+    MONTHS.forEach((m, i) => { if (m.startsWith(String(y) + '-')) lastIdx = i; });
+    return lastIdx;
+  }
+
+  function buildCurveChart() {
+    const yRange = globalYRange();
+    const ctx = document.getElementById('curve-chart');
+
+    curveChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: TENOR_LABELS,
+        datasets: [
+          {
+            label: '전년말',
+            data: [],
+            borderColor: 'rgba(183,121,31,0.55)',
+            backgroundColor: 'rgba(183,121,31,0.55)',
+            borderDash: [3, 3],
+            borderWidth: 1.5,
+            pointRadius: 0,
+            tension: 0.15,
+            hidden: true,
+          },
+          {
+            label: '전년 동월',
+            data: [],
+            borderColor: 'rgba(127,119,221,0.6)',
+            backgroundColor: 'rgba(127,119,221,0.6)',
+            borderDash: [5, 3],
+            borderWidth: 1.5,
+            pointRadius: 0,
+            tension: 0.15,
+            hidden: true,
+          },
+          {
+            label: '이전 달',
+            data: [],
+            borderColor: 'rgba(148,163,184,0.7)',
+            backgroundColor: 'rgba(148,163,184,0.7)',
+            borderWidth: 1.5,
+            pointRadius: 2,
+            tension: 0.15,
+          },
+          {
+            label: '현재',
+            data: [],
+            borderColor: '#16305c',
+            backgroundColor: '#16305c',
+            borderWidth: 2.6,
+            pointRadius: 4,
+            pointBackgroundColor: '#16305c',
+            tension: 0.15,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 350, easing: 'easeOutQuad' },
+        plugins: {
+          legend: {
+            display: true, position: 'top',
+            labels: { usePointStyle: true, boxWidth: 20, boxHeight: 8, font: { size: 12 } },
+          },
+          tooltip: {
+            callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y.toFixed(3)}%` },
+          },
+        },
+        scales: {
+          x: { ticks: { font: { size: 12.5 } } },
+          y: {
+            min: yRange.min, max: yRange.max,
+            title: { display: true, text: '금리(%)' },
+            ticks: { font: { size: 11.5 } },
+          },
+        },
+      },
+    });
+  }
+
+  function buildBottomChart() {
+    const ctx = document.getElementById('bottom-chart');
+    bottomChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [
+          {
+            label: '전체 추이',
+            data: [],
+            borderColor: '#0f7a6b',
+            backgroundColor: 'rgba(15,122,107,0.12)',
+            borderWidth: 1.4,
+            pointRadius: 0,
+            tension: 0.05,
+            fill: true,
+          },
+          {
+            label: '이벤트',
+            data: [],
+            type: 'scatter',
+            pointStyle: 'triangle',
+            pointRadius: 5,
+            backgroundColor: '#c0392b',
+            borderColor: '#c0392b',
+            showLine: false,
+          },
+          {
+            label: '현재 위치',
+            data: [],
+            type: 'scatter',
+            pointStyle: 'circle',
+            pointRadius: 5,
+            backgroundColor: '#16305c',
+            borderColor: '#fff',
+            borderWidth: 2,
+            showLine: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (c) => {
+                if (c.dataset.label === '이벤트') {
+                  const ev = EVENTS.find((e) => MONTH_DATES[e.idx] === c.raw.x);
+                  return ev ? `기준금리 ${ev.dir}: ${ev.from.toFixed(2)}% → ${ev.to.toFixed(2)}%` : '';
+                }
+                return `${c.raw.y.toFixed(3)}%`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            type: 'time',
+            time: { displayFormats: { year: 'yyyy' } },
+            ticks: { font: { size: 10.5 }, maxRotation: 0 },
+          },
+          y: { ticks: { font: { size: 10.5 } } },
+        },
+      },
+    });
+  }
+
+  function refreshBottomSeries() {
+    const series = bottomMode === 'spread' ? SPREAD : DATA['기준금리'];
+    bottomChart.data.datasets[0].data = MONTH_DATES.map((d, i) => ({ x: d, y: series[i] }));
+    bottomChart.data.datasets[1].data = EVENTS.map((e) => ({ x: MONTH_DATES[e.idx], y: series[e.idx] }));
+    document.getElementById('bottom-label').textContent =
+      bottomMode === 'spread' ? '산금6M − 기준금리 (%p)' : '기준금리 (%)';
+    updateBottomMarker();
+  }
+
+  function updateBottomMarker() {
+    const series = bottomMode === 'spread' ? SPREAD : DATA['기준금리'];
+    bottomChart.data.datasets[2].data = [{ x: MONTH_DATES[curIdx], y: series[curIdx] }];
+    bottomChart.update('none');
+  }
+
+  function render() {
+    document.getElementById('month-slider').value = curIdx;
+    document.getElementById('month-label').textContent = fmtMonthLabel(MONTH_DATES[curIdx]);
+
+    curveChart.data.datasets[2].data = curIdx > 0 && document.getElementById('ghost-toggle').checked
+      ? curveDataFor(curIdx - 1) : [];
+    curveChart.data.datasets[3].data = curveDataFor(curIdx);
+
+    if (document.getElementById('ref-toggle').checked) {
+      const refIdx = sameMonthLastYearIdx(curIdx);
+      curveChart.data.datasets[1].data = refIdx >= 0 ? curveDataFor(refIdx) : [];
+      curveChart.data.datasets[1].hidden = refIdx < 0;
+    } else {
+      curveChart.data.datasets[1].hidden = true;
+    }
+
+    if (document.getElementById('yearend-toggle').checked) {
+      const yeIdx = yearEndLastYearIdx(curIdx);
+      curveChart.data.datasets[0].data = yeIdx >= 0 ? curveDataFor(yeIdx) : [];
+      curveChart.data.datasets[0].hidden = yeIdx < 0;
+    } else {
+      curveChart.data.datasets[0].hidden = true;
+    }
+
+    curveChart.update();
+
+    updateBottomMarker();
+
+    const ev = EVENTS.find((e) => e.idx === curIdx);
+    document.getElementById('event-banner').textContent = ev
+      ? `🔔 기준금리 ${ev.dir}: ${ev.from.toFixed(2)}% → ${ev.to.toFixed(2)}%`
+      : '';
+  }
+
+  function stepForward() {
+    curIdx++;
+    if (curIdx >= MONTHS.length) {
+      curIdx = MONTHS.length - 1;
+      stopPlay();
+    }
+    render();
+  }
+
+  function stopPlay() {
+    playing = false;
+    clearInterval(timer);
+    document.getElementById('play-btn').textContent = '▶';
+  }
+
+  function startPlay() {
+    if (curIdx >= MONTHS.length - 1) curIdx = 0;
+    playing = true;
+    document.getElementById('play-btn').textContent = '❚❚';
+    timer = setInterval(stepForward, SPEED_MS[currentSpeed]);
+  }
+
+  function initControls() {
+    document.getElementById('play-btn').addEventListener('click', () => {
+      if (playing) stopPlay(); else startPlay();
+    });
+
+    document.querySelectorAll('.speed-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.speed-btn').forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        currentSpeed = btn.getAttribute('data-speed');
+        if (playing) { stopPlay(); startPlay(); }
+      });
+    });
+
+    const slider = document.getElementById('month-slider');
+    slider.max = MONTHS.length - 1;
+    slider.addEventListener('input', (e) => {
+      curIdx = parseInt(e.target.value, 10);
+      stopPlay();
+      render();
+    });
+
+    ['ghost-toggle', 'ref-toggle', 'yearend-toggle'].forEach((id) => {
+      document.getElementById(id).addEventListener('change', render);
+    });
+
+    document.querySelectorAll('.seg-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.seg-btn').forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        bottomMode = btn.getAttribute('data-mode');
+        refreshBottomSeries();
+      });
+    });
+
+    document.getElementById('close-btn').addEventListener('click', () => window.close());
+  }
+
+  async function main() {
+    try {
+      await loadData();
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+
+      curIdx = MONTHS.length - 1; // 최신 월부터 시작
+      buildCurveChart();
+      buildBottomChart();
+      refreshBottomSeries();
+      initControls();
+      render();
+    } catch (err) {
+      console.error(err);
+      document.getElementById('loading').textContent = '데이터를 불러오지 못했습니다: ' + err.message;
+    }
+  }
+
+  main();
+})();
+</script>
+</body>
+</html>

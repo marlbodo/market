@@ -226,12 +226,18 @@
     }
   }
 
-  function globalYRange() {
+  function globalYRange(fromIdx, toIdx) {
+    const s = fromIdx == null ? 0 : fromIdx;
+    const e = toIdx == null ? MONTHS.length - 1 : toIdx;
     let min = Infinity, max = -Infinity;
     TENORS.forEach((t) => {
-      DATA[t].forEach((v) => { if (v < min) min = v; if (v > max) max = v; });
+      for (let i = s; i <= e; i++) {
+        const v = DATA[t][i];
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
     });
-    const pad = (max - min) * 0.1 || 0.5;
+    const pad = (max - min) * 0.12 || 0.5;
     return { min: Math.max(0, min - pad), max: max + pad };
   }
 
@@ -524,6 +530,13 @@
     if (curIdx < rangeStart || curIdx > rangeEnd) {
       curIdx = rangeStart;
     }
+
+    // 선택한 구간 안에서만 y축 범위를 다시 잡아서, 변동폭이 작은 구간을 골랐을 때도
+    // 변화가 잘 보이도록 한다 (애니메이션 재생 중엔 축이 고정되어 안정적으로 보임).
+    const yRange = globalYRange(rangeStart, rangeEnd);
+    curveChart.options.scales.y.min = yRange.min;
+    curveChart.options.scales.y.max = yRange.max;
+
     stopPlay();
     render();
   }

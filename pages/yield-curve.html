@@ -75,13 +75,16 @@
   }
   .toggle-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
 
-  .event-banner { margin-top: 10px; }
-  .event-banner:empty { margin-top: 0; }
+  .event-banner {
+    margin-top: 10px; min-height: 40px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
   .event-item {
     display: flex; align-items: flex-start; gap: 8px;
     background: #fff7e6; border: 1px solid #f0c869; border-radius: 8px;
     padding: 8px 12px; font-size: 12.5px; color: #6b4a12; margin-top: 6px;
   }
+  .event-item:first-child { margin-top: 0; }
   .event-item .region-tag {
     flex: none; font-size: 10.5px; font-weight: 700; color: #8a5a15;
     background: #fbecc9; border-radius: 999px; padding: 2px 8px; margin-top: 1px;
@@ -90,7 +93,12 @@
   .event-item .event-desc { color: #6b4a12; }
 
   .chart-canvas-box { position: relative; height: 420px; }
-  .bottom-canvas-box { position: relative; height: 200px; cursor: pointer; }
+  .bottom-canvas-box {
+    position: relative; height: 200px; cursor: pointer;
+    outline: none; border-radius: 8px;
+  }
+  .bottom-canvas-box:focus-visible { box-shadow: 0 0 0 3px rgba(22,48,92,0.25); }
+  .bottom-hint { font-size: 11px; color: #9aa0ab; margin-top: 6px; text-align: center; }
 
   .bottom-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .bottom-toolbar .seg-btn {
@@ -175,9 +183,10 @@
         <label>B <select id="spread-b"></select></label>
       </div>
 
-      <div class="bottom-canvas-box">
+      <div class="bottom-canvas-box" id="bottom-canvas-box" tabindex="0">
         <canvas id="bottom-chart"></canvas>
       </div>
+      <div class="bottom-hint">⌨️ 클릭해서 멈춘 뒤, 키보드 좌우 화살표키로 한 달씩 이동하며 자세히 볼 수 있어요</div>
     </div>
   </div>
 </div>
@@ -259,8 +268,8 @@
     MONTHS = MONTHS.filter((m) => DEFAULT_TENORS.every((t) => byIndicatorMonth[t] && byIndicatorMonth[t][m] !== undefined));
     MONTH_DATES = MONTHS.map((m) => byIndicatorMonth['기준금리'][m].date);
 
-    const extra = Array.from(indicatorSet).filter((x) => !DEFAULT_TENORS.includes(x)).sort();
-    ALL_INDICATORS = [...DEFAULT_TENORS, ...extra];
+    // 아래 "지표 추이"/"스프레드" 선택 대상도 위쪽 Yield Curve 대상 종목(8개)으로만 한정
+    ALL_INDICATORS = [...DEFAULT_TENORS];
 
     ALL_INDICATORS.forEach((t) => {
       DATA[t] = MONTHS.map((m) => (byIndicatorMonth[t] && byIndicatorMonth[t][m]) ? byIndicatorMonth[t][m].value : null);
@@ -813,6 +822,19 @@
         if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
       }
       curIdx = bestIdx;
+      stopPlay();
+      render();
+      document.getElementById('bottom-canvas-box').focus();
+    });
+
+    // 클릭해서 포커스를 준 뒤엔 좌우 화살표키로 위 재생바처럼 한 달씩 이동 가능
+    document.getElementById('bottom-canvas-box').addEventListener('keydown', (evt) => {
+      if (evt.key !== 'ArrowLeft' && evt.key !== 'ArrowRight') return;
+      evt.preventDefault();
+      const delta = evt.key === 'ArrowRight' ? 1 : -1;
+      const next = curIdx + delta;
+      if (next < rangeStart || next > rangeEnd) return;
+      curIdx = next;
       stopPlay();
       render();
     });

@@ -71,6 +71,38 @@
   .chart-canvas-box { position: relative; height: 420px; }
   .bottom-canvas-box { position: relative; height: 200px; cursor: pointer; }
 
+  .curve-config-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .curve-config-head h3 { font-size: 13.5px; margin: 0; color: #1f2430; }
+  .hint-small { font-size: 11px; color: #9aa0ab; font-weight: 400; margin-left: 6px; }
+  .mini-btn {
+    border: 1px solid #d7dae0; background: #fff; color: #374151;
+    padding: 5px 11px; border-radius: 7px; font-size: 12px; cursor: pointer;
+  }
+  .mini-btn:hover { background: #f3f4f6; }
+  .mini-btn.add { margin-top: 8px; }
+
+  .curve-tenor-list { display: flex; flex-direction: column; gap: 6px; }
+  .curve-tenor-row {
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid #e5e7eb; border-radius: 7px; padding: 6px 8px;
+    background: #fff; cursor: grab;
+  }
+  .curve-tenor-row.drag-over { border-color: #16305c; background: #eef2f8; }
+  .curve-tenor-row .drag-handle { color: #9aa0ab; font-size: 14px; flex: none; }
+  .curve-tenor-row .pos-badge {
+    flex: none; width: 20px; height: 20px; border-radius: 50%;
+    background: #f4f5f7; color: #4b5563; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .curve-tenor-row select {
+    flex: 1; border: 1px solid #d7dae0; border-radius: 6px; padding: 5px 8px; font-size: 12.5px; color: #1f2430;
+  }
+  .curve-tenor-row .remove-btn {
+    flex: none; border: none; background: #fbeae6; color: #b3432e;
+    width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 13px;
+  }
+  .curve-tenor-row .remove-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
   .bottom-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .bottom-toolbar .seg-btn {
     border: 1px solid #d7dae0; background: #fff; color: #374151;
@@ -132,6 +164,15 @@
     </div>
 
     <div class="panel">
+      <div class="curve-config-head">
+        <h3>커브 구성 지표 <span class="hint-small">(드래그로 순서 변경, 최소 2개)</span></h3>
+        <button class="mini-btn" id="curve-reset-btn">기본값으로</button>
+      </div>
+      <div id="curve-tenor-list" class="curve-tenor-list"></div>
+      <button class="mini-btn add" id="curve-add-btn">+ 지표 추가</button>
+    </div>
+
+    <div class="panel">
       <div class="chart-canvas-box">
         <canvas id="curve-chart"></canvas>
       </div>
@@ -167,9 +208,10 @@
   const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
 
-  // 위쪽 커브에 항상 고정으로 쓰이는 8개 (기준금리 → CD91D → 산금 6M/1Y/2Y → 국고 3Y/5Y/10Y)
-  const TENORS = ['기준금리', 'CD 91D', '산금 6M', '산금 1Y', '산금 2Y', '국고 3Y', '국고 5Y', '국고 10Y'];
-  const TENOR_LABELS = ['기준금리', 'CD91D', '산금6M', '산금1Y', '산금2Y', '국고3Y', '국고5Y', '국고10Y'];
+  // 위쪽 커브의 기본 구성 (사용자가 추가/삭제/순서변경 가능 — CURVE_TENORS가 실제 표시값,
+  // DEFAULT_TENORS는 애니메이션 재생 가능한 달(MONTHS)을 정하는 기준으로만 사용)
+  const DEFAULT_TENORS = ['기준금리', 'CD 91D', '산금 6M', '산금 1Y', '산금 2Y', '국고 3Y', '국고 5Y', '국고 10Y'];
+  let CURVE_TENORS = [...DEFAULT_TENORS];
 
   const PALETTE = ['#16305c', '#0f7a6b', '#b7791f', '#7f77dd', '#c0392b', '#2b6fd9', '#d4537e', '#556b2f', '#8e44ad', '#e67e22'];
 
@@ -227,16 +269,16 @@
       indicatorSet.add(r.indicator);
       if (!byIndicatorMonth[r.indicator]) byIndicatorMonth[r.indicator] = {};
       byIndicatorMonth[r.indicator][monthKey] = { value: Number(r.value), date: r.month_date };
-      if (TENORS.includes(r.indicator)) monthSet.add(monthKey);
+      if (DEFAULT_TENORS.includes(r.indicator)) monthSet.add(monthKey);
     });
 
     MONTHS = Array.from(monthSet).sort();
-    // 커브에 쓰는 8개 지표가 모두 존재하는 달만 사용
-    MONTHS = MONTHS.filter((m) => TENORS.every((t) => byIndicatorMonth[t] && byIndicatorMonth[t][m] !== undefined));
+    // 기준이 되는 8개 지표가 모두 존재하는 달만 애니메이션 재생 대상으로 사용
+    MONTHS = MONTHS.filter((m) => DEFAULT_TENORS.every((t) => byIndicatorMonth[t] && byIndicatorMonth[t][m] !== undefined));
     MONTH_DATES = MONTHS.map((m) => byIndicatorMonth['기준금리'][m].date);
 
-    const extra = Array.from(indicatorSet).filter((x) => !TENORS.includes(x)).sort();
-    ALL_INDICATORS = [...TENORS, ...extra];
+    const extra = Array.from(indicatorSet).filter((x) => !DEFAULT_TENORS.includes(x)).sort();
+    ALL_INDICATORS = [...DEFAULT_TENORS, ...extra];
 
     ALL_INDICATORS.forEach((t) => {
       DATA[t] = MONTHS.map((m) => (byIndicatorMonth[t] && byIndicatorMonth[t][m]) ? byIndicatorMonth[t][m].value : null);
@@ -247,7 +289,7 @@
     const s = fromIdx == null ? 0 : fromIdx;
     const e = toIdx == null ? MONTHS.length - 1 : toIdx;
     let min = Infinity, max = -Infinity;
-    TENORS.forEach((t) => {
+    CURVE_TENORS.forEach((t) => {
       for (let i = s; i <= e; i++) {
         const v = DATA[t][i];
         if (v == null) continue;
@@ -260,7 +302,7 @@
   }
 
   function curveDataFor(idx) {
-    return TENORS.map((t) => DATA[t][idx]);
+    return CURVE_TENORS.map((t) => DATA[t][idx]);
   }
 
   function sameMonthLastYearIdx(idx) {
@@ -309,7 +351,7 @@
       type: 'line',
       plugins: [curveValueLabelPlugin],
       data: {
-        labels: TENOR_LABELS,
+        labels: CURVE_TENORS.map(shortLabel),
         datasets: [
           {
             label: '전년말',
@@ -536,6 +578,90 @@
     bSel.addEventListener('change', () => { spreadB = bSel.value; refreshBottomSeries(); });
   }
 
+  // ── 위쪽 커브 구성 지표 편집 (추가/삭제/드래그 순서변경) ──────────────
+  let dragFromIdx = null;
+
+  function applyCurveTenors() {
+    curveChart.data.labels = CURVE_TENORS.map(shortLabel);
+    const yRange = globalYRange(rangeStart, rangeEnd);
+    curveChart.options.scales.y.min = yRange.min;
+    curveChart.options.scales.y.max = yRange.max;
+    render();
+  }
+
+  function renderCurveTenorList() {
+    const box = document.getElementById('curve-tenor-list');
+    const opts = ALL_INDICATORS.map((n) => `<option value="${n}">${shortLabel(n)}</option>`).join('');
+
+    box.innerHTML = CURVE_TENORS.map((name, i) => `
+      <div class="curve-tenor-row" draggable="true" data-idx="${i}">
+        <span class="drag-handle">⠿</span>
+        <span class="pos-badge">${i + 1}</span>
+        <select data-idx="${i}">${opts}</select>
+        <button class="remove-btn" data-idx="${i}" ${CURVE_TENORS.length <= 2 ? 'disabled' : ''}>×</button>
+      </div>`).join('');
+
+    box.querySelectorAll('.curve-tenor-row select').forEach((sel) => {
+      const i = parseInt(sel.getAttribute('data-idx'), 10);
+      sel.value = CURVE_TENORS[i];
+      sel.addEventListener('change', () => {
+        CURVE_TENORS[i] = sel.value;
+        applyCurveTenors();
+      });
+    });
+
+    box.querySelectorAll('.remove-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (CURVE_TENORS.length <= 2) return;
+        const i = parseInt(btn.getAttribute('data-idx'), 10);
+        CURVE_TENORS.splice(i, 1);
+        renderCurveTenorList();
+        applyCurveTenors();
+      });
+    });
+
+    box.querySelectorAll('.curve-tenor-row').forEach((row) => {
+      row.addEventListener('dragstart', (e) => {
+        dragFromIdx = parseInt(row.getAttribute('data-idx'), 10);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        row.classList.add('drag-over');
+      });
+      row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        row.classList.remove('drag-over');
+        const toIdx = parseInt(row.getAttribute('data-idx'), 10);
+        if (dragFromIdx == null || dragFromIdx === toIdx) return;
+        const [moved] = CURVE_TENORS.splice(dragFromIdx, 1);
+        CURVE_TENORS.splice(toIdx, 0, moved);
+        dragFromIdx = null;
+        renderCurveTenorList();
+        applyCurveTenors();
+      });
+    });
+  }
+
+  function initCurveTenorControls() {
+    renderCurveTenorList();
+
+    document.getElementById('curve-add-btn').addEventListener('click', () => {
+      // 아직 안 쓰인 지표 중 첫 번째를 기본값으로 추가 (없으면 첫 지표 중복 추가)
+      const unused = ALL_INDICATORS.find((n) => !CURVE_TENORS.includes(n));
+      CURVE_TENORS.push(unused || ALL_INDICATORS[0]);
+      renderCurveTenorList();
+      applyCurveTenors();
+    });
+
+    document.getElementById('curve-reset-btn').addEventListener('click', () => {
+      CURVE_TENORS = [...DEFAULT_TENORS];
+      renderCurveTenorList();
+      applyCurveTenors();
+    });
+  }
+
   // 위에서 고른 시작~끝 구간만 슬라이스
   function sliceRange(arr) {
     return arr.slice(rangeStart, rangeEnd + 1);
@@ -742,6 +868,7 @@
 
     renderIndicatorChecklist();
     populateSpreadSelects();
+    initCurveTenorControls();
 
     // 아래 추이 차트를 클릭하면 그 시점으로 위 재생바를 이동시킨다.
     document.getElementById('bottom-chart').addEventListener('click', (evt) => {

@@ -49,6 +49,15 @@
     font-variant-numeric: tabular-nums;
   }
 
+  .range-row {
+    display: flex; align-items: center; gap: 18px; margin-top: 10px;
+    font-size: 12.5px; color: #4b5563;
+  }
+  .range-row label { display: flex; align-items: center; gap: 6px; }
+  .range-row select {
+    border: 1px solid #d7dae0; border-radius: 6px; padding: 4px 8px; font-size: 12.5px; color: #1f2430;
+  }
+
   .toggle-row {
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
     margin-top: 10px; padding-top: 10px; border-top: 1px solid #eef0f2;
@@ -96,6 +105,10 @@
         </div>
         <input type="range" class="month-slider" id="month-slider" min="0" max="0" value="0" step="1">
         <span class="month-label" id="month-label">-</span>
+      </div>
+      <div class="range-row" id="range-row">
+        <label>시작 <select id="range-start"></select></label>
+        <label>끝 <select id="range-end"></select></label>
       </div>
       <div class="toggle-row">
         <label><input type="checkbox" id="ghost-toggle" checked> 이전 달 잔상 표시</label>
@@ -147,6 +160,8 @@
   let EVENTS = [];         // { idx, from, to, dir }
   let curIdx = 0;
   let bottomMode = 'spread';
+  let rangeStart = 0;
+  let rangeEnd = 0;
 
   let curveChart = null;
   let bottomChart = null;
@@ -317,6 +332,52 @@
     });
   }
 
+  const hoverLinePlugin = {
+    id: 'hoverLine',
+    afterEvent(chart, args) {
+      const e = args.event;
+      const area = chart.chartArea;
+      if (!area) return;
+      if (e.type === 'mousemove' && e.y >= area.top && e.y <= area.bottom && e.x >= area.left && e.x <= area.right) {
+        chart._hoverY = e.y;
+        args.changed = true;
+      } else if (e.type === 'mouseout' || e.type === 'mouseleave') {
+        chart._hoverY = null;
+        args.changed = true;
+      }
+    },
+    afterDraw(chart) {
+      const y = chart._hoverY;
+      if (y == null) return;
+      const { ctx, chartArea, scales } = chart;
+      const value = scales.y.getValueForPixel(y);
+      if (value == null) return;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(chartArea.left, y);
+      ctx.lineTo(chartArea.right, y);
+      ctx.strokeStyle = 'rgba(31,36,48,0.45)';
+      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      const text = value.toFixed(3);
+      ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif';
+      const textWidth = ctx.measureText(text).width;
+      const boxX = chartArea.right - textWidth - 10;
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(31,36,48,0.85)';
+      ctx.fillRect(boxX - 4, y - 9, textWidth + 8, 18);
+      ctx.fillStyle = '#fff';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.fillText(text, boxX, y);
+      ctx.restore();
+    },
+  };
+  Chart.register(hoverLinePlugin);
+
   function buildBottomChart() {
     const ctx = document.getElementById('bottom-chart');
     bottomChart = new Chart(ctx, {
@@ -332,16 +393,6 @@
             pointRadius: 0,
             tension: 0.05,
             fill: true,
-          },
-          {
-            label: '이벤트',
-            data: [],
-            type: 'scatter',
-            pointStyle: 'triangle',
-            pointRadius: 5,
-            backgroundColor: '#c0392b',
-            borderColor: '#c0392b',
-            showLine: false,
           },
           {
             label: '현재 위치',
@@ -362,17 +413,7 @@
         animation: false,
         plugins: {
           legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (c) => {
-                if (c.dataset.label === '이벤트') {
-                  const ev = EVENTS.find((e) => MONTH_DATES[e.idx] === c.raw.x);
-                  return ev ? `기준금리 ${ev.dir}: ${ev.from.toFixed(2)}% → ${ev.to.toFixed(2)}%` : '';
-                }
-                return `${c.raw.y.toFixed(3)}%`;
-              },
-            },
-          },
+          tooltip: { enabled: false },
         },
         scales: {
           x: {
@@ -389,7 +430,6 @@
   function refreshBottomSeries() {
     const series = bottomMode === 'spread' ? SPREAD : DATA['기준금리'];
     bottomChart.data.datasets[0].data = MONTH_DATES.map((d, i) => ({ x: d, y: series[i] }));
-    bottomChart.data.datasets[1].data = EVENTS.map((e) => ({ x: MONTH_DATES[e.idx], y: series[e.idx] }));
     document.getElementById('bottom-label').textContent =
       bottomMode === 'spread' ? '산금6M − 기준금리 (%p)' : '기준금리 (%)';
     updateBottomMarker();
@@ -397,7 +437,7 @@
 
   function updateBottomMarker() {
     const series = bottomMode === 'spread' ? SPREAD : DATA['기준금리'];
-    bottomChart.data.datasets[2].data = [{ x: MONTH_DATES[curIdx], y: series[curIdx] }];
+    bottomChart.data.datasets[1].data = [{ x: MONTH_DATES[curIdx], y: series[curIdx] }];
     bottomChart.update('none');
   }
 
@@ -437,8 +477,8 @@
 
   function stepForward() {
     curIdx++;
-    if (curIdx >= MONTHS.length) {
-      curIdx = MONTHS.length - 1;
+    if (curIdx > rangeEnd) {
+      curIdx = rangeEnd;
       stopPlay();
     }
     render();
@@ -451,10 +491,41 @@
   }
 
   function startPlay() {
-    if (curIdx >= MONTHS.length - 1) curIdx = 0;
+    if (curIdx < rangeStart || curIdx >= rangeEnd) curIdx = rangeStart;
     playing = true;
     document.getElementById('play-btn').textContent = '❚❚';
     timer = setInterval(stepForward, SPEED_MS[currentSpeed]);
+  }
+
+  function populateRangeSelects() {
+    const startSel = document.getElementById('range-start');
+    const endSel = document.getElementById('range-end');
+    const opts = MONTHS.map((m, i) => `<option value="${i}">${fmtMonthLabel(MONTH_DATES[i])}</option>`).join('');
+    startSel.innerHTML = opts;
+    endSel.innerHTML = opts;
+    startSel.value = 0;
+    endSel.value = MONTHS.length - 1;
+  }
+
+  function applyRange() {
+    const startSel = document.getElementById('range-start');
+    const endSel = document.getElementById('range-end');
+    let s = parseInt(startSel.value, 10);
+    let e = parseInt(endSel.value, 10);
+    if (s > e) { [s, e] = [e, s]; }
+    rangeStart = s;
+    rangeEnd = e;
+    startSel.value = s;
+    endSel.value = e;
+
+    const slider = document.getElementById('month-slider');
+    slider.min = rangeStart;
+    slider.max = rangeEnd;
+    if (curIdx < rangeStart || curIdx > rangeEnd) {
+      curIdx = rangeStart;
+    }
+    stopPlay();
+    render();
   }
 
   function initControls() {
@@ -471,8 +542,15 @@
       });
     });
 
+    populateRangeSelects();
+    rangeStart = 0;
+    rangeEnd = MONTHS.length - 1;
+    document.getElementById('range-start').addEventListener('change', applyRange);
+    document.getElementById('range-end').addEventListener('change', applyRange);
+
     const slider = document.getElementById('month-slider');
-    slider.max = MONTHS.length - 1;
+    slider.min = rangeStart;
+    slider.max = rangeEnd;
     slider.addEventListener('input', (e) => {
       curIdx = parseInt(e.target.value, 10);
       stopPlay();

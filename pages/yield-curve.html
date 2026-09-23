@@ -28,9 +28,7 @@
     padding: 14px; margin-bottom: 12px;
   }
 
-  .transport {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  }
+  .transport { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .play-btn {
     border: none; background: #16305c; color: #fff; width: 42px; height: 42px;
     border-radius: 50%; font-size: 16px; cursor: pointer; flex: none;
@@ -65,21 +63,28 @@
   }
   .toggle-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
 
-  .event-banner {
-    margin-top: 8px; font-size: 12.5px; min-height: 18px;
-    color: #8a5a15; font-weight: 600;
-  }
-
   .chart-canvas-box { position: relative; height: 420px; }
-  .bottom-canvas-box { position: relative; height: 160px; }
+  .bottom-canvas-box { position: relative; height: 200px; }
 
-  .bottom-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .bottom-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .bottom-toolbar .seg-btn {
     border: 1px solid #d7dae0; background: #fff; color: #374151;
-    padding: 5px 11px; border-radius: 7px; font-size: 12px; cursor: pointer;
+    padding: 6px 13px; border-radius: 7px; font-size: 12.5px; cursor: pointer;
   }
   .bottom-toolbar .seg-btn.is-active { background: #e3f5ee; color: #1f8266; border-color: #8fd9bd; font-weight: 700; }
-  .bottom-toolbar .label { font-size: 12px; color: #6b7280; margin-left: auto; }
+
+  .sub-controls { margin-bottom: 10px; }
+  .indicator-checklist {
+    display: flex; flex-wrap: wrap; gap: 6px 14px;
+    font-size: 12.5px; color: #374151;
+  }
+  .indicator-checklist label { display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
+  .indicator-checklist .swatch { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+  .spread-controls { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #4b5563; }
+  .spread-controls select {
+    border: 1px solid #d7dae0; border-radius: 6px; padding: 4px 8px; font-size: 12.5px; color: #1f2430;
+  }
 
   .loading, .error { text-align: center; color: #9ca3af; font-size: 13px; padding: 60px 0; }
 </style>
@@ -115,7 +120,6 @@
         <label><input type="checkbox" id="ref-toggle"> 전년 동월 커브 비교</label>
         <label><input type="checkbox" id="yearend-toggle"> 전년말 커브 비교</label>
       </div>
-      <div class="event-banner" id="event-banner"></div>
     </div>
 
     <div class="panel">
@@ -126,10 +130,20 @@
 
     <div class="panel">
       <div class="bottom-toolbar">
-        <button class="seg-btn is-active" data-mode="spread">스프레드 (산금6M − 기준금리)</button>
-        <button class="seg-btn" data-mode="base">기준금리 추이</button>
-        <span class="label" id="bottom-label"></span>
+        <button class="seg-btn is-active" data-mode="multi">지표 추이</button>
+        <button class="seg-btn" data-mode="spread">스프레드</button>
       </div>
+
+      <div id="multi-controls" class="sub-controls">
+        <div id="indicator-checklist" class="indicator-checklist"></div>
+      </div>
+
+      <div id="spread-controls" class="sub-controls spread-controls" style="display:none;">
+        <label>A <select id="spread-a"></select></label>
+        <span>−</span>
+        <label>B <select id="spread-b"></select></label>
+      </div>
+
       <div class="bottom-canvas-box">
         <canvas id="bottom-chart"></canvas>
       </div>
@@ -144,27 +158,34 @@
   const SUPABASE_URL = "https://hnxvsopwxiamexnxczhj.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhueHZzb3B3eGlhbWV4bnhjemhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNjAzNjksImV4cCI6MjA5NzgzNjM2OX0._7LzP4rrjM1F06Dya_vX_kTA4t1jw7DlR6ExWlvhxak";
 
-  // 화면에 표시할 순서 (기준금리 → CD91D → 산금 6M/1Y/2Y → 국고 3Y/5Y/10Y)
+  // 위쪽 커브에 항상 고정으로 쓰이는 8개 (기준금리 → CD91D → 산금 6M/1Y/2Y → 국고 3Y/5Y/10Y)
   const TENORS = ['기준금리', 'CD 91D', '산금 6M', '산금 1Y', '산금 2Y', '국고 3Y', '국고 5Y', '국고 10Y'];
   const TENOR_LABELS = ['기준금리', 'CD91D', '산금6M', '산금1Y', '산금2Y', '국고3Y', '국고5Y', '국고10Y'];
+
+  const PALETTE = ['#16305c', '#0f7a6b', '#b7791f', '#7f77dd', '#c0392b', '#2b6fd9', '#d4537e', '#556b2f', '#8e44ad', '#e67e22'];
 
   const SPEED_MS = { slow: 900, normal: 450, fast: 180 };
   let currentSpeed = 'normal';
   let playing = false;
   let timer = null;
 
-  let MONTHS = [];         // ['2001-01', '2001-02', ...]
-  let MONTH_DATES = [];    // 실제 표시용 마지막 거래일 date (YYYY-MM-DD)
-  let DATA = {};           // DATA[indicator] = [value, value, ...] (MONTHS 순서)
-  let SPREAD = [];         // 산금6M - 기준금리, 월별
-  let EVENTS = [];         // { idx, from, to, dir }
+  let MONTHS = [];          // ['2001-01', ...] (커브 8개 지표가 모두 있는 달만)
+  let MONTH_DATES = [];     // 표시용 실제 날짜 (해당 월의 마지막 거래일)
+  let ALL_INDICATORS = [];  // 화면에서 선택 가능한 전체 지표 목록 (표시 순서)
+  let DATA = {};            // DATA[indicator] = [value|null, ...] (MONTHS 순서)
   let curIdx = 0;
-  let bottomMode = 'spread';
   let rangeStart = 0;
   let rangeEnd = 0;
 
+  let bottomMode = 'multi';                 // 'multi' | 'spread'
+  let selectedIndicators = new Set(['기준금리']);
+  let spreadA = '산금 6M';
+  let spreadB = '기준금리';
+
   let curveChart = null;
   let bottomChart = null;
+
+  function shortLabel(name) { return name.replace(/\s+/g, ''); }
 
   async function fetchRpc(fnName) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
@@ -189,41 +210,28 @@
     const rows = await fetchRpc('get_yield_curve_monthly');
 
     const byIndicatorMonth = {};
-    TENORS.forEach((t) => { byIndicatorMonth[t] = {}; });
-
+    const indicatorSet = new Set();
     const monthSet = new Set();
+
     rows.forEach((r) => {
-      const monthKey = r.month_date.slice(0, 7); // YYYY-MM
-      monthSet.add(monthKey);
-      if (!byIndicatorMonth[r.indicator]) return;
+      const monthKey = r.month_date.slice(0, 7);
+      indicatorSet.add(r.indicator);
+      if (!byIndicatorMonth[r.indicator]) byIndicatorMonth[r.indicator] = {};
       byIndicatorMonth[r.indicator][monthKey] = { value: Number(r.value), date: r.month_date };
+      if (TENORS.includes(r.indicator)) monthSet.add(monthKey);
     });
 
     MONTHS = Array.from(monthSet).sort();
-    // 8개 지표가 모두 존재하는 달만 사용
-    MONTHS = MONTHS.filter((m) => TENORS.every((t) => byIndicatorMonth[t][m] !== undefined));
-
+    // 커브에 쓰는 8개 지표가 모두 존재하는 달만 사용
+    MONTHS = MONTHS.filter((m) => TENORS.every((t) => byIndicatorMonth[t] && byIndicatorMonth[t][m] !== undefined));
     MONTH_DATES = MONTHS.map((m) => byIndicatorMonth['기준금리'][m].date);
 
-    TENORS.forEach((t) => {
-      DATA[t] = MONTHS.map((m) => byIndicatorMonth[t][m].value);
+    const extra = Array.from(indicatorSet).filter((x) => !TENORS.includes(x)).sort();
+    ALL_INDICATORS = [...TENORS, ...extra];
+
+    ALL_INDICATORS.forEach((t) => {
+      DATA[t] = MONTHS.map((m) => (byIndicatorMonth[t] && byIndicatorMonth[t][m]) ? byIndicatorMonth[t][m].value : null);
     });
-
-    SPREAD = MONTHS.map((_, i) => DATA['산금 6M'][i] - DATA['기준금리'][i]);
-
-    // 기준금리 변화 시점을 이벤트로 자동 추출
-    const base = DATA['기준금리'];
-    for (let i = 1; i < base.length; i++) {
-      const diff = base[i] - base[i - 1];
-      if (Math.abs(diff) >= 0.001) {
-        EVENTS.push({
-          idx: i,
-          from: base[i - 1],
-          to: base[i],
-          dir: diff > 0 ? '인상' : '인하',
-        });
-      }
-    }
   }
 
   function globalYRange(fromIdx, toIdx) {
@@ -233,11 +241,12 @@
     TENORS.forEach((t) => {
       for (let i = s; i <= e; i++) {
         const v = DATA[t][i];
+        if (v == null) continue;
         if (v < min) min = v;
         if (v > max) max = v;
       }
     });
-    const pad = (max - min) * 0.12 || 0.5;
+    const pad = (max - min) * 0.05 || 0.3;
     return { min: Math.max(0, min - pad), max: max + pad };
   }
 
@@ -255,7 +264,6 @@
   function yearEndLastYearIdx(idx) {
     const target = MONTHS[idx];
     const y = Number(target.slice(0, 4)) - 1;
-    // 해당 연도의 마지막으로 존재하는 달 (보통 12월)
     let lastIdx = -1;
     MONTHS.forEach((m, i) => { if (m.startsWith(String(y) + '-')) lastIdx = i; });
     return lastIdx;
@@ -346,6 +354,16 @@
           legend: {
             display: true, position: 'top',
             labels: { usePointStyle: true, boxWidth: 20, boxHeight: 8, font: { size: 12 } },
+            // [요구사항 7] 범례를 직접 클릭해도 위쪽 체크박스와 항상 같은 상태를 갖도록,
+            // 기본 토글 동작 대신 체크박스를 토글하고 그걸 기준으로 다시 그린다.
+            onClick: (e, legendItem) => {
+              const map = { 0: 'yearend-toggle', 1: 'ref-toggle', 2: 'ghost-toggle' };
+              const cbId = map[legendItem.datasetIndex];
+              if (!cbId) return; // '현재'는 항상 표시, 토글 불가
+              const cb = document.getElementById(cbId);
+              cb.checked = !cb.checked;
+              render();
+            },
           },
           tooltip: {
             callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y.toFixed(3)}%` },
@@ -356,7 +374,7 @@
           y: {
             min: yRange.min, max: yRange.max,
             title: { display: true, text: '금리(%)' },
-            ticks: { font: { size: 11.5 } },
+            ticks: { stepSize: 0.5, font: { size: 11.5 } },
           },
         },
       },
@@ -399,7 +417,7 @@
       const boxX = chartArea.right - textWidth - 10;
       ctx.setLineDash([]);
       ctx.fillStyle = 'rgba(31,36,48,0.85)';
-      ctx.fillRect(boxX - 4, y - 9, textWidth + 8, 18);
+      ctx.fillRect(boxX - 4, y - 9, textWidth + 8, 16);
       ctx.fillStyle = '#fff';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
@@ -409,32 +427,36 @@
   };
   Chart.register(hoverLinePlugin);
 
+  // 현재 위치(재생 커서) 마커마다 값 라벨을 붙여준다. _isMarker 플래그가 붙은 데이터셋만 대상으로 함.
   const bottomCurrentLabelPlugin = {
     id: 'bottomCurrentLabel',
     afterDatasetsDraw(chart) {
-      const meta = chart.getDatasetMeta(1); // '현재 위치'
-      if (!meta || !meta.data || !meta.data.length) return;
-      const point = meta.data[0];
-      const raw = chart.data.datasets[1].data[0];
-      if (!point || raw == null || raw.y == null) return;
-
       const { ctx, chartArea } = chart;
-      const text = raw.y.toFixed(3);
-      ctx.save();
-      ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif';
-      const textWidth = ctx.measureText(text).width;
-      let x = point.x + 9;
-      if (x + textWidth + 6 > chartArea.right) x = point.x - textWidth - 15;
-      let y = point.y - 12;
-      if (y - 9 < chartArea.top) y = point.y + 16;
+      chart.data.datasets.forEach((ds, dsIndex) => {
+        if (!ds._isMarker) return;
+        const meta = chart.getDatasetMeta(dsIndex);
+        if (!meta || !meta.data || !meta.data.length) return;
+        const point = meta.data[0];
+        const raw = ds.data[0];
+        if (!point || raw == null || raw.y == null) return;
 
-      ctx.fillStyle = '#16305c';
-      ctx.fillRect(x - 3, y - 9, textWidth + 6, 18);
-      ctx.fillStyle = '#fff';
-      ctx.textBaseline = 'middle';
-      ctx.textAlign = 'left';
-      ctx.fillText(text, x, y);
-      ctx.restore();
+        const text = raw.y.toFixed(3);
+        ctx.save();
+        ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif';
+        const textWidth = ctx.measureText(text).width;
+        let x = point.x + 9;
+        if (x + textWidth + 6 > chartArea.right) x = point.x - textWidth - 15;
+        let y = point.y - 14;
+        if (y - 9 < chartArea.top) y = point.y + 16;
+
+        ctx.fillStyle = ds.borderColor || '#16305c';
+        ctx.fillRect(x - 3, y - 9, textWidth + 6, 18);
+        ctx.fillStyle = '#fff';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'left';
+        ctx.fillText(text, x, y);
+        ctx.restore();
+      });
     },
   };
 
@@ -443,37 +465,19 @@
     bottomChart = new Chart(ctx, {
       type: 'line',
       plugins: [bottomCurrentLabelPlugin],
-      data: {
-        datasets: [
-          {
-            label: '전체 추이',
-            data: [],
-            borderColor: '#0f7a6b',
-            backgroundColor: 'rgba(15,122,107,0.12)',
-            borderWidth: 1.4,
-            pointRadius: 0,
-            tension: 0.05,
-            fill: true,
-          },
-          {
-            label: '현재 위치',
-            data: [],
-            type: 'scatter',
-            pointStyle: 'circle',
-            pointRadius: 5,
-            backgroundColor: '#16305c',
-            borderColor: '#fff',
-            borderWidth: 2,
-            showLine: false,
-          },
-        ],
-      },
+      data: { datasets: [] },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         animation: false,
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: true, position: 'top',
+            labels: {
+              usePointStyle: true, boxWidth: 16, boxHeight: 8, font: { size: 11.5 },
+              filter: (item) => !item.text.startsWith('_'), // 마커 데이터셋은 범례에서 숨김
+            },
+          },
           tooltip: { enabled: false },
         },
         scales: {
@@ -488,18 +492,106 @@
     });
   }
 
+  // 지표 선택 체크리스트 렌더링 (요구사항 4, 5)
+  function renderIndicatorChecklist() {
+    const box = document.getElementById('indicator-checklist');
+    box.innerHTML = ALL_INDICATORS.map((name, i) => {
+      const color = PALETTE[i % PALETTE.length];
+      const checked = selectedIndicators.has(name) ? 'checked' : '';
+      return `
+        <label>
+          <input type="checkbox" data-indicator="${name}" ${checked}>
+          <span class="swatch" style="background:${color}"></span>
+          ${shortLabel(name)}
+        </label>`;
+    }).join('');
+
+    box.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+      cb.addEventListener('change', () => {
+        const name = cb.getAttribute('data-indicator');
+        if (cb.checked) selectedIndicators.add(name); else selectedIndicators.delete(name);
+        refreshBottomSeries();
+      });
+    });
+  }
+
+  function populateSpreadSelects() {
+    const aSel = document.getElementById('spread-a');
+    const bSel = document.getElementById('spread-b');
+    const opts = ALL_INDICATORS.map((n) => `<option value="${n}">${shortLabel(n)}</option>`).join('');
+    aSel.innerHTML = opts;
+    bSel.innerHTML = opts;
+    aSel.value = spreadA;
+    bSel.value = spreadB;
+    aSel.addEventListener('change', () => { spreadA = aSel.value; refreshBottomSeries(); });
+    bSel.addEventListener('change', () => { spreadB = bSel.value; refreshBottomSeries(); });
+  }
+
+  // 위에서 고른 시작~끝 구간만 슬라이스
+  function sliceRange(arr) {
+    return arr.slice(rangeStart, rangeEnd + 1);
+  }
+
   function refreshBottomSeries() {
-    const series = bottomMode === 'spread' ? SPREAD : DATA['기준금리'];
-    bottomChart.data.datasets[0].data = MONTH_DATES.map((d, i) => ({ x: d, y: series[i] }));
-    document.getElementById('bottom-label').textContent =
-      bottomMode === 'spread' ? '산금6M − 기준금리 (%p)' : '기준금리 (%)';
+    const dates = sliceRange(MONTH_DATES);
+    const datasets = [];
+
+    if (bottomMode === 'multi') {
+      ALL_INDICATORS.forEach((name, i) => {
+        if (!selectedIndicators.has(name)) return;
+        const color = PALETTE[i % PALETTE.length];
+        const series = sliceRange(DATA[name]);
+        datasets.push({
+          label: shortLabel(name),
+          data: dates.map((d, j) => (series[j] == null ? null : { x: d, y: series[j] })),
+          borderColor: color, backgroundColor: color,
+          borderWidth: 1.5, pointRadius: 0, tension: 0.05, spanGaps: true,
+        });
+        datasets.push({
+          label: '_marker_' + name,
+          data: [], type: 'scatter', pointStyle: 'circle', pointRadius: 5,
+          backgroundColor: color, borderColor: '#fff', borderWidth: 2, showLine: false, _isMarker: true,
+        });
+      });
+    } else {
+      const seriesA = DATA[spreadA], seriesB = DATA[spreadB];
+      const spreadSeries = MONTHS.map((_, i) => (seriesA[i] == null || seriesB[i] == null) ? null : seriesA[i] - seriesB[i]);
+      const sliced = sliceRange(spreadSeries);
+      datasets.push({
+        label: `${shortLabel(spreadA)} − ${shortLabel(spreadB)}`,
+        data: dates.map((d, j) => (sliced[j] == null ? null : { x: d, y: sliced[j] })),
+        borderColor: '#0f7a6b', backgroundColor: 'rgba(15,122,107,0.12)',
+        borderWidth: 1.4, pointRadius: 0, tension: 0.05, fill: true, spanGaps: true,
+      });
+      datasets.push({
+        label: '_marker_spread', data: [], type: 'scatter', pointStyle: 'circle', pointRadius: 5,
+        backgroundColor: '#0f7a6b', borderColor: '#fff', borderWidth: 2, showLine: false, _isMarker: true,
+      });
+    }
+
+    bottomChart.data.datasets = datasets;
     updateBottomMarker();
   }
 
   function updateBottomMarker() {
-    const series = bottomMode === 'spread' ? SPREAD : DATA['기준금리'];
-    bottomChart.data.datasets[1].data = [{ x: MONTH_DATES[curIdx], y: series[curIdx] }];
+    if (bottomIdxOutOfRange()) return;
+    if (bottomMode === 'multi') {
+      ALL_INDICATORS.forEach((name) => {
+        if (!selectedIndicators.has(name)) return;
+        const markerDs = bottomChart.data.datasets.find((d) => d.label === '_marker_' + name);
+        const v = DATA[name][curIdx];
+        if (markerDs) markerDs.data = v == null ? [] : [{ x: MONTH_DATES[curIdx], y: v }];
+      });
+    } else {
+      const a = DATA[spreadA][curIdx], b = DATA[spreadB][curIdx];
+      const markerDs = bottomChart.data.datasets.find((d) => d.label === '_marker_spread');
+      if (markerDs) markerDs.data = (a == null || b == null) ? [] : [{ x: MONTH_DATES[curIdx], y: a - b }];
+    }
     bottomChart.update('none');
+  }
+
+  function bottomIdxOutOfRange() {
+    return !bottomChart || curIdx < rangeStart || curIdx > rangeEnd;
   }
 
   function render() {
@@ -527,13 +619,7 @@
     }
 
     curveChart.update();
-
     updateBottomMarker();
-
-    const ev = EVENTS.find((e) => e.idx === curIdx);
-    document.getElementById('event-banner').textContent = ev
-      ? `🔔 기준금리 ${ev.dir}: ${ev.from.toFixed(2)}% → ${ev.to.toFixed(2)}%`
-      : '';
   }
 
   function stepForward() {
@@ -558,14 +644,16 @@
     timer = setInterval(stepForward, SPEED_MS[currentSpeed]);
   }
 
-  function populateRangeSelects() {
+  function populateRangeSelects(defaultStartMonth) {
     const startSel = document.getElementById('range-start');
     const endSel = document.getElementById('range-end');
     const opts = MONTHS.map((m, i) => `<option value="${i}">${fmtMonthLabel(MONTH_DATES[i])}</option>`).join('');
     startSel.innerHTML = opts;
     endSel.innerHTML = opts;
-    startSel.value = 0;
+    const defaultStartIdx = defaultStartMonth ? Math.max(0, MONTHS.indexOf(defaultStartMonth)) : 0;
+    startSel.value = defaultStartIdx;
     endSel.value = MONTHS.length - 1;
+    return defaultStartIdx;
   }
 
   function applyRange() {
@@ -586,11 +674,13 @@
       curIdx = rangeStart;
     }
 
-    // 선택한 구간 안에서만 y축 범위를 다시 잡아서, 변동폭이 작은 구간을 골랐을 때도
-    // 변화가 잘 보이도록 한다 (애니메이션 재생 중엔 축이 고정되어 안정적으로 보임).
+    // [요구사항 3] 선택 구간 안에서만 y축을 다시 잡아 변동폭이 작아도 잘 보이게 함
     const yRange = globalYRange(rangeStart, rangeEnd);
     curveChart.options.scales.y.min = yRange.min;
     curveChart.options.scales.y.max = yRange.max;
+
+    // [요구사항 2] 아래 추이 차트도 같은 구간만 보이게
+    refreshBottomSeries();
 
     stopPlay();
     render();
@@ -610,8 +700,9 @@
       });
     });
 
-    populateRangeSelects();
-    rangeStart = 0;
+    // [요구사항 1] 시작 기본값 2010년 1월
+    const defaultStartIdx = populateRangeSelects('2010-01');
+    rangeStart = defaultStartIdx;
     rangeEnd = MONTHS.length - 1;
     document.getElementById('range-start').addEventListener('change', applyRange);
     document.getElementById('range-end').addEventListener('change', applyRange);
@@ -629,14 +720,19 @@
       document.getElementById(id).addEventListener('change', render);
     });
 
-    document.querySelectorAll('.seg-btn').forEach((btn) => {
+    document.querySelectorAll('.bottom-toolbar .seg-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.seg-btn').forEach((b) => b.classList.remove('is-active'));
+        document.querySelectorAll('.bottom-toolbar .seg-btn').forEach((b) => b.classList.remove('is-active'));
         btn.classList.add('is-active');
         bottomMode = btn.getAttribute('data-mode');
+        document.getElementById('multi-controls').style.display = bottomMode === 'multi' ? 'block' : 'none';
+        document.getElementById('spread-controls').style.display = bottomMode === 'spread' ? 'flex' : 'none';
         refreshBottomSeries();
       });
     });
+
+    renderIndicatorChecklist();
+    populateSpreadSelects();
 
     document.getElementById('close-btn').addEventListener('click', () => window.close());
   }
@@ -647,11 +743,16 @@
       document.getElementById('loading').style.display = 'none';
       document.getElementById('app').style.display = 'block';
 
-      curIdx = MONTHS.length - 1; // 최신 월부터 시작
       buildCurveChart();
       buildBottomChart();
-      refreshBottomSeries();
       initControls();
+
+      curIdx = rangeEnd; // 선택 구간의 마지막 달부터 시작
+      const yRange = globalYRange(rangeStart, rangeEnd);
+      curveChart.options.scales.y.min = yRange.min;
+      curveChart.options.scales.y.max = yRange.max;
+
+      refreshBottomSeries();
       render();
     } catch (err) {
       console.error(err);

@@ -210,6 +210,17 @@
   let playing = false;
   let timer = null;
 
+  // 차트 상단(왼쪽)에 현재 기준월을 크게 표시하기 위한 title 옵션.
+  // 텍스트는 render()에서 매번 갱신한다. (모바일에서 위쪽 재생바가 화면 밖으로 나가도 기준월이 보이도록)
+  const monthTitleOpts = () => ({
+    display: true,
+    text: '',
+    align: 'start',
+    color: '#16305c',
+    font: { size: 16, weight: '700' },
+    padding: { top: 0, bottom: 6 },
+  });
+
   let MONTHS = [];          // ['2001-01', ...] (커브 8개 지표가 모두 있는 달만)
   let MONTH_DATES = [];     // 표시용 실제 날짜 (해당 월의 마지막 거래일)
   let ALL_INDICATORS = [];  // 화면에서 선택 가능한 전체 지표 목록 (표시 순서)
@@ -424,6 +435,7 @@
         animation: { duration: 350, easing: 'easeOutQuad' },
         layout: { padding: { top: 18 } },
         plugins: {
+          title: monthTitleOpts(),
           legend: {
             display: true, position: 'top',
             labels: { usePointStyle: true, boxWidth: 20, boxHeight: 8, font: { size: 12 } },
@@ -522,7 +534,9 @@
         let y = point.y - 14;
         if (y - 9 < chartArea.top) y = point.y + 16;
 
-        ctx.fillStyle = ds.borderColor || '#16305c';
+        // 마커의 borderColor는 흰색(#fff)이라 배경으로 쓰면 흰 글씨가 안 보이고 선을 가리는
+        // 흰 박스가 됨 → 마커의 채움색(= 지표 색상)을 배경으로 사용한다.
+        ctx.fillStyle = ds.backgroundColor || '#16305c';
         ctx.fillRect(x - 3, y - 9, textWidth + 6, 18);
         ctx.fillStyle = '#fff';
         ctx.textBaseline = 'middle';
@@ -544,6 +558,7 @@
         maintainAspectRatio: false,
         animation: false,
         plugins: {
+          title: monthTitleOpts(),
           legend: {
             display: true, position: 'top',
             labels: {
@@ -668,8 +683,14 @@
   }
 
   function render() {
+    const monthText = fmtMonthLabel(MONTH_DATES[curIdx]);
     document.getElementById('month-slider').value = curIdx;
-    document.getElementById('month-label').textContent = fmtMonthLabel(MONTH_DATES[curIdx]);
+    document.getElementById('month-label').textContent = monthText;
+
+    // 위쪽 재생바뿐 아니라 두 차트 상단에도 현재 기준월을 표시 (특히 모바일에서 한눈에 보이도록)
+    curveChart.options.plugins.title.text = monthText;
+    bottomChart.options.plugins.title.text = monthText;
+
     renderEventBanner();
 
     curveChart.data.datasets[2].data = curIdx > 0 && document.getElementById('ghost-toggle').checked
@@ -698,10 +719,8 @@
 
   function stepForward() {
     curIdx++;
-    if (curIdx > rangeEnd) {
-      curIdx = rangeEnd;
-      stopPlay();
-    }
+    // 끝까지 가면 멈추지 않고 시작 지점으로 돌아가 무한 반복 재생
+    if (curIdx > rangeEnd) curIdx = rangeStart;
     render();
   }
 

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>공모주(IPO) 시초가 예상 — AI 마켓 인사이트</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  :root {
+    --f-up: #c0392b;
+    --f-down: #2b6fd9;
+    --f-band: #16305c;
+    --f-band-soft: #c9d3e6;
+    --f-amber: #b7791f;
+    --f-teal: #0f7a6b;
+  }
+  body { background: var(--bg-subtle, #f6f7f9); }
+  .pop-wrap { max-width: 1040px; margin: 0 auto; padding: 20px 20px 40px; }
+  .pop-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 14px; margin-bottom: 14px; border-bottom: 2px solid var(--text, #1f2430);
+  }
+  .pop-head h1 { font-size: 16px; margin: 0; }
+  .pop-sub { font-size: 12px; color: var(--text-muted, #6b7280); margin-top: 3px; font-weight: 400; }
+  .pop-close { font-size: 12.5px; color: var(--text-muted, #6b7280); border: 1px solid var(--border-strong, #cfd3da); border-radius: var(--radius-s, 6px); padding: 4px 10px; background: transparent; cursor: pointer; }
+
+  .card { background: var(--bg, #fff); border: 1px solid var(--border, #e5e7eb); border-radius: 10px; }
+  .mood { padding: 14px 16px; margin-bottom: 14px; }
+  .mood-title { font-size: 12.5px; font-weight: 700; margin-bottom: 8px; }
+  .mood-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .mood-item { background: var(--bg-subtle, #f6f7f9); border-radius: 8px; padding: 9px 11px; }
+  .mood-item .k { font-size: 11px; color: var(--text-muted, #6b7280); }
+  .mood-item .v { font-size: 15px; font-weight: 700; margin-top: 2px; }
+  .mood-item .s { font-size: 11px; color: var(--text-faint, #9ca3af); margin-top: 1px; }
+  .mood-note { font-size: 11.5px; color: var(--text-muted, #6b7280); margin-top: 9px; line-height: 1.6; }
+
+  .tbl-wrap { overflow-x: auto; }
+  table.fc { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 760px; }
+  table.fc th { background: var(--bg-subtle, #f6f7f9); font-weight: 600; font-size: 12px; color: var(--text-muted, #6b7280); padding: 9px 8px; border-bottom: 1px solid var(--border, #e5e7eb); text-align: center; white-space: nowrap; }
+  table.fc td { padding: 11px 8px; border-bottom: 1px solid var(--border, #e5e7eb); text-align: center; vertical-align: middle; }
+  table.fc td.name { text-align: left; font-weight: 600; }
+  tr.main { cursor: pointer; }
+  tr.main:hover td { background: var(--bg-hover, #f3f4f6); }
+  tr.main.open td { background: var(--bg-hover, #f3f4f6); }
+  .chev { display: inline-block; font-size: 10px; color: var(--text-faint, #9ca3af); margin-left: 5px; transition: transform .15s; }
+  tr.main.open .chev { transform: rotate(180deg); }
+  .tag { display: inline-block; font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: middle; }
+  .tag-spac { background: #eceafb; color: #5b50c4; }
+  .tag-live { background: #fdecea; color: var(--f-up); }
+  .conf { font-size: 10.5px; font-weight: 600; margin-top: 3px; }
+  .conf-hi { color: var(--f-teal); } .conf-mid { color: var(--text-muted, #6b7280); } .conf-low { color: var(--f-amber); }
+
+  .predcell { min-width: 230px; text-align: left; }
+  .predtxt { font-size: 13.5px; font-weight: 700; }
+  .predtxt small { font-weight: 500; color: var(--text-muted, #6b7280); font-size: 11.5px; margin-left: 4px; }
+  .track { position: relative; height: 8px; background: #eef0f3; border-radius: 4px; margin: 7px 0 3px; }
+  .track .r90 { position: absolute; top: 3px; height: 2px; background: var(--f-band-soft); }
+  .track .r50 { position: absolute; top: 0; height: 8px; background: var(--f-band); border-radius: 4px; opacity: .85; }
+  .track .med { position: absolute; top: -2px; width: 2px; height: 12px; background: var(--f-amber); }
+  .track .act { position: absolute; top: -4px; width: 4px; height: 16px; background: var(--f-up); border-radius: 2px; }
+  .track .zero { position: absolute; top: -1px; width: 1px; height: 10px; background: #9aa1ad; }
+  .acttxt { font-size: 11.5px; margin-top: 4px; }
+  .acttxt b { color: var(--f-up); }
+
+  tr.detail > td { background: var(--bg, #fff); padding: 0; text-align: left; }
+  .detail-inner { padding: 16px 18px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 760px) { .detail-inner { grid-template-columns: 1fr; } }
+  .box h3 { font-size: 13px; margin: 0 0 8px; }
+  .box p { font-size: 12.5px; line-height: 1.7; margin: 0 0 8px; color: var(--text, #1f2430); }
+  .full { grid-column: 1 / -1; }
+  .drv { display: grid; grid-template-columns: 1fr 70px; gap: 6px; align-items: center; font-size: 12.5px; padding: 5px 0; border-bottom: 1px dashed var(--border, #e5e7eb); }
+  .drv .bar { display: flex; align-items: center; height: 10px; position: relative; }
+  .drv .bar i { display: block; height: 8px; border-radius: 2px; position: absolute; }
+  .drv .val { text-align: right; font-weight: 700; }
+  .up { color: var(--f-up); } .down { color: var(--f-down); }
+  .kp { font-size: 12.5px; line-height: 1.65; margin: 0 0 6px; padding-left: 16px; }
+  .kp li { margin-bottom: 2px; }
+  .heat { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 9px; }
+  .heat-hi { background: #fdecea; color: var(--f-up); }
+  .heat-mid { background: #fdf3df; color: var(--f-amber); }
+  .heat-none { background: #eef0f3; color: var(--text-muted, #6b7280); }
+  table.sim { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.sim th { color: var(--text-muted, #6b7280); font-weight: 600; padding: 5px 6px; border-bottom: 1px solid var(--border, #e5e7eb); text-align: right; }
+  table.sim td { padding: 5px 6px; border-bottom: 1px solid var(--border, #e5e7eb); text-align: right; }
+  table.sim th:first-child, table.sim td:first-child { text-align: left; }
+  .news-mini { list-style: none; margin: 0; padding: 0; font-size: 12.5px; }
+  .news-mini li { padding: 5px 0; border-bottom: 1px solid var(--border, #e5e7eb); }
+  .news-mini a { color: var(--text, #1f2430); text-decoration: none; }
+  .news-mini a:hover { text-decoration: underline; }
+  .news-mini .d { color: var(--text-faint, #9ca3af); font-size: 11px; margin-left: 6px; }
+  .src a { font-size: 12px; color: var(--accent, #16305c); }
+  .note { font-size: 11.5px; color: var(--text-muted, #6b7280); line-height: 1.65; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11.5px; color: var(--text-muted, #6b7280); padding: 10px 4px 0; }
+  .legend span::before { content: ''; display: inline-block; width: 14px; height: 6px; margin-right: 5px; vertical-align: middle; border-radius: 3px; }
+  .legend .l50::before { background: var(--f-band); }
+  .legend .l90::before { background: var(--f-band-soft); }
+  .legend .lmed::before { background: var(--f-amber); width: 3px; height: 11px; }
+  .legend .lact::before { background: var(--f-up); width: 4px; height: 11px; }
+  .updated { font-size: 12px; color: var(--text-muted, #6b7280); padding: 10px 4px 0; display: flex; align-items: center; gap: 6px; }
+  .updated svg { width: 13px; height: 13px; flex: none; }
+  .foot { font-size: 11.5px; color: var(--text-faint, #9ca3af); line-height: 1.7; margin-top: 14px; }
+  .msg { padding: 28px; text-align: center; color: var(--text-muted, #6b7280); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="pop-wrap">
+  <div class="pop-head">
+    <div>
+      <h1>공모주(IPO) 시초가 예상</h1>
+      <div class="pop-sub">상장 일정이 확정된 종목의 공모가 대비 시초가 수익률 예상 · 종목을 클릭하면 근거와 종목 이야기가 열려요</div>
+    </div>
+    <button class="pop-close" onclick="window.close()">닫기</button>
+  </div>
+
+  <div class="card mood" id="mood"><div class="msg">시장 분위기를 불러오는 중…</div></div>
+
+  <div class="card">
+    <div class="tbl-wrap">
+      <table class="fc">
+        <thead>
+          <tr>
+            <th>상장일</th>
+            <th style="text-align:left">종목명</th>
+            <th>공모금액</th>
+            <th>경쟁률<br>(기관 / 일반)</th>
+            <th>확약률</th>
+            <th style="text-align:left">예상 시초가 수익률</th>
+          </tr>
+        </thead>
+        <tbody id="fc-body"><tr><td colspan="6" class="msg">예상치를 불러오는 중…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="legend">
+    <span class="l50">예상 밴드(25~75%)</span>
+    <span class="l90">넓게 본 범위(10~90%)</span>
+    <span class="lmed">중앙값</span>
+    <span class="lact">실제 시초가</span>
+  </div>
+
+  <div class="updated" id="updated">마지막 업데이트: -</div>
+
+  <div class="foot" id="foot">
+    ※ 시초가 수익률 = (시초가 − 공모가) ÷ 공모가. 2023.6 이후 상장 일반 종목의 청약경쟁률·기관경쟁률·확약률·공모규모로 만든 회귀모델에 최근 60일 시장 분위기 보정을 더한 통계적 추정이며, 맞히는 것을 보장하지 않아요. 상한은 +300%로 제한했습니다. 투자 판단의 참고 자료이며 투자 권유가 아닙니다.
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-client.js"></script>
+<script src="../js/helpers.js"></script>
+<script>
+(function () {
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const sgn = (v, d) => (v == null || isNaN(v)) ? '-' : (v > 0 ? '+' : '') + Number(v).toFixed(d == null ? 0 : d) + '%';
+  const num = (v, d) => (v == null || isNaN(v)) ? '-' : Number(v).toLocaleString('ko-KR', { maximumFractionDigits: d == null ? 0 : d });
+  const todayKR = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+  const addDays = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const md = (s) => s ? s.slice(5).replace('-', '.') : '-';
+  const SPAC_RE = /스팩|제[0-9]+호/;
+  const LO = -20, HI = 300;
+  const pos = (v) => Math.max(0, Math.min(100, (v - LO) / (HI - LO) * 100));
+  const median = (a) => { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const avg = (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+  const cls = (v) => v > 0 ? 'up' : v < 0 ? 'down' : '';
+
+  const state = { rows: [], actual: {} };
+
+  async function safe(q) { try { const r = await q; return r.error ? { data: [], error: r.error } : r; } catch (e) { return { data: [], error: e }; } }
+
+  async function main() {
+    if (typeof db === 'undefined') { document.getElementById('fc-body').innerHTML = '<tr><td colspan="6" class="msg">DB 연결을 확인해 주세요.</td></tr>'; return; }
+
+    const fcRes = await safe(db.from('ipo_open_forecast').select('*').gte('listing_date', addDays(todayKR, -3)).order('listing_date').order('stock_name'));
+    if (fcRes.error) { console.error(fcRes.error); document.getElementById('fc-body').innerHTML = '<tr><td colspan="6" class="msg">예상치를 불러오지 못했습니다.</td></tr>'; document.getElementById('mood').innerHTML = ''; return; }
+    state.rows = fcRes.data || [];
+    renderUpdated();
+
+    const names = state.rows.map((r) => r.stock_name);
+    const [ovRes, hRes, mRes] = await Promise.all([
+      safe(db.from('ipo_open_actual_override').select('stock_name, open_return_pct')),
+      names.length ? safe(db.from('ipo_history').select('stock_name, confirmed_price, listing_open_price, listing_first_close_price').in('stock_name', names)) : Promise.resolve({ data: [] }),
+      safe(db.from('ipo_history').select('stock_name, listing_date, confirmed_price, listing_open_price').gte('listing_date', addDays(todayKR, -90)).lte('listing_date', todayKR).not('listing_open_price', 'is', null)),
+    ]);
+
+    const ov = {}; (ovRes.data || []).forEach((o) => { ov[o.stock_name] = Number(o.open_return_pct); });
+    (hRes.data || []).forEach((h) => {
+      const conf = Number(h.confirmed_price);
+      if (h.listing_open_price != null && conf > 0) state.actual[h.stock_name] = { open: (Number(h.listing_open_price) - conf) / conf * 100, close: h.listing_first_close_price != null ? (Number(h.listing_first_close_price) - conf) / conf * 100 : null };
+    });
+    Object.keys(ov).forEach((k) => { state.actual[k] = Object.assign({}, state.actual[k], { open: ov[k] }); });
+
+    renderMood(mRes.data || [], ov);
+    renderTable();
+  }
+
+  function renderUpdated() {
+    const el = document.getElementById('updated');
+    const ts = state.rows.map((r) => new Date(r.updated_at).getTime()).filter((t) => !isNaN(t));
+    const clock = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6.8"/><path d="M9 5.2V9l3 1.8"/></svg>';
+    if (!ts.length) { el.innerHTML = '마지막 업데이트: -'; return; }
+    const p = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date(Math.max.apply(null, ts)));
+    const g = (t) => (p.find((x) => x.type === t) || {}).value;
+    el.innerHTML = `${clock}마지막 업데이트: ${g('year')}. ${g('month')}. ${g('day')}. ${g('hour') === '24' ? '00' : g('hour')}:${g('minute')} <span style="color:var(--text-faint,#9ca3af)">· 매일 09:30, 18:30 자동 갱신</span>`;
+  }
+
+  function renderMood(hist, ov) {
+    const el = document.getElementById('mood');
+    const deals = (hist || []).filter((h) => !SPAC_RE.test(h.stock_name) && Number(h.confirmed_price) > 0)
+      .map((h) => ({ date: h.listing_date, ret: (Number(h.listing_open_price) - Number(h.confirmed_price)) / Number(h.confirmed_price) * 100, name: h.stock_name }));
+    state.rows.forEach((r) => { if (ov[r.stock_name] != null && !deals.some((d) => d.name === r.stock_name)) deals.push({ date: r.listing_date, ret: ov[r.stock_name], name: r.stock_name }); });
+    const win = (n) => deals.filter((d) => d.date >= addDays(todayKR, -n));
+    const item = (label, arr) => arr.length
+      ? `<div class="mood-item"><div class="k">${label}</div><div class="v ${cls(avg(arr.map((d) => d.ret)))}">평균 ${sgn(avg(arr.map((d) => d.ret)))}</div><div class="s">중앙값 ${sgn(median(arr.map((d) => d.ret)))} · ${arr.length}건 · 공모가 이하 시초가 ${arr.filter((d) => d.ret <= 0).length}건</div></div>`
+      : `<div class="mood-item"><div class="k">${label}</div><div class="v">-</div><div class="s">상장 없음</div></div>`;
+    const first = state.rows.find((r) => !r.is_spac && r.regime_adj_log != null);
+    const adj = first ? (Math.exp(Number(first.regime_adj_log)) - 1) * 100 : null;
+    el.innerHTML = `
+      <div class="mood-title">최근 공모주 시장 분위기 (일반 종목, 스팩 제외)</div>
+      <div class="mood-grid">
+        ${item('최근 30일 상장', win(30))}
+        ${item('최근 60일 상장', win(60))}
+        ${item('최근 90일 상장', win(90))}
+        <div class="mood-item"><div class="k">모델에 반영한 분위기 보정</div><div class="v ${cls(adj)}">${adj == null ? '-' : sgn(adj)}</div><div class="s">최근 60일 실제가 모델보다 얼마나 높았나(표본 적을수록 축소)</div></div>
+      </div>
+      <div class="mood-note">8월에는 공모가 이하 시초가가 잇따라 나올 만큼 식었다가 9월 이후 수요가 몰린 종목 중심으로 다시 강해졌어요. 평균보다 <b>종목별 수급(경쟁률·확약)에 따른 편차</b>가 크다는 점을 감안하세요. 진코스텍처럼 이전상장 종목은 일반 신규상장과 수급 성격이 달라 학습·분위기 보정에서 제외했습니다.</div>`;
+  }
+
+  function confBadge(c) {
+    if (!c) return '';
+    const k = c === '높음' ? 'conf-hi' : c === '낮음' ? 'conf-low' : 'conf-mid';
+    return `<div class="conf ${k}">예측 신뢰도 ${esc(c)}</div>`;
+  }
+
+  function trackHtml(r, act) {
+    const p = (k) => Number(r[k]);
+    return `<div class="track">
+      <div class="zero" style="left:${pos(0)}%"></div>
+      <div class="r90" style="left:${pos(p('pred_p10'))}%;width:${pos(p('pred_p90')) - pos(p('pred_p10'))}%"></div>
+      <div class="r50" style="left:${pos(p('pred_p25'))}%;width:${Math.max(1, pos(p('pred_p75')) - pos(p('pred_p25')))}%"></div>
+      <div class="med" style="left:${pos(p('pred_p50'))}%"></div>
+      ${act != null ? `<div class="act" style="left:calc(${pos(act)}% - 2px)"></div>` : ''}
+    </div>`;
+  }
+
+  function verdict(r, act) {
+    if (act == null) return '';
+    const lo = Number(r.pred_p25), hi = Number(r.pred_p75);
+    const t = act < Number(r.pred_p10) ? '예측 범위(10~90%)보다 낮게 형성' : act < lo ? '예상 밴드 아래' : act > Number(r.pred_p90) ? '예측 범위(10~90%)보다 높게 형성' : act > hi ? '예상 밴드 위' : '예상 밴드 안';
+    return `<div class="acttxt">실제 시초가 <b>${sgn(act, 1)}</b> · ${t} <span style="color:var(--text-faint,#9ca3af)">(예상 중앙값 ${sgn(Number(r.pred_p50))})</span></div>`;
+  }
+
+  function renderTable() {
+    const body = document.getElementById('fc-body');
+    if (!state.rows.length) { body.innerHTML = '<tr><td colspan="6" class="msg">현재 상장 일정이 확정된 종목이 없어요.</td></tr>'; return; }
+    body.innerHTML = state.rows.map((r, i) => {
+      const a = state.actual[r.stock_name];
+      const act = a && a.open != null ? a.open : null;
+      return `
+      <tr class="main" data-i="${i}">
+        <td>${md(r.listing_date)}</td>
+        <td class="name">${esc(r.stock_name)}${r.is_spac ? '<span class="tag tag-spac">스팩</span>' : ''}${act != null ? '<span class="tag tag-live">상장 완료</span>' : ''}<span class="chev">▾</span>${confBadge(r.confidence)}</td>
+        <td>${num(r.offering_amount_eok)}억원</td>
+        <td>${num(r.institutional_competition_rate, 0)} / ${r.subscription_competition_rate != null ? num(r.subscription_competition_rate, 0) : '-'}</td>
+        <td>${r.lockup_commitment_ratio != null ? Number(r.lockup_commitment_ratio).toFixed(1) + '%' : '-'}</td>
+        <td class="predcell">
+          <div class="predtxt">${sgn(Number(r.pred_p25))} ~ ${sgn(Number(r.pred_p75))}<small>중앙 ${sgn(Number(r.pred_p50))}</small></div>
+          ${trackHtml(r, act)}
+          ${verdict(r, act)}
+        </td>
+      </tr>
+      <tr class="detail" id="d${i}" style="display:none"><td colspan="6"><div class="detail-inner" id="di${i}"></div></td></tr>`;
+    }).join('');
+
+    body.querySelectorAll('tr.main').forEach((tr) => tr.addEventListener('click', () => toggle(Number(tr.dataset.i), tr)));
+  }
+
+  function toggle(i, tr) {
+    const d = document.getElementById('d' + i);
+    const open = d.style.display === 'none';
+    d.style.display = open ? '' : 'none';
+    tr.classList.toggle('open', open);
+    if (open && !d.dataset.done) { d.dataset.done = '1'; fillDetail(i); }
+  }
+
+  function heatHtml(h) {
+    if (!h || h === '-') return '<span class="heat heat-none">해당 없음</span>';
+    const k = h === '높음' ? 'heat-hi' : 'heat-mid';
+    return `<span class="heat ${k}">업종 분위기 ${esc(h)}</span>`;
+  }
+
+  function driversHtml(r) {
+    const base = r.model_info && r.model_info.train_mean_pct != null ? Number(r.model_info.train_mean_pct) : null;
+    if (r.is_spac) {
+      return `<h3>예상 수익률 산출 근거</h3>
+        <p class="note">스팩은 사업·재무 요인이 없어서 최근 12개월 스팩 시초가 수익률 분포를 그대로 사용했어요(표본 ${num(r.n_train)}건).</p>
+        <div class="drv"><span>하위 10%</span><span class="val ${cls(r.pred_p10)}">${sgn(Number(r.pred_p10))}</span></div>
+        <div class="drv"><span>하위 25%</span><span class="val ${cls(r.pred_p25)}">${sgn(Number(r.pred_p25))}</span></div>
+        <div class="drv"><span>중앙값</span><span class="val ${cls(r.pred_p50)}">${sgn(Number(r.pred_p50))}</span></div>
+        <div class="drv"><span>상위 25%</span><span class="val ${cls(r.pred_p75)}">${sgn(Number(r.pred_p75))}</span></div>
+        <div class="drv"><span>상위 10%</span><span class="val ${cls(r.pred_p90)}">${sgn(Number(r.pred_p90))}</span></div>`;
+    }
+    const drv = Array.isArray(r.drivers) ? r.drivers : [];
+    const maxAbs = Math.max(20, ...drv.map((d) => Math.abs(Number(d.effect_pct))));
+    const rows = drv.map((d) => {
+      const e = Number(d.effect_pct);
+      const w = Math.min(50, Math.abs(e) / maxAbs * 50);
+      const bar = e >= 0
+        ? `<i style="left:50%;width:${w}%;background:var(--f-up)"></i>`
+        : `<i style="right:50%;width:${w}%;background:var(--f-down)"></i>`;
+      return `<div class="drv"><div><div>${esc(d.label)}</div><div class="bar" style="margin-top:4px"><i style="left:50%;width:1px;height:10px;background:#9aa1ad"></i>${bar}</div></div><span class="val ${cls(e)}">${e > 0 ? '▲' : e < 0 ? '▼' : ''}${Math.abs(e).toFixed(0)}%</span></div>`;
+    }).join('');
+    return `<h3>예상 수익률 산출 근거</h3>
+      <p class="note">과거 평균 상장 종목(${base != null ? sgn(base) : '-'})에서 출발해, 이 종목의 수요·확약·규모와 최근 분위기가 수익률을 몇 % 더하거나 깎는지를 보여줘요.</p>
+      ${rows}
+      <div class="drv" style="border-bottom:none"><span><b>모델 계산값 → 최종 중앙값</b></span><span class="val">${sgn(Number(r.base_pred_pct))} → ${sgn(Number(r.pred_p50))}</span></div>`;
+  }
+
+  function simHtml(r) {
+    const s = Array.isArray(r.similar_deals) ? r.similar_deals : [];
+    if (!s.length) return '';
+    const head = r.is_spac
+      ? '<tr><th>종목</th><th>상장일</th><th>공모금액</th><th>기관경쟁률</th><th>시초가</th></tr>'
+      : '<tr><th>종목</th><th>상장일</th><th>공모금액</th><th>기관</th><th>일반</th><th>확약</th><th>시초가</th></tr>';
+    const body = s.map((x) => r.is_spac
+      ? `<tr><td>${esc(x.name)}</td><td>${md(x.date)}</td><td>${num(x.amt)}억</td><td>${num(x.inst)}</td><td class="${cls(x.ret)}"><b>${sgn(Number(x.ret))}</b></td></tr>`
+      : `<tr><td>${esc(x.name)}</td><td>${md(x.date)}</td><td>${num(x.amt)}억</td><td>${num(x.inst)}</td><td>${num(x.sub)}</td><td>${x.lock != null ? Number(x.lock).toFixed(1) + '%' : '-'}</td><td class="${cls(x.ret)}"><b>${sgn(Number(x.ret))}</b></td></tr>`).join('');
+    return `<h3>${r.is_spac ? '최근 상장한 스팩 5건' : '조건이 가장 비슷했던 과거 종목 5건'}</h3><div class="tbl-wrap"><table class="sim"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  }
+
+  function storyHtml(r) {
+    const kp = r.key_points || {};
+    const li = (a) => (a || []).map((t) => `<li>${esc(t)}</li>`).join('');
+    const src = (Array.isArray(r.sources) ? r.sources : []).map((s) => `<div class="src"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a></div>`).join('');
+    if (!r.company_summary) return `<h3>종목 이야기</h3><p class="note">아직 정리된 종목 설명이 없어요.</p>`;
+    return `<h3>종목 이야기 ${heatHtml(r.sector_heat)}</h3>
+      ${r.sector ? `<p class="note" style="margin-bottom:4px">업종: ${esc(r.sector)}</p>` : ''}
+      <p>${esc(r.company_summary)}</p>
+      ${r.sector_note ? `<p class="note">${esc(r.sector_note)}</p>` : ''}
+      ${(kp.pos && kp.pos.length) ? `<div class="note" style="margin-top:6px"><b>긍정 포인트</b></div><ul class="kp">${li(kp.pos)}</ul>` : ''}
+      ${(kp.risk && kp.risk.length) ? `<div class="note"><b>체크할 리스크</b></div><ul class="kp">${li(kp.risk)}</ul>` : ''}
+      ${src ? `<div class="note" style="margin-top:6px"><b>출처</b></div>${src}` : ''}`;
+  }
+
+  async function fillDetail(i) {
+    const r = state.rows[i];
+    const el = document.getElementById('di' + i);
+    const modelNote = r.model_info && r.model_info.formula ? esc(r.model_info.formula) : '';
+    el.innerHTML = `
+      <div class="box">${driversHtml(r)}</div>
+      <div class="box">${storyHtml(r)}</div>
+      <div class="box full">${simHtml(r)}</div>
+      <div class="box full"><h3>관련 뉴스 (AI 마켓 인사이트 공모주 뉴스)</h3><ul class="news-mini" id="nw${i}"><li class="note">불러오는 중…</li></ul></div>
+      <div class="box full note">
+        예상 밴드 ${sgn(Number(r.pred_p25))} ~ ${sgn(Number(r.pred_p75))}는 모델 오차를 감안했을 때 실제 시초가가 들어올 가능성이 약 50%인 구간이고, 넓게 본 범위 ${sgn(Number(r.pred_p10))} ~ ${sgn(Number(r.pred_p90))}는 약 80%예요.
+        ${modelNote ? `<br>모델: ${modelNote} · 학습 ${num(r.n_train)}건${r.model_r2 ? ' · 설명력(R²) ' + Number(r.model_r2).toFixed(2) : ''} · 갱신 ${esc(String(r.updated_at || '').slice(0, 16).replace('T', ' '))}` : ''}
+      </div>`;
+
+    const key = r.stock_name.replace(/\(.*?\)/g, '').trim();
+    const res = await safe(db.from('ipo_news').select('title, link, article_published_at').ilike('title', '%' + key + '%').order('article_published_at', { ascending: false }).limit(5));
+    const ul = document.getElementById('nw' + i);
+    const list = res.data || [];
+    ul.innerHTML = list.length
+      ? list.map((n) => `<li><a href="${esc(n.link || '#')}" target="_blank" rel="noopener">${esc(n.title)}</a><span class="d">${esc(String(n.article_published_at || '').slice(0, 10))}</span></li>`).join('')
+      : '<li class="note">이 종목 이름이 들어간 최근 공모주 뉴스가 아직 없어요.</li>';
+  }
+
+  main();
+})();
+</script>
+</body>
+</html>

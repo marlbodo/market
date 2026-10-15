@@ -431,7 +431,10 @@
       <div class="panel">
         <div class="panel-head">
           <h2><span class="section-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="13" height="12" rx="1.5"/><path d="M2.5 7h13M6 2v3M12 2v3"/><circle cx="6" cy="10.6" r="0.9" fill="currentColor" stroke="none"/><circle cx="9" cy="10.6" r="0.9" fill="currentColor" stroke="none"/></svg></span>공모주(IPO) 일정</h2>
-          <a href="pages/ipo-schedule-all.html" class="panel-more" id="ipo-schedule-more-link">자세히 보기</a>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <a href="pages/ipo-open-forecast.html" class="panel-more" id="ipo-open-forecast-link">시초가 예상</a>
+            <a href="pages/ipo-schedule-all.html" class="panel-more" id="ipo-schedule-more-link">자세히 보기</a>
+          </div>
         </div>
         <div class="tag-legend" id="ipo-filter-row">
           <button class="ipo-filter-btn is-active" data-ipo-filter="all">전체</button>
@@ -603,6 +606,12 @@
     const w = Math.min(1100, screen.availWidth - 40);
     const h = Math.min(950, screen.availHeight - 60);
     openCentered(this.href, 'newsAll', w, h);
+  });
+  document.getElementById('ipo-open-forecast-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    const w = Math.min(1100, screen.availWidth - 40);
+    const h = Math.min(950, screen.availHeight - 60);
+    openCentered(this.href, 'ipoOpenForecast', w, h);
   });
   document.getElementById('ipo-schedule-more-link').addEventListener('click', function (e) {
     e.preventDefault();

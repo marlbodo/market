@@ -214,6 +214,10 @@
       : `<div class="mood-item"><div class="k">${label}</div><div class="v">-</div><div class="s">상장 없음</div></div>`;
     const first = state.rows.find((r) => !r.is_spac && r.regime_adj_log != null);
     const adj = first ? (Math.exp(Number(first.regime_adj_log)) - 1) * 100 : null;
+    const shockRow = state.rows.find((r) => !r.is_spac && r.overlay_log != null && Number(r.overlay_log) !== 0);
+    const shock = shockRow ? (Math.exp(Number(shockRow.overlay_log)) - 1) * 100 : null;
+    const shockItem = shock == null ? '' : `<div class="mood-item" style="background:#eef3fb"><div class="k">증시 급락 충격 보정(한시)</div><div class="v ${cls(shock)}">${sgn(shock)}</div><div class="s">예측 수익배수에 곱해 반영 · 불확실성 구간도 넓힘</div></div>`;
+    const shockNote = shockRow && shockRow.overlay_note ? `<div class="mood-note" style="margin-top:6px"><b>시장 충격 보정 사유:</b> ${esc(shockRow.overlay_note)}</div>` : '';
     el.innerHTML = `
       <div class="mood-title">최근 공모주 시장 분위기 (일반 종목, 스팩 제외)</div>
       <div class="mood-grid">
@@ -221,7 +225,9 @@
         ${item('최근 60일 상장', win(60))}
         ${item('최근 90일 상장', win(90))}
         <div class="mood-item"><div class="k">모델에 반영한 분위기 보정</div><div class="v ${cls(adj)}">${adj == null ? '-' : sgn(adj)}</div><div class="s">최근 60일 실제가 모델보다 얼마나 높았나(표본 적을수록 축소)</div></div>
+        ${shockItem}
       </div>
+      ${shockNote}
       <div class="mood-note">8월에는 공모가 이하 시초가가 잇따라 나올 만큼 식었다가 9월 이후 수요가 몰린 종목 중심으로 다시 강해졌어요. 평균보다 <b>종목별 수급(경쟁률·확약)에 따른 편차</b>가 크다는 점을 감안하세요. 진코스텍처럼 이전상장 종목은 일반 신규상장과 수급 성격이 달라 학습·분위기 보정에서 제외했습니다.</div>`;
   }
 

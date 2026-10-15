@@ -200,7 +200,7 @@
     if (!ts.length) { el.innerHTML = '마지막 업데이트: -'; return; }
     const p = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date(Math.max.apply(null, ts)));
     const g = (t) => (p.find((x) => x.type === t) || {}).value;
-    el.innerHTML = `${clock}마지막 업데이트: ${g('year')}. ${g('month')}. ${g('day')}. ${g('hour') === '24' ? '00' : g('hour')}:${g('minute')} <span style="color:var(--text-faint,#9ca3af)">· 매일 06:00, 18:00 자동 갱신</span>`;
+    el.innerHTML = `${clock}마지막 업데이트: ${g('year')}. ${g('month')}. ${g('day')}. ${g('hour') === '24' ? '00' : g('hour')}:${g('minute')} <span style="color:var(--text-faint,#9ca3af)">· 매일 18:00 자동 갱신</span>`;
   }
 
   function renderMood(hist, ov) {

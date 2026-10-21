@@ -214,7 +214,7 @@
       : `<div class="mood-item"><div class="k">${label}</div><div class="v">-</div><div class="s">상장 없음</div></div>`;
     const first = state.rows.find((r) => !r.is_spac && r.regime_adj_log != null);
     const adj = first ? (Math.exp(Number(first.regime_adj_log)) - 1) * 100 : null;
-    const shockRow = state.rows.find((r) => !r.is_spac && r.overlay_log != null && Number(r.overlay_log) !== 0);
+    const shockRow = state.rows.find((r) => !r.is_spac && r.listing_date >= todayKR && r.overlay_log != null && Number(r.overlay_log) !== 0);
     const shock = shockRow ? (Math.exp(Number(shockRow.overlay_log)) - 1) * 100 : null;
     const shockItem = shock == null ? '' : `<div class="mood-item" style="background:#eef3fb"><div class="k">증시 급락 충격 보정(한시)</div><div class="v ${cls(shock)}">${sgn(shock)}</div><div class="s">예측 수익배수에 곱해 반영 · 불확실성 구간도 넓힘</div></div>`;
     const shockNote = shockRow && shockRow.overlay_note ? `<div class="mood-note" style="margin-top:6px"><b>시장 충격 보정 사유:</b> ${esc(shockRow.overlay_note)}</div>` : '';

@@ -214,7 +214,7 @@
     const item = (label, arr) => arr.length
       ? `<div class="mood-item"><div class="k">${label}</div><div class="v ${cls(avg(arr.map((d) => d.ret)))}">평균 ${sgn(avg(arr.map((d) => d.ret)))}</div><div class="s">중앙값 ${sgn(median(arr.map((d) => d.ret)))} · ${arr.length}건 · 공모가 이하 시초가 ${arr.filter((d) => d.ret <= 0).length}건</div></div>`
       : `<div class="mood-item"><div class="k">${label}</div><div class="v">-</div><div class="s">상장 없음</div></div>`;
-    const first = state.rows.find((r) => !r.is_spac && r.regime_adj_log != null);
+    const first = state.rows.find((r) => !r.is_spac && r.regime_adj_log != null && r.listing_date >= todayKR) || state.rows.find((r) => !r.is_spac && r.regime_adj_log != null);
     const adj = first ? (Math.exp(Number(first.regime_adj_log)) - 1) * 100 : null;
     const shockRow = state.rows.find((r) => !r.is_spac && r.listing_date >= todayKR && r.overlay_log != null && Number(r.overlay_log) !== 0);
     const shock = shockRow ? (Math.exp(Number(shockRow.overlay_log)) - 1) * 100 : null;

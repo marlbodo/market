@@ -156,6 +156,7 @@
   const todayKR = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
   const addDays = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
   const md = (s) => s ? s.slice(5).replace('-', '.') : '-';
+  const ymd = (s) => s ? s.slice(0, 10).replace(/-/g, '.') : '-';
   const SPAC_RE = /스팩|제[0-9]+호/;
   const LO = -20, HI = 300;
   const pos = (v) => Math.max(0, Math.min(100, (v - LO) / (HI - LO) * 100));
@@ -200,7 +201,7 @@
     if (!ts.length) { el.innerHTML = '마지막 업데이트: -'; return; }
     const p = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date(Math.max.apply(null, ts)));
     const g = (t) => (p.find((x) => x.type === t) || {}).value;
-    el.innerHTML = `${clock}마지막 업데이트: ${g('year')}. ${g('month')}. ${g('day')}. ${g('hour') === '24' ? '00' : g('hour')}:${g('minute')} <span style="color:var(--text-faint,#9ca3af)">· 매일 18:00 자동 갱신</span>`;
+    el.innerHTML = `${clock}마지막 업데이트: ${g('year')}. ${g('month')}. ${g('day')}. ${g('hour') === '24' ? '00' : g('hour')}:${g('minute')} <span style="color:var(--text-faint,#9ca3af)">· 매일 18:00 자동 갱신 · 상장 완료 종목은 3일간만 표시</span>`;
   }
 
   function renderMood(hist, ov) {
@@ -328,8 +329,8 @@
       ? '<tr><th>종목</th><th>상장일</th><th>공모금액</th><th>기관경쟁률</th><th>시초가</th></tr>'
       : '<tr><th>종목</th><th>상장일</th><th>공모금액</th><th>기관</th><th>일반</th><th>확약</th><th>시초가</th></tr>';
     const body = s.map((x) => r.is_spac
-      ? `<tr><td>${esc(x.name)}</td><td>${md(x.date)}</td><td>${num(x.amt)}억</td><td>${num(x.inst)}</td><td class="${cls(x.ret)}"><b>${sgn(Number(x.ret))}</b></td></tr>`
-      : `<tr><td>${esc(x.name)}</td><td>${md(x.date)}</td><td>${num(x.amt)}억</td><td>${num(x.inst)}</td><td>${num(x.sub)}</td><td>${x.lock != null ? Number(x.lock).toFixed(1) + '%' : '-'}</td><td class="${cls(x.ret)}"><b>${sgn(Number(x.ret))}</b></td></tr>`).join('');
+      ? `<tr><td>${esc(x.name)}</td><td>${ymd(x.date)}</td><td>${num(x.amt)}억</td><td>${num(x.inst)}</td><td class="${cls(x.ret)}"><b>${sgn(Number(x.ret))}</b></td></tr>`
+      : `<tr><td>${esc(x.name)}</td><td>${ymd(x.date)}</td><td>${num(x.amt)}억</td><td>${num(x.inst)}</td><td>${num(x.sub)}</td><td>${x.lock != null ? Number(x.lock).toFixed(1) + '%' : '-'}</td><td class="${cls(x.ret)}"><b>${sgn(Number(x.ret))}</b></td></tr>`).join('');
     return `<h3>${r.is_spac ? '최근 상장한 스팩 5건' : '조건이 가장 비슷했던 과거 종목 5건'}</h3><div class="tbl-wrap"><table class="sim"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
   }
 

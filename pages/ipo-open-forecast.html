@@ -156,6 +156,7 @@
   const todayKR = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
   const addDays = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
   const md = (s) => s ? s.slice(5).replace('-', '.') : '-';
+  const kst = (t) => { const d = new Date(t); if (!t || isNaN(d)) return '-'; const p = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(d); return p + ' (한국시간)'; };
   const ymd = (s) => s ? s.slice(0, 10).replace(/-/g, '.') : '-';
   const SPAC_RE = /스팩|제[0-9]+호/;
   const LO = -20, HI = 300;
@@ -359,7 +360,7 @@
       <div class="box full"><h3>관련 뉴스 (네이버 뉴스)</h3><ul class="news-mini" id="nw${i}"><li class="note">불러오는 중…</li></ul></div>
       <div class="box full note">
         예상 밴드 ${sgn(Number(r.pred_p25))} ~ ${sgn(Number(r.pred_p75))}는 모델 오차를 감안했을 때 실제 시초가가 들어올 가능성이 약 50%인 구간이고, 넓게 본 범위 ${sgn(Number(r.pred_p10))} ~ ${sgn(Number(r.pred_p90))}는 약 80%예요.
-        ${modelNote ? `<br>모델: ${modelNote} · 학습 ${num(r.n_train)}건${r.model_r2 ? ' · 설명력(R²) ' + Number(r.model_r2).toFixed(2) : ''} · 갱신 ${esc(String(r.updated_at || '').slice(0, 16).replace('T', ' '))}` : ''}
+        ${modelNote ? `<br>모델: ${modelNote} · 학습 ${num(r.n_train)}건${r.model_r2 ? ' · 설명력(R²) ' + Number(r.model_r2).toFixed(2) : ''} · 갱신 ${esc(kst(r.updated_at))}` : ''}
       </div>`;
 
     const key = r.stock_name.replace(/\(.*?\)/g, '').trim();

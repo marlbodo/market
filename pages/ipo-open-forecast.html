@@ -355,19 +355,26 @@
       <div class="box">${driversHtml(r)}</div>
       <div class="box">${storyHtml(r)}</div>
       <div class="box full">${simHtml(r)}</div>
-      <div class="box full"><h3>관련 뉴스 (AI 마켓 인사이트 공모주 뉴스)</h3><ul class="news-mini" id="nw${i}"><li class="note">불러오는 중…</li></ul></div>
+      <div class="box full"><h3>관련 뉴스 (네이버 뉴스)</h3><ul class="news-mini" id="nw${i}"><li class="note">불러오는 중…</li></ul></div>
       <div class="box full note">
         예상 밴드 ${sgn(Number(r.pred_p25))} ~ ${sgn(Number(r.pred_p75))}는 모델 오차를 감안했을 때 실제 시초가가 들어올 가능성이 약 50%인 구간이고, 넓게 본 범위 ${sgn(Number(r.pred_p10))} ~ ${sgn(Number(r.pred_p90))}는 약 80%예요.
         ${modelNote ? `<br>모델: ${modelNote} · 학습 ${num(r.n_train)}건${r.model_r2 ? ' · 설명력(R²) ' + Number(r.model_r2).toFixed(2) : ''} · 갱신 ${esc(String(r.updated_at || '').slice(0, 16).replace('T', ' '))}` : ''}
       </div>`;
 
     const key = r.stock_name.replace(/\(.*?\)/g, '').trim();
-    const res = await safe(db.from('ipo_news').select('title, link, article_published_at').ilike('title', '%' + key + '%').order('article_published_at', { ascending: false }).limit(5));
     const ul = document.getElementById('nw' + i);
-    const list = res.data || [];
+    let list = [];
+    try {
+      const { data } = await db.functions.invoke('naver-news', { body: { q: key + ' 공모주' } });
+      list = (data && data.items) || [];
+      if (!list.length) {
+        const r2 = await db.functions.invoke('naver-news', { body: { q: key } });
+        list = (r2.data && r2.data.items) || [];
+      }
+    } catch (e) { list = []; }
     ul.innerHTML = list.length
-      ? list.map((n) => `<li><a href="${esc(n.link || '#')}" target="_blank" rel="noopener">${esc(n.title)}</a><span class="d">${esc(String(n.article_published_at || '').slice(0, 10))}</span></li>`).join('')
-      : '<li class="note">이 종목 이름이 들어간 최근 공모주 뉴스가 아직 없어요.</li>';
+      ? list.map((n) => `<li><a href="${esc(n.link || '#')}" target="_blank" rel="noopener">${esc(n.title)}</a><span class="d">${esc(n.date || '')}</span></li>`).join('')
+      : '<li class="note">관련 뉴스를 불러오지 못했거나 아직 없어요.</li>';
   }
 
   main();
